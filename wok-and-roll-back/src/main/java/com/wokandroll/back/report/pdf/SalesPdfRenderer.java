@@ -31,9 +31,10 @@ import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 /**
- * Draws the sales report PDF (api-contract.md section 3.18, #155 part 1): A4 portrait, a header
- * with the filters and the UTC time, the region table and the month table, "Page x of y" in the
- * footer. It only prints what ReportService gives, so PDF = web = CSV. The charts come in part 2.
+ * Draws the sales report PDF (api-contract.md section 3.18, #155, #173): A4 portrait, a header with
+ * the filters and the UTC time, the orders-by-country chart and the region table, the year KPIs,
+ * the total-by-month chart and the month table, "Page x of y" in the footer. It only prints what
+ * ReportService gives, so PDF = web = CSV.
  */
 @Component
 public class SalesPdfRenderer {
@@ -63,8 +64,8 @@ public class SalesPdfRenderer {
       document.addTitle(TITLE);
       document.open();
       header(document, regions, months);
-      regionSection(document, regions);
-      monthSection(document, months);
+      regionSection(document, writer, regions);
+      monthSection(document, writer, months);
       document.close();
     } catch (DocumentException e) {
       throw new IllegalStateException("Could not build the sales PDF", e);
@@ -88,7 +89,7 @@ public class SalesPdfRenderer {
     d.add(new Paragraph("Generated " + GENERATED.format(r.generatedAt()) + " UTC", TEXT));
   }
 
-  private static void regionSection(Document d, SalesByRegionResponse r) {
+  private static void regionSection(Document d, PdfWriter writer, SalesByRegionResponse r) {
     d.add(section("1. Sales by region, " + r.from() + " to " + r.to()));
     d.add(
         new Paragraph(
@@ -96,6 +97,15 @@ public class SalesPdfRenderer {
                 + " orders: "
                 + r.totalOrders(),
             TEXT));
+    d.add(chartTitle("Orders by country"));
+    d.add(
+        PdfBarChart.draw(
+            writer,
+            CHART_WIDTH,
+            CHART_HEIGHT,
+            r.regions().stream().map(RegionSales::country).toList(),
+            r.regions().stream().map(s -> BigDecimal.valueOf(s.orders())).toList(),
+            r.regions().stream().map(s -> String.valueOf(s.orders())).toList()));
     PdfPTable table = table("Country");
     for (RegionSales s : r.regions()) {
       table.addCell(cell(s.countryName() + " (" + s.currency() + ")", Element.ALIGN_LEFT));
@@ -112,7 +122,7 @@ public class SalesPdfRenderer {
     d.add(table);
   }
 
-  private static void monthSection(Document d, SalesByMonthResponse m) {
+  private static void monthSection(Document d, PdfWriter writer, SalesByMonthResponse m) {
     d.add(
         section(
             "2. Sales by month, " + m.countryName() + " " + m.year() + " (" + m.currency() + ")"));
@@ -129,7 +139,15 @@ public class SalesPdfRenderer {
         t.total(),
         t.averageCheck());
     d.add(kpis);
-    d.add(new Paragraph(" ", TEXT));
+    d.add(chartTitle("Total by month, " + m.currency()));
+    d.add(
+        PdfBarChart.draw(
+            writer,
+            CHART_WIDTH,
+            CHART_HEIGHT,
+            m.months().stream().map(s -> monthShort(s.month())).toList(),
+            m.months().stream().map(MonthSales::total).toList(),
+            m.months().stream().map(s -> money(s.total())).toList()));
     PdfPTable table = table("Month");
     for (MonthSales s : m.months()) {
       table.addCell(cell(monthName(s.month()), Element.ALIGN_LEFT));
@@ -144,6 +162,22 @@ public class SalesPdfRenderer {
           s.averageCheck());
     }
     d.add(table);
+  }
+
+  /** Width of the A4 text area (595 - 2 × 36), so the chart lines up with the tables. */
+  private static final float CHART_WIDTH = 523;
+
+  private static final float CHART_HEIGHT = 150;
+
+  private static Paragraph chartTitle(String text) {
+    Paragraph p = new Paragraph(text, HEAD);
+    p.setSpacingBefore(8);
+    p.setSpacingAfter(4);
+    return p;
+  }
+
+  static String monthShort(int month) {
+    return java.time.Month.of(month).getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
   }
 
   private static Paragraph section(String text) {
