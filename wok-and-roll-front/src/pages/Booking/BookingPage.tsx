@@ -150,6 +150,16 @@ export function BookingPage() {
   }, [booking]);
 
   const times = cafe ? bookingTimes(cafe, date, today, minutesNowInTimeZone(timeZone)) : [];
+  const noTimesLeft = times.length > 0 && times.every((option) => option.disabled);
+
+  // Late in the evening today has no free time any more: start from tomorrow instead.
+  useEffect(() => {
+    if (cafe && date === today && noTimesLeft) {
+      setDate(localDateKey(addDays(dateKeyToDate(today), 1)));
+    }
+    // Only when the café or "today" changes, not when the guest picks today again on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafe, today]);
 
   function changed(field: Field) {
     setErrors((current) => ({ ...current, [field]: undefined }));
@@ -441,7 +451,9 @@ export function BookingPage() {
                   ))}
                 </select>
                 <span id="booking-time-hint" className="input__message">
-                  Local time of the café.
+                  {noTimesLeft
+                    ? 'No times are left on this day. Please choose another date.'
+                    : 'Local time of the café.'}
                 </span>
                 {errors.time && (
                   <span id="booking-time-error" className="input__message input__message--error">
