@@ -1,0 +1,27 @@
+name: Epic
+description: A large goal (one per RACI main goal) that is split into user stories and tasks. Usually created by the Team Lead or BA.
+title: "[Epic N] <goal>"
+type: Feature
+labels: ["epic"]
+projects: ["ITPU-Teamwork-2026/13"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+    validations:
+      required: true
+  - type: input
+    id: criteria
+    attributes:
+      label: Grading criteria

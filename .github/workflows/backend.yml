@@ -1,0 +1,46 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "wok-and-roll-back/**"
+      - ".github/workflows/backend.yml"
+  push:
+    branches: [dev, main]
+    paths:
+      - "wok-and-roll-back/**"
+      - ".github/workflows/backend.yml"
+
+jobs:
+  build:
+    name: Build, tests, format check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wok-and-roll-back
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: wokroll
+          POSTGRES_PASSWORD: wokroll
+          POSTGRES_DB: wokroll
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wokroll"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: mvn verify (tests + Spotless)
+        run: mvn -B verify

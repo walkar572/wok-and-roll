@@ -1,0 +1,12 @@
+{
+  "name": "t12-wok-and-roll",
+  "private": true,
+  "workspaces": [
+    "wok-and-roll-front"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace wok-and-roll-front --",
+    "build": "npm run build --workspace wok-and-roll-front",
+    "preview": "npm run preview --workspace wok-and-roll-front"
+  }
+}

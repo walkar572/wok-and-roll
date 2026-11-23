@@ -1,0 +1,52 @@
+name: Bug report
+description: Something does not work as the story or design says.
+title: "[Bug] <what is wrong, where>"
+type: Bug
+labels: ["bug"]
+projects: ["ITPU-Teamwork-2026/13"]
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: Also add the matching `severity:` label.
+      options:
+        - "critical — blocks a core flow or gives wrong money totals"
+        - "major — feature works incorrectly, no easy workaround"
+        - "minor — cosmetic or has an easy workaround"
+    validations:
+      required: true
+  - type: input
+    id: story
+    attributes:
+      label: Related story / task
+      placeholder: "#25"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result (screenshots, API response)
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "Country UZB · Chrome 130 · 320 px · build/commit abc123"

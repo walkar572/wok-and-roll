@@ -1,0 +1,208 @@
+package com.wokandroll.back.cart;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
+
+// Runs only when CI=true: GitHub Actions sets it and has PostgreSQL 16 on localhost:5432.
+// Locally: start the database, then run CI=true mvn verify. Each test is rolled back.
+/**
+ * Cart quote against the real database with the Flyway seed (#33, #113). The unit tests use a fake
+ * repository; this test checks the SQL of the pricing package and the numbers of the seed. Ids are
+ * looked up by name, so the test does not depend on the order of the seed.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+@EnabledIfEnvironmentVariable(named = "CI", matches = "true")
+class CartQuoteApiIntegrationTest {
+
+  @Autowired private MockMvc mvc;
+
+  @Autowired private JdbcClient jdbc;
+
+  @Test
+  void twoLargeFirecrackerUdonsWithExtraChickenInUzbekistan() throws Exception {
+    // udon 48.00 + Large 12.00 + Extra chicken 9.00 = 69.00 each, x2 = 138.00; VAT 15%
+    long udon = productId("Firecracker udon");
+    long large = modifierId("Firecracker udon", "Large");
+    long chicken = modifierId("Firecracker udon", "Extra chicken");
+
+    quote(
+            """
+            {"country": "UZB", "items": [
+              {"productId": %d, "quantity": 2, "modifierIds": [%d, %d]}
+            ]}
+            """
+                .formatted(udon, large, chicken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.country").value("UZB"))
+        .andExpect(jsonPath("$.currency").value("UZS"))
+        .andExpect(jsonPath("$.lines[0].name").value("Firecracker udon"))
+        .andExpect(jsonPath("$.lines[0].quantity").value(2))
+        .andExpect(jsonPath("$.lines[0].unitPrice").value(69.00))
+        .andExpect(jsonPath("$.lines[0].lineTotal").value(138.00))
+        .andExpect(jsonPath("$.lines[0].modifiers.length()").value(2))
+        .andExpect(jsonPath("$.lines[0].modifiers[0].name").value("Large"))
+        .andExpect(jsonPath("$.lines[0].modifiers[0].type").value("SIZE"))
+        .andExpect(jsonPath("$.lines[0].modifiers[1].name").value("Extra chicken"))
+        .andExpect(jsonPath("$.lines[0].modifiers[1].type").value("EXTRA"))
+        .andExpect(jsonPath("$.subtotal").value(138.00))
+        .andExpect(jsonPath("$.vatRate").value(15.00))
+        .andExpect(jsonPath("$.vat").value(20.70))
+        .andExpect(jsonPath("$.amountInclVat").value(158.70))
+        .andExpect(jsonPath("$.scenario").value("PICKUP"))
+        .andExpect(jsonPath("$.discountRate").value(3.00))
+        .andExpect(jsonPath("$.discount").value(4.76))
+        .andExpect(jsonPath("$.deliveryFee").value(0.00))
+        .andExpect(jsonPath("$.total").value(153.94));
+  }
+
+  @Test
+  void deliveryInUzbekistanWithTheTwentyZoneIsFourSixtySixTwenty() throws Exception {
+    // 2 x set 129.00 + 2 x California roll 55.00 + Gyoza 32.00 = 400.00; VAT 15% = 60.00
+    // amount incl. VAT 460.00 -> 3% = 13.80; delivery 20.00 is added last: 466.20
+    quote(
+            """
+            {"country": "UZB", "scenario": "DELIVERY", "deliveryZoneId": %d, "items": [
+              {"productId": %d, "quantity": 2},
+              {"productId": %d, "quantity": 2},
+              {"productId": %d, "quantity": 1}
+            ]}
+            """
+                .formatted(
+                    uzbZoneWithFee("20.00"),
+                    productId("Wok & Roll set for two"),
+                    productId("California roll"),
+                    productId("Gyoza")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.scenario").value("DELIVERY"))
+        .andExpect(jsonPath("$.subtotal").value(400.00))
+        .andExpect(jsonPath("$.vat").value(60.00))
+        .andExpect(jsonPath("$.amountInclVat").value(460.00))
+        .andExpect(jsonPath("$.discountRate").value(3.00))
+        .andExpect(jsonPath("$.discount").value(13.80))
+        .andExpect(jsonPath("$.deliveryFee").value(20.00))
+        .andExpect(jsonPath("$.total").value(466.20));
+  }
+
+  @Test
+  void zoneOfAnotherCountryIsRejected() throws Exception {
+    long kazZone =
+        jdbc.sql(
+                "SELECT z.id FROM delivery_zone z JOIN country c ON c.id = z.country_id "
+                    + "WHERE c.code = 'KAZ' AND z.active ORDER BY z.id LIMIT 1")
+            .query(Long.class)
+            .single();
+
+    quote(
+            """
+            {"country": "UZB", "scenario": "DELIVERY", "deliveryZoneId": %d, "items": [
+              {"productId": %d, "quantity": 1}
+            ]}
+            """
+                .formatted(kazZone, productId("Gyoza")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("UNKNOWN_DELIVERY_ZONE"))
+        .andExpect(jsonPath("$.fields.deliveryZoneId").exists());
+  }
+
+  @Test
+  void outOfStockTunaNigiriIsRejected() throws Exception {
+    quote(
+            """
+            {"country": "UZB", "items": [{"productId": %d, "quantity": 1}]}
+            """
+                .formatted(productId("Tuna nigiri")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OUT_OF_STOCK"))
+        .andExpect(jsonPath("$.message").exists())
+        .andExpect(jsonPath("$.fields['items[0].productId']").value("Tuna nigiri is out of stock"));
+  }
+
+  @Test
+  void udonWithoutASizeIsRejected() throws Exception {
+    // the dish has sizes (Regular, Large), so exactly one SIZE is needed; the key is the list
+    quote(
+            """
+            {"country": "UZB", "items": [{"productId": %d, "quantity": 1}]}
+            """
+                .formatted(productId("Firecracker udon")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_MODIFIER"))
+        .andExpect(jsonPath("$.message").exists())
+        .andExpect(jsonPath("$.fields['items[0].modifierIds']").value("choose exactly one size"));
+  }
+
+  @Test
+  void extraTofuIsNotSoldInChina() throws Exception {
+    // Extra tofu has no price in CHN in the seed; the key is the position of the modifier
+    quote(
+            """
+            {"country": "CHN", "items": [
+              {"productId": %d, "quantity": 1, "modifierIds": [%d]}
+            ]}
+            """
+                .formatted(
+                    productId("Miso mushroom rice"),
+                    modifierId("Miso mushroom rice", "Extra tofu")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_MODIFIER"))
+        .andExpect(jsonPath("$.message").exists())
+        .andExpect(jsonPath("$.fields['items[0].modifierIds[0]']").exists());
+  }
+
+  @Test
+  void unknownProductIsRejected() throws Exception {
+    quote(
+            """
+            {"country": "UZB", "items": [{"productId": 999999, "quantity": 1}]}
+            """)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("UNKNOWN_PRODUCT"))
+        .andExpect(jsonPath("$.message").exists())
+        .andExpect(jsonPath("$.fields['items[0].productId']").exists());
+  }
+
+  private ResultActions quote(String json) throws Exception {
+    return mvc.perform(
+        post("/api/v1/cart/quote").contentType(MediaType.APPLICATION_JSON).content(json));
+  }
+
+  private long uzbZoneWithFee(String fee) {
+    return jdbc.sql(
+            "SELECT z.id FROM delivery_zone z JOIN country c ON c.id = z.country_id "
+                + "WHERE c.code = 'UZB' AND z.active AND z.fee = :fee ORDER BY z.id LIMIT 1")
+        .param("fee", new java.math.BigDecimal(fee))
+        .query(Long.class)
+        .single();
+  }
+
+  private long productId(String name) {
+    return jdbc.sql("SELECT id FROM product WHERE name = :name")
+        .param("name", name)
+        .query(Long.class)
+        .single();
+  }
+
+  private long modifierId(String productName, String modifierName) {
+    return jdbc.sql(
+            "SELECT m.id FROM modifier m JOIN product p ON p.id = m.product_id "
+                + "WHERE p.name = :product AND m.name = :modifier")
+        .param("product", productName)
+        .param("modifier", modifierName)
+        .query(Long.class)
+        .single();
+  }
+}

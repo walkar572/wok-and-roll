@@ -1,0 +1,38 @@
+# Local run of the whole backend: PostgreSQL + Spring Boot app.
+# Start: docker compose up --build   (from the repo root)
+# Stop:  docker compose down         (add -v to also delete the database volume)
+# First time only, create .env with a JWT secret (the file is in .gitignore):
+#   echo "JWT_SECRET=$(openssl rand -base64 48)" > .env
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-wokroll}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wokroll}
+      POSTGRES_DB: wokroll
+    ports:
+      # If 5432 is busy on your machine, run: DB_PORT=5433 docker compose up --build
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-wokroll} -d wokroll"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  back:
+    build: ./wok-and-roll-back
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/wokroll
+      DB_USERNAME: ${DB_USERNAME:-wokroll}
+      DB_PASSWORD: ${DB_PASSWORD:-wokroll}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env, see the comment at the top of this file}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

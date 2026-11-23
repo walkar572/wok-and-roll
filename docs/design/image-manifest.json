@@ -1,0 +1,58 @@
+[
+  {
+    "source": "dish-1.png",
+    "file": "udon.webp",
+    "width": 512,
+    "height": 512,
+    "bytes": 44862,
+    "sourceBytes": 460048
+  },
+  {
+    "source": "dish-2.png",
+    "file": "salmon-roll.webp",
+    "width": 512,
+    "height": 512,
+    "bytes": 43718,
+    "sourceBytes": 463847
+  },
+  {
+    "source": "dish-3.png",
+    "file": "mushroom-rice.webp",
+    "width": 512,
+    "height": 512,
+    "bytes": 38660,
+    "sourceBytes": 440197
+  },
+  {
+    "source": "dish-4.png",
+    "file": "gyoza.webp",
+    "width": 512,
+    "height": 512,
+    "bytes": 50034,
+    "sourceBytes": 480295
+  },
+  {
+    "source": "dish-5.png",
+    "file": "tuna-nigiri.webp",
+    "width": 512,
+    "height": 512,
+    "bytes": 27772,
+    "sourceBytes": 409720
+  },
+  {
+    "source": "dish-6.png",
+    "file": "yuzu-lemonade.webp",
+    "width": 512,
+    "height": 512,
+    "bytes": 16598,
+    "sourceBytes": 377294
+  },
+  {
+    "source": "hero-sushi-v2.png",
+    "file": "hero-sushi.webp",
+    "width": 1280,
+    "height": 853,
+    "bytes": 61084,
+    "sourceBytes": 1883712
+  }
+]

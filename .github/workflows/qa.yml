@@ -1,0 +1,110 @@
+name: QA automation
+
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'wok-and-roll-front/**'
+      - 'wok-and-roll-back/**'
+      - 'wok-and-roll-qa/**'
+      - '.github/workflows/qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: wokroll
+          POSTGRES_PASSWORD: wokroll
+          POSTGRES_DB: wokroll
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wokroll -d wokroll"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: 'true'
+      DB_URL: jdbc:postgresql://127.0.0.1:5432/wokroll
+      DB_USERNAME: wokroll
+      DB_PASSWORD: wokroll
+      API_BASE_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: wok-and-roll-back/pom.xml
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build --prefix wok-and-roll-front
+
+      - name: Install Playwright dependencies
+        run: npm ci --prefix wok-and-roll-qa/automation
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: wok-and-roll-qa/automation
+
+      - name: Set a JWT secret for this run
+        # The backend refuses to start without JWT_SECRET (#62). A new random one per run.
+        run: echo "JWT_SECRET=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
+
+      - name: Start backend API
+        run: |
+          nohup mvn -B -f wok-and-roll-back/pom.xml spring-boot:run -DskipTests > /tmp/wok-and-roll-back.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8080/api/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/wok-and-roll-back.log
+          exit 1
+
+      - name: Start frontend preview
+        run: |
+          npm run preview --prefix wok-and-roll-front -- --host 127.0.0.1 > /tmp/vite-preview.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/vite-preview.log
+          exit 1
+
+      - name: Run Playwright tests
+        run: npx playwright test --project=chromium
+        working-directory: wok-and-roll-qa/automation
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: wok-and-roll-qa/automation/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload backend log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: /tmp/wok-and-roll-back.log
+          if-no-files-found: ignore
+          retention-days: 7

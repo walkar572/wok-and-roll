@@ -1,0 +1,19 @@
+Date | What changed in the plan | Why | Who approved | Link
+- 31 Oct: Project Plan v2 approved by the team. Changes: planning 45 min, demo and retro 25 + 20 min, updated Definition of Ready, bug severity levels, milestones for each stage, "Refs" rule, account deadline is now API 19 Nov and UI 25 Nov.
+- 31 Oct: Modifiers API moved from Abdulaziz to Nodir (#52), and CSV export from Nodir to Timur (#69), to balance the backend work.
+- 1 Nov: Code review: only the Team Lead approves PRs (the plan said "Team Lead or another developer").
+- 5 Nov: Reports show each country in its own currency; the region chart shows the number of orders (mentor Q&A, 2 Nov). The Figma Reports frames (#26) and the reports API (#66–#69) follow this. Approved by Maksudbek.
+- 5 Nov: Discount thresholds are stored per country (`country_id NOT NULL`), not as one shared table as in the ERD draft (#19). Approved by Maksudbek.
+- 5 Nov: Frontend uses TypeScript (the plan said React + Vite), as the mentor recommends. Approved by Maksudbek.
+- 5 Nov: The mentor is on vacation on 9–13 Nov. Prototype approval (#28) is asked in a Friday slot or by message; otherwise it moves to Mon 16 Nov. Approved by Maksudbek.
+- 6 Nov: Design approval moved from the mentor to the Team Lead. The mentor said there are no strict design requirements (Q&A, 2 Nov). The design is frozen; any design change goes through the Change Log. Approved by Maksudbek.
+- 8 Nov: #38 moved from sprint 1 to sprint 2
+- 14 Nov: Re-plan of Stages 3–5 (`docs/mvp-plan.md`). Sprint 3 (16–22 Nov) and Sprint 4 (23–29 Nov) build every MVP feature; Sprint 5 (30 Nov – 6 Dec) is only testing, bug fixing and the defense. Why: a full test week before the defense, and the Sprint 2 lesson that late merges leave no time for QA. Approved by Maksudbek. Refs #142
+- 14 Nov: Moved earlier: the report APIs by region and by month (#153, #154) from Sprint 4 to Sprint 3; the PDF starts in Sprint 3 (#155) and ends in Sprint 4 (#173); the sales history seed (#171) is due Mon 23 Nov. Approved by Maksudbek. Refs #66, #67, #68
+- 14 Nov: Moved later: the accessibility audit (#70) and the full automated regression (#71) move to Sprint 5. #72 becomes "feature freeze Thu 26 Nov, code freeze Wed 2 Dec, release v1.0.0 Thu 3 Dec" (the plan had code freeze on Thu 26 Nov). The technical write-up (#73) and the Project Report (#74) stay in Sprint 4. Approved by Maksudbek.
+- 14 Nov: Owners changed: all screens are built by Serhii (the plan had Nodir on the login and admin pages, #62, #64); the staff API (#176) is Timur's, because orders are his module; the RBAC rules (#175) stay with Abdulaziz. Approved by Maksudbek. Refs #142
+- 14 Nov: Scope added inside existing stories: a staff API for orders and bookings (#65, estimate 5 → 8), a login limit and demo users (#151), a request id in every response (#152). The pickup point endpoint is now `GET /api/v1/cafes` (#146). Approved by Maksudbek. Refs #142
+- 14 Nov: Stories #55–#69 rewritten with Given/When/Then acceptance criteria and split into 55 sub-issues (#142–#196), each with an owner, estimate, sprint, start and target date, role, priority and an `area:` label. Approved by Maksudbek. Refs #142
+- 14 Nov: The acceptance line "Thresholds are in the local currency" moved from #50 to #55, where the discount is built. Approved by Maksudbek.
+- 14 Nov: The Stage 3–4 contract was planned for Fri 13 Nov (contract v1.0, §11). Contract v1.1 is ready on Sat 14 Nov and is agreed at Sprint 3 planning on Mon 16 Nov. Refs #142
+- 14 Nov: #117 and #120 moved from Serhii to Maksudbek to free Serhii for checkout in Sprint 3. Approved by Maksudbek.

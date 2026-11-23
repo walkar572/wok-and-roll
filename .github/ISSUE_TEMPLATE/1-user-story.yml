@@ -1,0 +1,60 @@
+name: User story
+description: User-facing value with acceptance criteria (INVEST). Goes under an epic as a sub-issue.
+title: "<short outcome, e.g. Guest chooses a country and sees local currency>"
+type: Task
+labels: ["user-story"]
+projects: ["ITPU-Teamwork-2026/13"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write it so it is **I**ndependent, **N**egotiable, **V**aluable, **E**stimable, **S**mall (fits one sprint) and **T**estable.
+        After creating: add it as a sub-issue of its epic, set **Milestone** (stage), **Priority**, **Role** and an `area:` label.
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      value: "**As a** <guest / admin / staff>, **I want** <goal>, **so that** <benefit>."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Given / When / Then, one per line. Include validation, responsive (320/768/1200) and keyboard where relevant.
+      value: |
+        - [ ] Given ..., when ..., then ...
+        - [ ] Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks (split into sub-issues at refinement, each ≤ 1 day)
+      value: |
+        - [ ] BE: ... — owner
+        - [ ] FE: ... — owner
+        - [ ] QA: test cases / E2E — owner
+  - type: input
+    id: figma
+    attributes:
+      label: Figma link (required for UI stories)
+  - type: input
+    id: api
+    attributes:
+      label: API contract (Swagger endpoint / PR)
+  - type: textarea
+    id: value
+    attributes:
+      label: Value / grading criteria
+      placeholder: e.g. Home/Menu and Cart (60)
+  - type: checkboxes
+    id: dor
+    attributes:
+      label: Definition of Ready
+      options:
+        - label: Acceptance criteria agreed with the team
+        - label: Figma link added (if UI)
+        - label: API contract agreed (if backend)
+        - label: Estimated in planning poker (Fibonacci 1-2-3-5-8)
+        - label: Dependencies known and fits in one sprint

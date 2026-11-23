@@ -1,0 +1,4 @@
+node_modules/
+/wok-and-roll-qa/automation/playwright-report/
+/wok-and-roll-qa/automation/test-results/
+.env

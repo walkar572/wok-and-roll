@@ -1,0 +1,54 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "wok-and-roll-front/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/frontend.yml"
+  push:
+    branches: [dev, main]
+    paths:
+      - "wok-and-roll-front/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/frontend.yml"
+
+jobs:
+  build:
+    name: Install, lint, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the frontend is set up
+        id: check
+        run: |
+          if [ -s wok-and-roll-front/package.json ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "wok-and-roll-front/package.json is empty, nothing to build yet."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: "22"
+
+      - name: Install
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --prefix wok-and-roll-front; fi
+
+      - name: Lint
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          if [ -f package.json ]; then npm run lint --workspaces --if-present; else npm run lint --prefix wok-and-roll-front --if-present; fi
+
+      - name: Build (TypeScript + Vite)
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          if [ -f package.json ]; then npm run build --workspaces --if-present; else npm run build --prefix wok-and-roll-front --if-present; fi

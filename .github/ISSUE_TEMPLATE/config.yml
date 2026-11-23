@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How we work in GitHub (read first)
+    url: https://github.com/ITPU-Teamwork-2026/t12-wok-and-roll/blob/main/HOW-WE-WORK.md
+    about: 4-minute guide - board, statuses, daily routine, bugs.
+  - name: Project board (Team 12 · Wok & Roll)
+    url: https://github.com/orgs/ITPU-Teamwork-2026/projects/13
+    about: Backlog, current sprint and roles.

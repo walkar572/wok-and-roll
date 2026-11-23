@@ -1,0 +1,34 @@
+Date | Who decided | Decision | Why | Link (issue or PR)
+- 31 Oct: GitHub Projects board 13 is our task tracker
+- 31 Oct: Branch flow is feature, then dev, then main. Main is updated every Friday after the demo.
+- 31 Oct: PRs use "Refs #N", not "Closes". QA moves the issue to Done.
+- 31 Oct: Daily stand-up Mon–Fri at 19:00, 15 minutes, in Teams
+- 31 Oct: Repo folders: wok-and-roll-front, wok-and-roll-back, wok-and-roll-qa
+- 1 Nov: Only the Team Lead reviews and merges into dev
+- 5 Nov (mentor, Q&A 2 Nov): discount thresholds use the technical task table as the reference. Team Lead decision: the same numbers (100 / 500 / 700 / 1000 / 5000) apply in the **local currency** of each country, no conversion. Stored per country in `discount_threshold` (data, not code). Refs #44, #34
+- 5 Nov (mentor): prices may be changed if they do not make sense; the logic must stay. Seed data (#33) is the source of truth for prices; prices in Figma are examples.
+- 5 Nov (Team Lead, not answered by the mentor): rounding is `BigDecimal` HALF_UP to 2 decimals after each step (VAT, discount, total). Refs #44, #34
+- 5 Nov (Team Lead, not answered by the mentor): delivery fee is a fixed fee per delivery zone in local currency. It is added last, outside VAT and discount, and does not change the threshold. Refs #44
+- 5 Nov (Team Lead, not answered by the mentor): guests choose an Order Date of today or later (Tashkent date). Past dates exist only in seed data for reports. The API returns 400 for a past date. Refs #44, #56
+- 5 Nov (mentor): reports show every country in its own currency, no conversion (conversion is extra work and is not graded). Sales by region chart = number of orders; money per country in a table in local currency; sales by month = one country in its currency. Refs #66, #67, #68, #69
+- 5 Nov (Team Lead): stack is Java 21, Maven, Spring Boot 3.5.x (Project Plan v2 and #31), PostgreSQL 16, Flyway, springdoc; React + TypeScript + Vite (the mentor recommends TypeScript), React Router, Chart.js; Playwright (JavaScript) + axe-core. Refs #14
+- 5 Nov (mentor + Team Lead): do not write complex UI components from scratch. Keep the components already built in #38; for Select, Date picker, Toast and dialogs use Radix UI Primitives and react-day-picker, styled with the Figma tokens. Refs #38
+- 5 Nov (Team Lead): API and database conventions are in `docs/architecture.md`: `/api/v1`, `?country=UZB`, DTO records, Flyway V1 = #32 and timestamp versions after it, `customer_order` and `app_user` table names. Refs #29
+- 5 Nov (Team Lead): CI runs on pull requests into `dev` and `main`: backend `mvn verify`, frontend install + lint + build. Refs #30
+- 5 Nov (mentor): the mentor checks each person's technical work in the commit history, and AI tools are allowed. Rules: push at least once per working day, open a Draft PR on the first day, commit only your own work (use `Co-authored-by` for a teammate's code), understand every line you push. See HOW-WE-WORK.md, section 9.
+- 5 Nov (Project Plan v2): no multi-language UI; it is out of scope.
+- 10 Nov (Team Lead): the Stage 2 API contract is `docs/api-contract.md`. Modifiers come inside `GET /api/v1/products/{id}`, the menu filter is `categoryId`, quantity is a whole number 1–99, and the cart quote returns subtotal and VAT in Sprint 2; discount, delivery fee and total are added in Stage 3 as new fields without breaking changes. Refs #123
+- 14 Nov (Team Lead): Stages 3–5 are re-planned (`docs/mvp-plan.md`). Every MVP feature, base and bonus, is built in Sprint 3 and Sprint 4; Sprint 5 is only testing, bug fixing and the defense. The hardest backend work (pricing and orders, auth, delivery and time slots, report aggregates and the PDF) starts in Sprint 3. Refs #142
+- 14 Nov (Team Lead): feature freeze is Thu 26 Nov 20:00, so the Sprint 4 demo on Fri 27 Nov shows the whole MVP; the bug-fix code freeze is Wed 2 Dec 20:00; `v1.0.0` is tagged on Thu 3 Dec. Refs #72
+- 14 Nov (Team Lead): all bonus features stay in scope with a cut line, checked on Wed 25 Nov 12:00: first the admin page (#185), then the staff API (#176), then the My orders page (#184). Base features, pickup, delivery, time slots and booking are not cut. Refs #142
+- 14 Nov (Team Lead): Serhii builds all screens. Each backend API is planned to be merged at least one day before its screen. Refs #142
+- 14 Nov (Team Lead): API contract v1.1 (`docs/api-contract.md`) is the API for Stages 3–5 and the bonus features, agreed at Sprint 3 planning on Mon 16 Nov. All changes to v1.0 are additive. Refs #142
+- 14 Nov (Team Lead): one café resource for pickup points and table booking (`GET /api/v1/cafes`, not `pickup-points`). Every delivery zone is served by one café and has a fixed fee; every country has a 20.00 zone for the golden examples. Refs #58, #59, #61
+- 14 Nov (Team Lead): Order Date, time slots and bookings use the local date and time of the café's country (one IANA time zone per country), not the Tashkent date from 5 Nov. Refs #56, #60, #61
+- 14 Nov (Team Lead): time slots are 30 minutes with a capacity of 5 orders per café, shared by pickup and delivery. The capacity is checked by one atomic SQL statement, and a cancelled order frees its place. Refs #60
+- 14 Nov (Team Lead): the order is priced again on the server; `expectedTotal` gives `409 PRICE_CHANGED` when the total has changed; orders and bookings accept an `Idempotency-Key`; order numbers are random (`WR-` + 8 characters). Refs #56
+- 14 Nov (Team Lead): a booking takes 90 minutes; tables have 2, 4, 6 or 8 seats; the smallest free table is used; a database exclusion constraint stops double booking. Guests can book without an account. Refs #61
+- 14 Nov (Team Lead): roles: the guest flow is public; `/me` any logged-in user; `/staff` STAFF and ADMIN (new staff API for orders and bookings); `/reports` VIEWER and ADMIN; `/admin` ADMIN. Another user's order gives 404, not 403. 5 failed logins in 15 minutes give 429; tokens get `iss` and `aud`. Refs #62, #63, #65
+- 14 Nov (Team Lead): reports count orders by order date, all statuses except CANCELLED; all 5 countries and all 12 months are always returned; there is no sum across currencies except the number of orders. One PDF has both reports; each report has its own CSV (RFC 4180, safe against CSV injection). Refs #66, #67, #68, #69
+- 14 Nov (Team Lead): the error body stays `{code, message, fields}` and gets `requestId` (header `X-Request-Id`). We do not switch to `application/problem+json` (RFC 9457) in v1, because it is a breaking change for the frontend and the tests. Refs #152
+- 14 Nov (Team Lead): new lists (`me/orders`, `staff`, `admin/products`) use paging with `pageSize` and an opaque `pageToken`, without a total count. Refs #63, #64, #65

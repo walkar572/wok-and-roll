@@ -1,0 +1,11 @@
+{
+  "name": "wok-and-roll-qa-automation",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

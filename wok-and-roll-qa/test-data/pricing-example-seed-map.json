@@ -1,0 +1,47 @@
+[
+  {
+    "exampleId": "UZB-project-plan-delivery-400",
+    "country": "UZB",
+    "items": [
+      { "productName": "Edamame", "quantity": 1, "modifierNames": [] },
+      { "productName": "Miso mushroom rice", "quantity": 1, "modifierNames": ["Regular"] },
+      { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large", "Extra chicken", "Fried egg"] },
+      { "productName": "Wok & Roll set for two", "quantity": 2, "modifierNames": [] }
+    ]
+  },
+  {
+    "exampleId": "UZB-project-plan-pickup-400",
+    "country": "UZB",
+    "items": [
+      { "productName": "Edamame", "quantity": 1, "modifierNames": [] },
+      { "productName": "Miso mushroom rice", "quantity": 1, "modifierNames": ["Regular"] },
+      { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large", "Extra chicken", "Fried egg"] },
+      { "productName": "Wok & Roll set for two", "quantity": 2, "modifierNames": [] }
+    ]
+  },
+  {
+    "exampleId": "GEO-threshold-700",
+    "country": "GEO",
+    "items": [
+      { "productName": "Edamame", "quantity": 1, "modifierNames": [] },
+      { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large"] },
+      { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large", "Fried egg"] },
+      { "productName": "Wok & Roll set for two", "quantity": 4, "modifierNames": [] }
+    ]
+  },
+  {
+    "exampleId": "UKR-below-100",
+    "country": "UKR",
+    "items": [
+      { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Regular", "Extra chicken"] }
+    ]
+  },
+  {
+    "exampleId": "UZB-pickup-below-100",
+    "country": "UZB",
+    "items": [
+      { "productName": "Gyoza", "quantity": 1, "modifierNames": [] },
+      { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Regular"] }
+    ]
+  }
+]

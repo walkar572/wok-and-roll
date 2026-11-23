@@ -1,0 +1,35 @@
+name: Task
+description: A piece of work of one day or less with one owner (technical, design, QA or Scrum task).
+title: "<verb + object, e.g. Add Flyway migration for regional prices>"
+type: Task
+projects: ["ITPU-Teamwork-2026/13"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep it to **one day or less**. Add it as a sub-issue of its story or epic, then set **Sprint**, **Role**, **Target date** and an `area:` label.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Why are we doing this?
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected result
+      description: How do we know it is done?
+    validations:
+      required: true
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Checklist
+      value: |
+        - [ ] ...
+  - type: input
+    id: raci
+    attributes:
+      label: RACI
+      placeholder: "R: ... · A: ... · C: ... · I: ..."

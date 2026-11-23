@@ -1,0 +1,819 @@
+[
+  {
+    "id": "UZB-project-plan-delivery-400",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 200,
+        "quantity": 2
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 400,
+      "vatRate": 15,
+      "vat": 60,
+      "amountInclVat": 460,
+      "discountRate": 3,
+      "discount": 13.8,
+      "total": 466.2
+    }
+  },
+  {
+    "id": "UZB-project-plan-pickup-400",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "PICKUP",
+    "items": [
+      {
+        "unitPrice": 200,
+        "quantity": 2
+      }
+    ],
+    "deliveryFee": 0,
+    "expected": {
+      "subtotal": 400,
+      "vatRate": 15,
+      "vat": 60,
+      "amountInclVat": 460,
+      "discountRate": 3,
+      "discount": 13.8,
+      "total": 446.2
+    }
+  },
+  {
+    "id": "UZB-below-100",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 50,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 50,
+      "vatRate": 15,
+      "vat": 7.5,
+      "amountInclVat": 57.5,
+      "discountRate": 0,
+      "discount": 0,
+      "total": 77.5
+    }
+  },
+  {
+    "id": "UZB-threshold-100",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 86.96,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 86.96,
+      "vatRate": 15,
+      "vat": 13.04,
+      "amountInclVat": 100,
+      "discountRate": 3,
+      "discount": 3,
+      "total": 117
+    },
+    "thresholdTarget": 100
+  },
+  {
+    "id": "UZB-threshold-500",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 434.78,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 434.78,
+      "vatRate": 15,
+      "vat": 65.22,
+      "amountInclVat": 500,
+      "discountRate": 5,
+      "discount": 25,
+      "total": 495
+    },
+    "thresholdTarget": 500
+  },
+  {
+    "id": "UZB-threshold-700",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 608.7,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 608.7,
+      "vatRate": 15,
+      "vat": 91.31,
+      "amountInclVat": 700.01,
+      "discountRate": 7,
+      "discount": 49,
+      "total": 671.01
+    },
+    "thresholdTarget": 700
+  },
+  {
+    "id": "UZB-threshold-1000",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 869.57,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 869.57,
+      "vatRate": 15,
+      "vat": 130.44,
+      "amountInclVat": 1000.01,
+      "discountRate": 10,
+      "discount": 100,
+      "total": 920.01
+    },
+    "thresholdTarget": 1000
+  },
+  {
+    "id": "UZB-threshold-5000",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 4347.83,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 4347.83,
+      "vatRate": 15,
+      "vat": 652.17,
+      "amountInclVat": 5000,
+      "discountRate": 15,
+      "discount": 750,
+      "total": 4270
+    },
+    "thresholdTarget": 5000
+  },
+  {
+    "id": "KAZ-below-100",
+    "country": "KAZ",
+    "currency": "KZT",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 50,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 50,
+      "vatRate": 20,
+      "vat": 10,
+      "amountInclVat": 60,
+      "discountRate": 0,
+      "discount": 0,
+      "total": 80
+    }
+  },
+  {
+    "id": "KAZ-threshold-100",
+    "country": "KAZ",
+    "currency": "KZT",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 83.33,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 83.33,
+      "vatRate": 20,
+      "vat": 16.67,
+      "amountInclVat": 100,
+      "discountRate": 3,
+      "discount": 3,
+      "total": 117
+    },
+    "thresholdTarget": 100
+  },
+  {
+    "id": "KAZ-threshold-500",
+    "country": "KAZ",
+    "currency": "KZT",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 416.67,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 416.67,
+      "vatRate": 20,
+      "vat": 83.33,
+      "amountInclVat": 500,
+      "discountRate": 5,
+      "discount": 25,
+      "total": 495
+    },
+    "thresholdTarget": 500
+  },
+  {
+    "id": "KAZ-threshold-700",
+    "country": "KAZ",
+    "currency": "KZT",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 583.33,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 583.33,
+      "vatRate": 20,
+      "vat": 116.67,
+      "amountInclVat": 700,
+      "discountRate": 7,
+      "discount": 49,
+      "total": 671
+    },
+    "thresholdTarget": 700
+  },
+  {
+    "id": "KAZ-threshold-1000",
+    "country": "KAZ",
+    "currency": "KZT",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 833.33,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 833.33,
+      "vatRate": 20,
+      "vat": 166.67,
+      "amountInclVat": 1000,
+      "discountRate": 10,
+      "discount": 100,
+      "total": 920
+    },
+    "thresholdTarget": 1000
+  },
+  {
+    "id": "KAZ-threshold-5000",
+    "country": "KAZ",
+    "currency": "KZT",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 4166.67,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 4166.67,
+      "vatRate": 20,
+      "vat": 833.33,
+      "amountInclVat": 5000,
+      "discountRate": 15,
+      "discount": 750,
+      "total": 4270
+    },
+    "thresholdTarget": 5000
+  },
+  {
+    "id": "GEO-below-100",
+    "country": "GEO",
+    "currency": "GEL",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 50,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 50,
+      "vatRate": 12,
+      "vat": 6,
+      "amountInclVat": 56,
+      "discountRate": 0,
+      "discount": 0,
+      "total": 76
+    }
+  },
+  {
+    "id": "GEO-threshold-100",
+    "country": "GEO",
+    "currency": "GEL",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 89.29,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 89.29,
+      "vatRate": 12,
+      "vat": 10.71,
+      "amountInclVat": 100,
+      "discountRate": 3,
+      "discount": 3,
+      "total": 117
+    },
+    "thresholdTarget": 100
+  },
+  {
+    "id": "GEO-threshold-500",
+    "country": "GEO",
+    "currency": "GEL",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 446.43,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 446.43,
+      "vatRate": 12,
+      "vat": 53.57,
+      "amountInclVat": 500,
+      "discountRate": 5,
+      "discount": 25,
+      "total": 495
+    },
+    "thresholdTarget": 500
+  },
+  {
+    "id": "GEO-threshold-700",
+    "country": "GEO",
+    "currency": "GEL",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 625,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 625,
+      "vatRate": 12,
+      "vat": 75,
+      "amountInclVat": 700,
+      "discountRate": 7,
+      "discount": 49,
+      "total": 671
+    },
+    "thresholdTarget": 700
+  },
+  {
+    "id": "GEO-threshold-1000",
+    "country": "GEO",
+    "currency": "GEL",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 892.86,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 892.86,
+      "vatRate": 12,
+      "vat": 107.14,
+      "amountInclVat": 1000,
+      "discountRate": 10,
+      "discount": 100,
+      "total": 920
+    },
+    "thresholdTarget": 1000
+  },
+  {
+    "id": "GEO-threshold-5000",
+    "country": "GEO",
+    "currency": "GEL",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 4464.29,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 4464.29,
+      "vatRate": 12,
+      "vat": 535.71,
+      "amountInclVat": 5000,
+      "discountRate": 15,
+      "discount": 750,
+      "total": 4270
+    },
+    "thresholdTarget": 5000
+  },
+  {
+    "id": "UKR-below-100",
+    "country": "UKR",
+    "currency": "UAH",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 50,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 50,
+      "vatRate": 8,
+      "vat": 4,
+      "amountInclVat": 54,
+      "discountRate": 0,
+      "discount": 0,
+      "total": 74
+    }
+  },
+  {
+    "id": "UKR-threshold-100",
+    "country": "UKR",
+    "currency": "UAH",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 92.59,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 92.59,
+      "vatRate": 8,
+      "vat": 7.41,
+      "amountInclVat": 100,
+      "discountRate": 3,
+      "discount": 3,
+      "total": 117
+    },
+    "thresholdTarget": 100
+  },
+  {
+    "id": "UKR-threshold-500",
+    "country": "UKR",
+    "currency": "UAH",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 462.96,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 462.96,
+      "vatRate": 8,
+      "vat": 37.04,
+      "amountInclVat": 500,
+      "discountRate": 5,
+      "discount": 25,
+      "total": 495
+    },
+    "thresholdTarget": 500
+  },
+  {
+    "id": "UKR-threshold-700",
+    "country": "UKR",
+    "currency": "UAH",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 648.15,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 648.15,
+      "vatRate": 8,
+      "vat": 51.85,
+      "amountInclVat": 700,
+      "discountRate": 7,
+      "discount": 49,
+      "total": 671
+    },
+    "thresholdTarget": 700
+  },
+  {
+    "id": "UKR-threshold-1000",
+    "country": "UKR",
+    "currency": "UAH",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 925.93,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 925.93,
+      "vatRate": 8,
+      "vat": 74.07,
+      "amountInclVat": 1000,
+      "discountRate": 10,
+      "discount": 100,
+      "total": 920
+    },
+    "thresholdTarget": 1000
+  },
+  {
+    "id": "UKR-threshold-5000",
+    "country": "UKR",
+    "currency": "UAH",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 4629.63,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 4629.63,
+      "vatRate": 8,
+      "vat": 370.37,
+      "amountInclVat": 5000,
+      "discountRate": 15,
+      "discount": 750,
+      "total": 4270
+    },
+    "thresholdTarget": 5000
+  },
+  {
+    "id": "CHN-below-100",
+    "country": "CHN",
+    "currency": "CNY",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 50,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 50,
+      "vatRate": 18,
+      "vat": 9,
+      "amountInclVat": 59,
+      "discountRate": 0,
+      "discount": 0,
+      "total": 79
+    }
+  },
+  {
+    "id": "CHN-threshold-100",
+    "country": "CHN",
+    "currency": "CNY",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 84.75,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 84.75,
+      "vatRate": 18,
+      "vat": 15.26,
+      "amountInclVat": 100.01,
+      "discountRate": 3,
+      "discount": 3,
+      "total": 117.01
+    },
+    "thresholdTarget": 100
+  },
+  {
+    "id": "CHN-threshold-500",
+    "country": "CHN",
+    "currency": "CNY",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 423.73,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 423.73,
+      "vatRate": 18,
+      "vat": 76.27,
+      "amountInclVat": 500,
+      "discountRate": 5,
+      "discount": 25,
+      "total": 495
+    },
+    "thresholdTarget": 500
+  },
+  {
+    "id": "CHN-threshold-700",
+    "country": "CHN",
+    "currency": "CNY",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 593.22,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 593.22,
+      "vatRate": 18,
+      "vat": 106.78,
+      "amountInclVat": 700,
+      "discountRate": 7,
+      "discount": 49,
+      "total": 671
+    },
+    "thresholdTarget": 700
+  },
+  {
+    "id": "CHN-threshold-1000",
+    "country": "CHN",
+    "currency": "CNY",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 847.46,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 847.46,
+      "vatRate": 18,
+      "vat": 152.54,
+      "amountInclVat": 1000,
+      "discountRate": 10,
+      "discount": 100,
+      "total": 920
+    },
+    "thresholdTarget": 1000
+  },
+  {
+    "id": "CHN-threshold-5000",
+    "country": "CHN",
+    "currency": "CNY",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 4237.29,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 4237.29,
+      "vatRate": 18,
+      "vat": 762.71,
+      "amountInclVat": 5000,
+      "discountRate": 15,
+      "discount": 750,
+      "total": 4270
+    },
+    "thresholdTarget": 5000
+  },
+  {
+    "id": "UZB-vat-half-up-10-30",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 10.3,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 10.3,
+      "vatRate": 15,
+      "vat": 1.55,
+      "amountInclVat": 11.85,
+      "discountRate": 0,
+      "discount": 0,
+      "total": 31.85
+    }
+  },
+  {
+    "id": "KAZ-discount-half-up-150-50",
+    "country": "KAZ",
+    "currency": "KZT",
+    "scenario": "DELIVERY",
+    "items": [
+      {
+        "unitPrice": 125.42,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 20,
+    "expected": {
+      "subtotal": 125.42,
+      "vatRate": 20,
+      "vat": 25.08,
+      "amountInclVat": 150.5,
+      "discountRate": 3,
+      "discount": 4.52,
+      "total": 165.98
+    }
+  },
+  {
+    "id": "UZB-pickup-below-100",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "PICKUP",
+    "items": [
+      {
+        "unitPrice": 80,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 0,
+    "expected": {
+      "subtotal": 80,
+      "vatRate": 15,
+      "vat": 12,
+      "amountInclVat": 92,
+      "discountRate": 0,
+      "discount": 0,
+      "total": 92
+    }
+  },
+  {
+    "id": "UZB-pickup-threshold-500",
+    "country": "UZB",
+    "currency": "UZS",
+    "scenario": "PICKUP",
+    "items": [
+      {
+        "unitPrice": 434.78,
+        "quantity": 1
+      }
+    ],
+    "deliveryFee": 0,
+    "expected": {
+      "subtotal": 434.78,
+      "vatRate": 15,
+      "vat": 65.22,
+      "amountInclVat": 500,
+      "discountRate": 5,
+      "discount": 25,
+      "total": 475
+    }
+  }
+]
