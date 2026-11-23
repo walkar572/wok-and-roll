@@ -57,7 +57,7 @@ class MyOrdersApiIntegrationTest {
             .andExpect(jsonPath("$.items[0].status").value("NEW"))
             .andExpect(jsonPath("$.items[0].scenario").value("PICKUP"))
             .andExpect(jsonPath("$.items[0].itemCount").value(2))
-            .andExpect(jsonPath("$.items[0].total").value(138.32))
+            .andExpect(jsonPath("$.items[0].total").value(176249.00))
             .andExpect(jsonPath("$.items[0].currency").value("UZS"))
             .andReturn()
             .getResponse()
@@ -75,7 +75,7 @@ class MyOrdersApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.orderNumber").value(first))
         .andExpect(jsonPath("$.lines[0].name").value("Salmon avocado roll"))
-        .andExpect(jsonPath("$.total").value(138.32));
+        .andExpect(jsonPath("$.total").value(176249.00));
   }
 
   @Test
@@ -132,7 +132,7 @@ class MyOrdersApiIntegrationTest {
     return JsonPath.read(body, "$.token");
   }
 
-  /** Two Salmon avocado rolls for pickup in Chilanzar tomorrow: total 138.32 UZS. */
+  /** Two Salmon avocado rolls for pickup in Chilanzar tomorrow: total 176249.00 UZS. */
   private String placeOrder(String token, String slot) throws Exception {
     String tomorrow = clock.today("UZB").plusDays(1).toString();
     String body =
@@ -144,7 +144,7 @@ class MyOrdersApiIntegrationTest {
                         """
                         {"country": "UZB", "orderDate": "%s", "scenario": "PICKUP", "cafeId": %d,
                          "slotStart": "%s", "contactName": "My Orders Test",
-                         "contactPhone": "+998901234567", "expectedTotal": 138.32,
+                         "contactPhone": "+998901234567", "expectedTotal": 176249.00,
                          "items": [{"productId": 1, "quantity": 2, "modifierIds": []}]}
                         """
                             .formatted(tomorrow, 1, slot)))

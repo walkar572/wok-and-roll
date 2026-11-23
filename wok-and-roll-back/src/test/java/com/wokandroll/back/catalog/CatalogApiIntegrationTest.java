@@ -44,7 +44,7 @@ class CatalogApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(10))
         .andExpect(jsonPath("$[0].name").value("Salmon avocado roll"))
-        .andExpect(jsonPath("$[0].price").value(62.00))
+        .andExpect(jsonPath("$[0].price").value(79000.00))
         .andExpect(jsonPath("$[1].name").value("Tuna nigiri"))
         .andExpect(jsonPath("$[1].inStock").value(false))
         .andExpect(jsonPath("$[4].name").value("Firecracker udon"))
@@ -59,7 +59,7 @@ class CatalogApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(3))
         .andExpect(jsonPath("$[0].name").value("Firecracker udon"))
-        .andExpect(jsonPath("$[0].price").value(54.00))
+        .andExpect(jsonPath("$[0].price").value(31.00))
         .andExpect(jsonPath("$[0].currency").value("CNY"));
   }
 

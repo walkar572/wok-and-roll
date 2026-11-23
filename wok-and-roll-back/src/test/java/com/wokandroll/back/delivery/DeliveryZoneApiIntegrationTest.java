@@ -16,7 +16,7 @@ import com.wokandroll.back.delivery.repository.DeliveryZoneRepository.DeliveryZo
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,16 +39,24 @@ class DeliveryZoneApiIntegrationTest {
 
   @Autowired private DeliveryZoneRepository repository;
 
+  /** Near zone, center and far zone of every country, in its own currency (realistic fees). */
   @ParameterizedTest
-  @ValueSource(strings = {"UZB", "KAZ", "GEO", "UKR", "CHN"})
-  void everyCountryHasThreeZonesAndOneWithFeeTwenty(String country) throws Exception {
+  @CsvSource({
+    "UZB, 15000.00, 20000.00, 30000.00",
+    "KAZ, 600.00, 800.00, 1200.00",
+    "GEO, 3.50, 4.50, 6.50",
+    "UKR, 50.00, 65.00, 100.00",
+    "CHN, 8.00, 11.00, 17.00"
+  })
+  void everyCountryHasThreeZonesWithItsOwnFees(
+      String country, String near, String center, String far) throws Exception {
     mvc.perform(get("/api/v1/delivery-zones").param("country", country))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(3))
         .andExpect(jsonPath("$.items[*].country", everyItem(is(country))))
-        .andExpect(content().string(containsString("\"fee\":15.00")))
-        .andExpect(content().string(containsString("\"fee\":20.00")))
-        .andExpect(content().string(containsString("\"fee\":30.00")));
+        .andExpect(content().string(containsString("\"fee\":" + near)))
+        .andExpect(content().string(containsString("\"fee\":" + center)))
+        .andExpect(content().string(containsString("\"fee\":" + far)));
   }
 
   @Test
@@ -60,16 +68,16 @@ class DeliveryZoneApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].name").value("Tashkent: Center"))
         .andExpect(jsonPath("$.items[0].cafeId").value(chilanzar))
-        .andExpect(jsonPath("$.items[0].fee").value(20.00))
+        .andExpect(jsonPath("$.items[0].fee").value(20000.00))
         .andExpect(jsonPath("$.items[0].currency").value("UZS"))
         .andExpect(jsonPath("$.items[0].deliveryMinutes").value(45))
         .andExpect(jsonPath("$.items[1].name").value("Tashkent: Sergeli"))
         .andExpect(jsonPath("$.items[1].cafeId").value(chilanzar))
-        .andExpect(jsonPath("$.items[1].fee").value(30.00))
+        .andExpect(jsonPath("$.items[1].fee").value(30000.00))
         .andExpect(jsonPath("$.items[2].name").value("Tashkent: Yunusabad"))
         .andExpect(jsonPath("$.items[2].cafeId").value(yunusabad))
-        .andExpect(jsonPath("$.items[2].fee").value(15.00))
-        .andExpect(content().string(containsString("\"fee\":20.00")));
+        .andExpect(jsonPath("$.items[2].fee").value(15000.00))
+        .andExpect(content().string(containsString("\"fee\":20000.00")));
   }
 
   @Test
@@ -79,7 +87,7 @@ class DeliveryZoneApiIntegrationTest {
     DeliveryZoneRow zone = repository.findActive("UZB", center).orElseThrow();
 
     assertThat(zone.name()).isEqualTo("Tashkent: Center");
-    assertThat(zone.fee()).isEqualByComparingTo("20.00");
+    assertThat(zone.fee()).isEqualByComparingTo("20000.00");
     assertThat(zone.currency()).isEqualTo("UZS");
     assertThat(zone.cafeId()).isEqualTo(cafeId("Wok & Roll Chilanzar"));
     assertThat(repository.findActive("KAZ", center)).isEmpty();

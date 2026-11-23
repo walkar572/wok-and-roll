@@ -34,7 +34,8 @@ class CartQuoteApiIntegrationTest {
 
   @Test
   void twoLargeFirecrackerUdonsWithExtraChickenInUzbekistan() throws Exception {
-    // udon 48.00 + Large 12.00 + Extra chicken 9.00 = 69.00 each, x2 = 138.00; VAT 15%
+    // udon 55,000 + Large 15,000 + Extra chicken 12,000 = 82,000 each, x2 = 164,000; VAT 15%
+    // = 24,600 -> 188,600, from 100,000 the discount is 3 % = 5,658 -> total 182,942
     long udon = productId("Firecracker udon");
     long large = modifierId("Firecracker udon", "Large");
     long chicken = modifierId("Firecracker udon", "Extra chicken");
@@ -51,28 +52,29 @@ class CartQuoteApiIntegrationTest {
         .andExpect(jsonPath("$.currency").value("UZS"))
         .andExpect(jsonPath("$.lines[0].name").value("Firecracker udon"))
         .andExpect(jsonPath("$.lines[0].quantity").value(2))
-        .andExpect(jsonPath("$.lines[0].unitPrice").value(69.00))
-        .andExpect(jsonPath("$.lines[0].lineTotal").value(138.00))
+        .andExpect(jsonPath("$.lines[0].unitPrice").value(82000.00))
+        .andExpect(jsonPath("$.lines[0].lineTotal").value(164000.00))
         .andExpect(jsonPath("$.lines[0].modifiers.length()").value(2))
         .andExpect(jsonPath("$.lines[0].modifiers[0].name").value("Large"))
         .andExpect(jsonPath("$.lines[0].modifiers[0].type").value("SIZE"))
         .andExpect(jsonPath("$.lines[0].modifiers[1].name").value("Extra chicken"))
         .andExpect(jsonPath("$.lines[0].modifiers[1].type").value("EXTRA"))
-        .andExpect(jsonPath("$.subtotal").value(138.00))
+        .andExpect(jsonPath("$.subtotal").value(164000.00))
         .andExpect(jsonPath("$.vatRate").value(15.00))
-        .andExpect(jsonPath("$.vat").value(20.70))
-        .andExpect(jsonPath("$.amountInclVat").value(158.70))
+        .andExpect(jsonPath("$.vat").value(24600.00))
+        .andExpect(jsonPath("$.amountInclVat").value(188600.00))
         .andExpect(jsonPath("$.scenario").value("PICKUP"))
         .andExpect(jsonPath("$.discountRate").value(3.00))
-        .andExpect(jsonPath("$.discount").value(4.76))
+        .andExpect(jsonPath("$.discount").value(5658.00))
         .andExpect(jsonPath("$.deliveryFee").value(0.00))
-        .andExpect(jsonPath("$.total").value(153.94));
+        .andExpect(jsonPath("$.total").value(182942.00));
   }
 
   @Test
-  void deliveryInUzbekistanWithTheTwentyZoneIsFourSixtySixTwenty() throws Exception {
-    // 2 x set 129.00 + 2 x California roll 55.00 + Gyoza 32.00 = 400.00; VAT 15% = 60.00
-    // amount incl. VAT 460.00 -> 3% = 13.80; delivery 20.00 is added last: 466.20
+  void deliveryInUzbekistanWithTheCenterZone() throws Exception {
+    // 2 x set 189,000 + 2 x California roll 69,000 + Gyoza 39,000 = 555,000; VAT 15% = 83,250
+    // amount incl. VAT 638,250 -> from 500,000 the discount is 5 % = 31,912.50; the delivery fee
+    // 20,000 is added last: 626,337.50
     quote(
             """
             {"country": "UZB", "scenario": "DELIVERY", "deliveryZoneId": %d, "items": [
@@ -82,19 +84,19 @@ class CartQuoteApiIntegrationTest {
             ]}
             """
                 .formatted(
-                    uzbZoneWithFee("20.00"),
+                    uzbZoneWithFee("20000.00"),
                     productId("Wok & Roll set for two"),
                     productId("California roll"),
                     productId("Gyoza")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.scenario").value("DELIVERY"))
-        .andExpect(jsonPath("$.subtotal").value(400.00))
-        .andExpect(jsonPath("$.vat").value(60.00))
-        .andExpect(jsonPath("$.amountInclVat").value(460.00))
-        .andExpect(jsonPath("$.discountRate").value(3.00))
-        .andExpect(jsonPath("$.discount").value(13.80))
-        .andExpect(jsonPath("$.deliveryFee").value(20.00))
-        .andExpect(jsonPath("$.total").value(466.20));
+        .andExpect(jsonPath("$.subtotal").value(555000.00))
+        .andExpect(jsonPath("$.vat").value(83250.00))
+        .andExpect(jsonPath("$.amountInclVat").value(638250.00))
+        .andExpect(jsonPath("$.discountRate").value(5.00))
+        .andExpect(jsonPath("$.discount").value(31912.50))
+        .andExpect(jsonPath("$.deliveryFee").value(20000.00))
+        .andExpect(jsonPath("$.total").value(626337.50));
   }
 
   @Test

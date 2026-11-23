@@ -55,7 +55,7 @@ class AdminCatalogApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items", hasSize(10)))
         .andExpect(jsonPath("$.items[0].name").value("Salmon avocado roll"))
-        .andExpect(jsonPath("$.items[0].price").value(67.00))
+        .andExpect(jsonPath("$.items[0].price").value(3190.00))
         .andExpect(jsonPath("$.items[0].currency").value("KZT"))
         .andExpect(jsonPath("$.items[0].inStock").value(true))
         .andExpect(jsonPath("$.items[0].priceVersion").value(0))

@@ -115,7 +115,7 @@ class StaffApiIntegrationTest {
                         """
                         {"country": "UZB", "orderDate": "%s", "scenario": "PICKUP", "cafeId": 1,
                          "slotStart": "%s", "contactName": "Staff Test",
-                         "contactPhone": "+998901234567", "expectedTotal": 138.32,
+                         "contactPhone": "+998901234567", "expectedTotal": 176249.00,
                          "items": [{"productId": 1, "quantity": 2, "modifierIds": []}]}
                         """
                             .formatted(date, slot)))
