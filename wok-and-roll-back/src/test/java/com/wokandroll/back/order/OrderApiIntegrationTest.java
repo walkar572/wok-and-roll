@@ -85,7 +85,14 @@ class OrderApiIntegrationTest {
                 .query(String.class)
                 .single())
         .isEqualTo("aziz@mail.uz");
-    assertThat(jdbc.sql("SELECT count(*) FROM order_item").query(Long.class).single()).isEqualTo(1);
+    // only the lines of this order: the sales history seed (#171) has its own lines
+    assertThat(
+            jdbc.sql(
+                    "SELECT count(*) FROM order_item"
+                        + " WHERE order_id = (SELECT max(id) FROM customer_order)")
+                .query(Long.class)
+                .single())
+        .isEqualTo(1);
   }
 
   @Test
