@@ -29,7 +29,12 @@ public class OrderNumberGenerator {
   }
 
   public String next() {
-    StringBuilder number = new StringBuilder(PREFIX);
+    return next(PREFIX);
+  }
+
+  /** The same kind of number with another prefix, for example {@code BK-} for bookings (#174). */
+  public String next(String prefix) {
+    StringBuilder number = new StringBuilder(prefix);
     for (int i = 0; i < LENGTH; i++) {
       number.append(ALPHABET.charAt(random.nextInt(ALPHABET.length())));
     }
