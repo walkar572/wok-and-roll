@@ -14,7 +14,8 @@
 -- The report integration tests use 2024 and 2031, so this history does not change them.
 -- About 1 order in 60 belongs to the demo customer, so "My orders" has a history to show.
 
--- 1. Orders: country x day x n, with more orders later in the year and at weekends.
+-- 1. Orders: country x day x n, with more orders later in the year, at weekends and in the
+--    bigger markets (about 3,400 orders in all).
 CREATE TEMP TABLE seed_order AS
 WITH day_country AS (
     SELECT d::date AS day, c.id AS country_id, c.code, c.currency_code, c.time_zone,
@@ -32,6 +33,8 @@ numbered AS (
         + ('x' || substr(md5('wr-seed-day-' || dc.code || dc.day), 1, 7))::bit(28)::int % 3
         + (extract(MONTH FROM dc.day)::int - 6) / 2
         + CASE WHEN extract(ISODOW FROM dc.day) >= 6 THEN 1 ELSE 0 END
+        -- bigger markets get more orders, so the region chart has a story
+        + CASE dc.code WHEN 'UZB' THEN 2 WHEN 'KAZ' THEN 1 WHEN 'CHN' THEN 1 ELSE 0 END
     ) AS n
 ),
 keyed AS (
