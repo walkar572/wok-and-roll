@@ -1,4 +1,8 @@
+import { clearAuth, currentToken } from './authToken';
+
 export type CountryCode = string;
+export type OrderStatus = 'NEW' | 'CONFIRMED' | 'DONE' | 'CANCELLED';
+const ORDER_STATUSES: OrderStatus[] = ['NEW', 'CONFIRMED', 'DONE', 'CANCELLED'];
 
 export interface Country {
   code: CountryCode;
@@ -126,7 +130,7 @@ export interface OrderRequest {
 
 export interface OrderResponse extends Omit<CartQuote, 'scenario'> {
   orderNumber: string;
-  status: 'NEW' | 'CONFIRMED' | 'DONE' | 'CANCELLED';
+  status: OrderStatus;
   createdAt: string;
   orderDate: string;
   slotStart: string;
@@ -143,6 +147,10 @@ export class ApiRequestError extends Error {
   status: number;
   code: string;
   fields: Record<string, string>;
+  /** X-Request-Id of the failed call, for bug reports (API contract §1). */
+  requestId?: string;
+  /** Seconds from the Retry-After header (429 TOO_MANY_ATTEMPTS). */
+  retryAfterSeconds?: number;
 
   constructor(status: number, message: string, code: string, fields: Record<string, string>) {
     super(message);
@@ -173,10 +181,10 @@ const USE_API_MOCKS = import.meta.env.DEV && import.meta.env.VITE_API_MOCKS === 
  */
 export function guestErrorMessage(error: unknown, fallback: string): string {
   if (
-    error instanceof ApiRequestError
-    && error.status >= 400
-    && error.status < 500
-    && !TECHNICAL_CODES.has(error.code)
+    error instanceof ApiRequestError &&
+    error.status >= 400 &&
+    error.status < 500 &&
+    !TECHNICAL_CODES.has(error.code)
   ) {
     return error.message;
   }
@@ -191,24 +199,28 @@ export const fallbackCountries: Country[] = [
   { code: 'CHN', name: 'China', currency: 'CNY', vatRate: 18, timeZone: 'Asia/Shanghai' },
 ];
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function isPositiveInteger(value: unknown): value is number {
+export function isPositiveInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0;
 }
 
-async function requestJson(
-  path: string,
-  init?: RequestInit,
-  expectedStatus?: number,
-): Promise<unknown> {
+/**
+ * Sends a request with the login token (if any) and turns every error into ApiRequestError, so
+ * the pages handle errors in one way (API contract §4). A 401 for a request that carried a token
+ * means the token is no longer valid: it is deleted and the guest flow works again.
+ */
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers);
-  headers.set('Accept', 'application/json');
+  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+  const token = currentToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
   const response = await fetch(path, { ...init, headers });
 
   if (!response.ok) {
+    if (response.status === 401 && token) clearAuth('rejected');
     const body: unknown = await response.json().catch(() => null);
     const fields: Record<string, string> = {};
 
@@ -218,16 +230,26 @@ async function requestJson(
       }
     }
 
-    if (
-      isRecord(body)
-      && typeof body.code === 'string'
-      && typeof body.message === 'string'
-    ) {
-      throw new ApiRequestError(response.status, body.message, body.code, fields);
+    if (isRecord(body) && typeof body.code === 'string' && typeof body.message === 'string') {
+      const error = new ApiRequestError(response.status, body.message, body.code, fields);
+      if (typeof body.requestId === 'string') error.requestId = body.requestId;
+      const retryAfter = Number(response.headers.get('Retry-After'));
+      if (Number.isFinite(retryAfter) && retryAfter > 0) error.retryAfterSeconds = retryAfter;
+      throw error;
     }
 
     throw new Error(`Request failed (${response.status} ${response.statusText}).`);
   }
+
+  return response;
+}
+
+export async function requestJson(
+  path: string,
+  init?: RequestInit,
+  expectedStatus?: number,
+): Promise<unknown> {
+  const response = await apiFetch(path, init);
 
   if (expectedStatus !== undefined && response.status !== expectedStatus) {
     throw new Error(`Request expected status ${expectedStatus} but received ${response.status}.`);
@@ -238,16 +260,16 @@ async function requestJson(
 
 function parseModifier(value: unknown, source: string): ProductModifier {
   if (
-    !isRecord(value)
-    || typeof value.id !== 'number'
-    || !Number.isInteger(value.id)
-    || value.id <= 0
-    || (value.type !== 'SIZE' && value.type !== 'EXTRA')
-    || typeof value.name !== 'string'
-    || !value.name.trim()
-    || typeof value.priceDelta !== 'number'
-    || !Number.isFinite(value.priceDelta)
-    || value.priceDelta < 0
+    !isRecord(value) ||
+    typeof value.id !== 'number' ||
+    !Number.isInteger(value.id) ||
+    value.id <= 0 ||
+    (value.type !== 'SIZE' && value.type !== 'EXTRA') ||
+    typeof value.name !== 'string' ||
+    !value.name.trim() ||
+    typeof value.priceDelta !== 'number' ||
+    !Number.isFinite(value.priceDelta) ||
+    value.priceDelta < 0
   ) {
     throw new Error(`${source} returned an invalid modifier.`);
   }
@@ -262,62 +284,62 @@ function parseModifier(value: unknown, source: string): ProductModifier {
 
 function parseCartQuote(value: unknown): CartQuote {
   if (
-    !isRecord(value)
-    || typeof value.country !== 'string'
-    || !/^[A-Z]{3}$/.test(value.country)
-    || typeof value.currency !== 'string'
-    || !/^[A-Z]{3}$/.test(value.currency)
-    || !Array.isArray(value.lines)
-    || typeof value.subtotal !== 'number'
-    || !Number.isFinite(value.subtotal)
-    || value.subtotal < 0
-    || typeof value.vatRate !== 'number'
-    || !Number.isFinite(value.vatRate)
-    || value.vatRate < 0
-    || value.vatRate > 100
-    || typeof value.vat !== 'number'
-    || !Number.isFinite(value.vat)
-    || value.vat < 0
-    || typeof value.amountInclVat !== 'number'
-    || !Number.isFinite(value.amountInclVat)
-    || value.amountInclVat < 0
-    || (value.scenario !== 'PICKUP' && value.scenario !== 'DELIVERY')
-    || typeof value.discountRate !== 'number'
-    || !Number.isFinite(value.discountRate)
-    || value.discountRate < 0
-    || value.discountRate > 100
-    || typeof value.discount !== 'number'
-    || !Number.isFinite(value.discount)
-    || value.discount < 0
-    || typeof value.deliveryFee !== 'number'
-    || !Number.isFinite(value.deliveryFee)
-    || value.deliveryFee < 0
-    || typeof value.total !== 'number'
-    || !Number.isFinite(value.total)
-    || value.total < 0
+    !isRecord(value) ||
+    typeof value.country !== 'string' ||
+    !/^[A-Z]{3}$/.test(value.country) ||
+    typeof value.currency !== 'string' ||
+    !/^[A-Z]{3}$/.test(value.currency) ||
+    !Array.isArray(value.lines) ||
+    typeof value.subtotal !== 'number' ||
+    !Number.isFinite(value.subtotal) ||
+    value.subtotal < 0 ||
+    typeof value.vatRate !== 'number' ||
+    !Number.isFinite(value.vatRate) ||
+    value.vatRate < 0 ||
+    value.vatRate > 100 ||
+    typeof value.vat !== 'number' ||
+    !Number.isFinite(value.vat) ||
+    value.vat < 0 ||
+    typeof value.amountInclVat !== 'number' ||
+    !Number.isFinite(value.amountInclVat) ||
+    value.amountInclVat < 0 ||
+    (value.scenario !== 'PICKUP' && value.scenario !== 'DELIVERY') ||
+    typeof value.discountRate !== 'number' ||
+    !Number.isFinite(value.discountRate) ||
+    value.discountRate < 0 ||
+    value.discountRate > 100 ||
+    typeof value.discount !== 'number' ||
+    !Number.isFinite(value.discount) ||
+    value.discount < 0 ||
+    typeof value.deliveryFee !== 'number' ||
+    !Number.isFinite(value.deliveryFee) ||
+    value.deliveryFee < 0 ||
+    typeof value.total !== 'number' ||
+    !Number.isFinite(value.total) ||
+    value.total < 0
   ) {
     throw new Error('Cart quote API returned an invalid response.');
   }
 
   const lines = value.lines.map((line: unknown): CartQuoteLine => {
     if (
-      !isRecord(line)
-      || typeof line.productId !== 'number'
-      || !Number.isInteger(line.productId)
-      || line.productId <= 0
-      || typeof line.name !== 'string'
-      || !line.name.trim()
-      || !Array.isArray(line.modifiers)
-      || typeof line.quantity !== 'number'
-      || !Number.isInteger(line.quantity)
-      || line.quantity < 1
-      || line.quantity > 99
-      || typeof line.unitPrice !== 'number'
-      || !Number.isFinite(line.unitPrice)
-      || line.unitPrice < 0
-      || typeof line.lineTotal !== 'number'
-      || !Number.isFinite(line.lineTotal)
-      || line.lineTotal < 0
+      !isRecord(line) ||
+      typeof line.productId !== 'number' ||
+      !Number.isInteger(line.productId) ||
+      line.productId <= 0 ||
+      typeof line.name !== 'string' ||
+      !line.name.trim() ||
+      !Array.isArray(line.modifiers) ||
+      typeof line.quantity !== 'number' ||
+      !Number.isInteger(line.quantity) ||
+      line.quantity < 1 ||
+      line.quantity > 99 ||
+      typeof line.unitPrice !== 'number' ||
+      !Number.isFinite(line.unitPrice) ||
+      line.unitPrice < 0 ||
+      typeof line.lineTotal !== 'number' ||
+      !Number.isFinite(line.lineTotal) ||
+      line.lineTotal < 0
     ) {
       throw new Error('Cart quote API returned an invalid line.');
     }
@@ -325,9 +347,9 @@ function parseCartQuote(value: unknown): CartQuote {
     return {
       productId: line.productId,
       name: line.name,
-      modifiers: line.modifiers.map((modifier: unknown) => (
-        parseModifier(modifier, 'Cart quote API')
-      )),
+      modifiers: line.modifiers.map((modifier: unknown) =>
+        parseModifier(modifier, 'Cart quote API'),
+      ),
       quantity: line.quantity,
       unitPrice: line.unitPrice,
       lineTotal: line.lineTotal,
@@ -350,30 +372,30 @@ function parseCartQuote(value: unknown): CartQuote {
   };
 }
 
-function parseOrderResponse(value: unknown): OrderResponse {
+export function parseOrderResponse(value: unknown): OrderResponse {
   if (!isRecord(value)) throw new Error('Orders API returned an invalid response.');
   const quote = parseCartQuote(value);
   const deliveryZone = parseOrderDeliveryZone(value.deliveryZone);
   if (
-    typeof value.orderNumber !== 'string'
-    || !value.orderNumber.trim()
-    || value.status !== 'NEW'
-    || typeof value.createdAt !== 'string'
-    || typeof value.orderDate !== 'string'
-    || !/^\d{4}-\d{2}-\d{2}$/.test(value.orderDate)
-    || typeof value.slotStart !== 'string'
-    || !/^\d{2}:\d{2}$/.test(value.slotStart)
-    || typeof value.slotEnd !== 'string'
-    || !/^\d{2}:\d{2}$/.test(value.slotEnd)
-    || !isRecord(value.cafe)
-    || !isPositiveInteger(value.cafe.id)
-    || typeof value.cafe.name !== 'string'
-    || !value.cafe.name.trim()
-    || typeof value.cafe.address !== 'string'
-    || !value.cafe.address.trim()
-    || (value.deliveryAddress !== null && typeof value.deliveryAddress !== 'string')
-    || typeof value.contactName !== 'string'
-    || typeof value.contactPhone !== 'string'
+    typeof value.orderNumber !== 'string' ||
+    !value.orderNumber.trim() ||
+    !ORDER_STATUSES.includes(value.status as OrderStatus) ||
+    typeof value.createdAt !== 'string' ||
+    typeof value.orderDate !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value.orderDate) ||
+    typeof value.slotStart !== 'string' ||
+    !/^\d{2}:\d{2}$/.test(value.slotStart) ||
+    typeof value.slotEnd !== 'string' ||
+    !/^\d{2}:\d{2}$/.test(value.slotEnd) ||
+    !isRecord(value.cafe) ||
+    !isPositiveInteger(value.cafe.id) ||
+    typeof value.cafe.name !== 'string' ||
+    !value.cafe.name.trim() ||
+    typeof value.cafe.address !== 'string' ||
+    !value.cafe.address.trim() ||
+    (value.deliveryAddress !== null && typeof value.deliveryAddress !== 'string') ||
+    typeof value.contactName !== 'string' ||
+    typeof value.contactPhone !== 'string'
   ) {
     throw new Error('Orders API returned an invalid response.');
   }
@@ -381,7 +403,7 @@ function parseOrderResponse(value: unknown): OrderResponse {
   return {
     ...quote,
     orderNumber: value.orderNumber,
-    status: 'NEW',
+    status: value.status as OrderStatus,
     createdAt: value.createdAt,
     orderDate: value.orderDate,
     slotStart: value.slotStart,
@@ -392,9 +414,7 @@ function parseOrderResponse(value: unknown): OrderResponse {
       name: value.cafe.name,
       address: value.cafe.address,
     },
-    deliveryZone: deliveryZone === null
-      ? null
-      : deliveryZone,
+    deliveryZone: deliveryZone === null ? null : deliveryZone,
     deliveryAddress: value.deliveryAddress,
     contactName: value.contactName,
     contactPhone: value.contactPhone,
@@ -404,10 +424,10 @@ function parseOrderResponse(value: unknown): OrderResponse {
 function parseOrderDeliveryZone(value: unknown): { id: number; name: string } | null {
   if (value === null) return null;
   if (
-    !isRecord(value)
-    || !isPositiveInteger(value.id)
-    || typeof value.name !== 'string'
-    || !value.name.trim()
+    !isRecord(value) ||
+    !isPositiveInteger(value.id) ||
+    typeof value.name !== 'string' ||
+    !value.name.trim()
   ) {
     throw new Error('Orders API returned an invalid delivery zone.');
   }
@@ -421,20 +441,18 @@ function parseCountries(value: unknown): Country[] {
 
   const parsed = value.map((item: unknown): Country => {
     if (
-      !isRecord(item)
-      || typeof item.code !== 'string'
-      || !/^[A-Z]{3}$/.test(item.code)
-      || typeof item.name !== 'string'
-      || !item.name.trim()
-      || typeof item.currency !== 'string'
-      || !/^[A-Z]{3}$/.test(item.currency)
-      || typeof item.vatRate !== 'number'
-      || !Number.isFinite(item.vatRate)
-      || item.vatRate < 0
-      || item.vatRate > 100
-      || (item.timeZone !== undefined && (
-        typeof item.timeZone !== 'string' || !item.timeZone.trim()
-      ))
+      !isRecord(item) ||
+      typeof item.code !== 'string' ||
+      !/^[A-Z]{3}$/.test(item.code) ||
+      typeof item.name !== 'string' ||
+      !item.name.trim() ||
+      typeof item.currency !== 'string' ||
+      !/^[A-Z]{3}$/.test(item.currency) ||
+      typeof item.vatRate !== 'number' ||
+      !Number.isFinite(item.vatRate) ||
+      item.vatRate < 0 ||
+      item.vatRate > 100 ||
+      (item.timeZone !== undefined && (typeof item.timeZone !== 'string' || !item.timeZone.trim()))
     ) {
       throw new Error('Countries API returned an invalid country.');
     }
@@ -444,9 +462,10 @@ function parseCountries(value: unknown): Country[] {
       name: item.name,
       currency: item.currency,
       vatRate: item.vatRate,
-      timeZone: typeof item.timeZone === 'string'
-        ? item.timeZone
-        : fallbackCountries.find(({ code }) => code === item.code)?.timeZone ?? 'UTC',
+      timeZone:
+        typeof item.timeZone === 'string'
+          ? item.timeZone
+          : (fallbackCountries.find(({ code }) => code === item.code)?.timeZone ?? 'UTC'),
     };
   });
 
@@ -459,12 +478,12 @@ function parseCountries(value: unknown): Country[] {
 
 function parseCategory(item: unknown): Category {
   if (
-    !isRecord(item)
-    || typeof item.id !== 'number'
-    || !Number.isInteger(item.id)
-    || item.id <= 0
-    || typeof item.name !== 'string'
-    || !item.name.trim()
+    !isRecord(item) ||
+    typeof item.id !== 'number' ||
+    !Number.isInteger(item.id) ||
+    item.id <= 0 ||
+    typeof item.name !== 'string' ||
+    !item.name.trim()
   ) {
     throw new Error('Categories API returned an invalid category.');
   }
@@ -474,24 +493,24 @@ function parseCategory(item: unknown): Category {
 
 function parseProduct(item: unknown): Product {
   if (
-    !isRecord(item)
-    || typeof item.id !== 'number'
-    || !Number.isInteger(item.id)
-    || item.id <= 0
-    || typeof item.categoryId !== 'number'
-    || !Number.isInteger(item.categoryId)
-    || item.categoryId <= 0
-    || typeof item.name !== 'string'
-    || !item.name.trim()
-    || (item.description !== null && typeof item.description !== 'string')
-    || (item.imageUrl !== null && typeof item.imageUrl !== 'string')
-    || typeof item.price !== 'number'
-    || !Number.isFinite(item.price)
-    || item.price < 0
-    || typeof item.currency !== 'string'
-    || !/^[A-Z]{3}$/.test(item.currency)
-    || typeof item.inStock !== 'boolean'
-    || typeof item.hasModifiers !== 'boolean'
+    !isRecord(item) ||
+    typeof item.id !== 'number' ||
+    !Number.isInteger(item.id) ||
+    item.id <= 0 ||
+    typeof item.categoryId !== 'number' ||
+    !Number.isInteger(item.categoryId) ||
+    item.categoryId <= 0 ||
+    typeof item.name !== 'string' ||
+    !item.name.trim() ||
+    (item.description !== null && typeof item.description !== 'string') ||
+    (item.imageUrl !== null && typeof item.imageUrl !== 'string') ||
+    typeof item.price !== 'number' ||
+    !Number.isFinite(item.price) ||
+    item.price < 0 ||
+    typeof item.currency !== 'string' ||
+    !/^[A-Z]{3}$/.test(item.currency) ||
+    typeof item.inStock !== 'boolean' ||
+    typeof item.hasModifiers !== 'boolean'
   ) {
     throw new Error('Products API returned an invalid product.');
   }
@@ -515,29 +534,29 @@ function parseProductDetails(item: unknown): ProductDetail {
     throw new Error('Product details API returned an invalid modifier list.');
   }
 
-  const modifiers = item.modifiers.map((modifier: unknown) => (
-    parseModifier(modifier, 'Product details API')
-  ));
+  const modifiers = item.modifiers.map((modifier: unknown) =>
+    parseModifier(modifier, 'Product details API'),
+  );
 
   return { ...product, modifiers };
 }
 
 function parseCafe(value: unknown): Cafe {
   if (
-    !isRecord(value)
-    || !isPositiveInteger(value.id)
-    || typeof value.country !== 'string'
-    || typeof value.name !== 'string'
-    || !value.name.trim()
-    || typeof value.address !== 'string'
-    || !value.address.trim()
-    || (value.phone !== null && typeof value.phone !== 'string')
-    || typeof value.opensAt !== 'string'
-    || !/^\d{2}:\d{2}$/.test(value.opensAt)
-    || typeof value.closesAt !== 'string'
-    || !/^\d{2}:\d{2}$/.test(value.closesAt)
-    || typeof value.timeZone !== 'string'
-    || !value.timeZone.trim()
+    !isRecord(value) ||
+    !isPositiveInteger(value.id) ||
+    typeof value.country !== 'string' ||
+    typeof value.name !== 'string' ||
+    !value.name.trim() ||
+    typeof value.address !== 'string' ||
+    !value.address.trim() ||
+    (value.phone !== null && typeof value.phone !== 'string') ||
+    typeof value.opensAt !== 'string' ||
+    !/^\d{2}:\d{2}$/.test(value.opensAt) ||
+    typeof value.closesAt !== 'string' ||
+    !/^\d{2}:\d{2}$/.test(value.closesAt) ||
+    typeof value.timeZone !== 'string' ||
+    !value.timeZone.trim()
   ) {
     throw new Error('Cafés API returned an invalid café.');
   }
@@ -555,20 +574,20 @@ function parseCafe(value: unknown): Cafe {
 
 function parseDeliveryZone(value: unknown): DeliveryZone {
   if (
-    !isRecord(value)
-    || !isPositiveInteger(value.id)
-    || typeof value.country !== 'string'
-    || typeof value.name !== 'string'
-    || !value.name.trim()
-    || !isPositiveInteger(value.cafeId)
-    || typeof value.fee !== 'number'
-    || !Number.isFinite(value.fee)
-    || value.fee < 0
-    || typeof value.currency !== 'string'
-    || !/^[A-Z]{3}$/.test(value.currency)
-    || typeof value.deliveryMinutes !== 'number'
-    || !Number.isInteger(value.deliveryMinutes)
-    || value.deliveryMinutes < 0
+    !isRecord(value) ||
+    !isPositiveInteger(value.id) ||
+    typeof value.country !== 'string' ||
+    typeof value.name !== 'string' ||
+    !value.name.trim() ||
+    !isPositiveInteger(value.cafeId) ||
+    typeof value.fee !== 'number' ||
+    !Number.isFinite(value.fee) ||
+    value.fee < 0 ||
+    typeof value.currency !== 'string' ||
+    !/^[A-Z]{3}$/.test(value.currency) ||
+    typeof value.deliveryMinutes !== 'number' ||
+    !Number.isInteger(value.deliveryMinutes) ||
+    value.deliveryMinutes < 0
   ) {
     throw new Error('Delivery zones API returned an invalid zone.');
   }
@@ -585,20 +604,20 @@ function parseDeliveryZone(value: unknown): DeliveryZone {
 
 function parseTimeSlot(value: unknown): TimeSlot {
   if (
-    !isRecord(value)
-    || typeof value.start !== 'string'
-    || !/^\d{2}:\d{2}$/.test(value.start)
-    || typeof value.end !== 'string'
-    || !/^\d{2}:\d{2}$/.test(value.end)
-    || typeof value.capacity !== 'number'
-    || !Number.isInteger(value.capacity)
-    || value.capacity < 0
-    || typeof value.remaining !== 'number'
-    || !Number.isInteger(value.remaining)
-    || value.remaining < 0
-    || value.remaining > value.capacity
-    || typeof value.available !== 'boolean'
-    || (value.reason !== null && value.reason !== 'FULL' && value.reason !== 'PAST')
+    !isRecord(value) ||
+    typeof value.start !== 'string' ||
+    !/^\d{2}:\d{2}$/.test(value.start) ||
+    typeof value.end !== 'string' ||
+    !/^\d{2}:\d{2}$/.test(value.end) ||
+    typeof value.capacity !== 'number' ||
+    !Number.isInteger(value.capacity) ||
+    value.capacity < 0 ||
+    typeof value.remaining !== 'number' ||
+    !Number.isInteger(value.remaining) ||
+    value.remaining < 0 ||
+    value.remaining > value.capacity ||
+    typeof value.available !== 'boolean' ||
+    (value.reason !== null && value.reason !== 'FULL' && value.reason !== 'PAST')
   ) {
     throw new Error('Time slots API returned an invalid slot.');
   }
@@ -614,13 +633,13 @@ function parseTimeSlot(value: unknown): TimeSlot {
 
 function parseTimeSlots(value: unknown): TimeSlots {
   if (
-    !isRecord(value)
-    || !isPositiveInteger(value.cafeId)
-    || typeof value.date !== 'string'
-    || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)
-    || typeof value.timeZone !== 'string'
-    || !value.timeZone.trim()
-    || !Array.isArray(value.slots)
+    !isRecord(value) ||
+    !isPositiveInteger(value.cafeId) ||
+    typeof value.date !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value.date) ||
+    typeof value.timeZone !== 'string' ||
+    !value.timeZone.trim() ||
+    !Array.isArray(value.slots)
   ) {
     throw new Error('Time slots API returned an invalid response.');
   }
@@ -656,10 +675,7 @@ export async function loadCategories(country: CountryCode): Promise<Category[]> 
   return response.map(parseCategory);
 }
 
-export async function loadProducts(
-  country: CountryCode,
-  categoryId?: number,
-): Promise<Product[]> {
+export async function loadProducts(country: CountryCode, categoryId?: number): Promise<Product[]> {
   const query = new URLSearchParams({ country });
   if (categoryId !== undefined) query.set('categoryId', String(categoryId));
 
@@ -670,10 +686,7 @@ export async function loadProducts(
   return response.map(parseProduct);
 }
 
-export async function loadProductDetails(
-  id: number,
-  country: CountryCode,
-): Promise<ProductDetail> {
+export async function loadProductDetails(id: number, country: CountryCode): Promise<ProductDetail> {
   const query = new URLSearchParams({ country });
   return parseProductDetails(await requestJson(`/api/v1/products/${id}?${query}`));
 }
@@ -691,13 +704,14 @@ export async function quoteCart(request: CartQuoteRequest): Promise<CartQuote> {
   });
   const quote = parseCartQuote(response);
   if (
-    quote.country !== request.country
-    || quote.scenario !== request.scenario
-    || quote.lines.length !== request.items.length
-    || quote.lines.some((line, index) => (
-      line.productId !== request.items[index].productId
-      || line.quantity !== request.items[index].quantity
-    ))
+    quote.country !== request.country ||
+    quote.scenario !== request.scenario ||
+    quote.lines.length !== request.items.length ||
+    quote.lines.some(
+      (line, index) =>
+        line.productId !== request.items[index].productId ||
+        line.quantity !== request.items[index].quantity,
+    )
   ) {
     throw new Error('Cart quote API returned a response that does not match the request.');
   }
@@ -752,14 +766,20 @@ export async function placeOrder(
     return mockPlaceOrder(request);
   }
 
-  return parseOrderResponse(await requestJson('/api/v1/orders', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Idempotency-Key': idempotencyKey,
-    },
-    body: JSON.stringify(request),
-  }, 201));
+  return parseOrderResponse(
+    await requestJson(
+      '/api/v1/orders',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify(request),
+      },
+      201,
+    ),
+  );
 }
 
 export function formatPrice(amount: number, currency: string): string {

@@ -4,6 +4,7 @@ import App from './app/App';
 import './App.css';
 import './design-tokens.css';
 import './figma-layout.css';
+import './features.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
