@@ -1,6 +1,6 @@
-# API contract: Wok & Roll MVP (v1.2)
+# API contract: Wok & Roll MVP (v1.3)
 
-Refs #123, #142 · Owner: Maksudbek (Team Lead) · Version 1.2 · Status: **for agreement** at Sprint 3 planning, Mon 16 Nov (agreed when merged into `dev`)
+Refs #123, #142 · Owner: Maksudbek (Team Lead) · Version 1.3 · Status: **for agreement** at Sprint 3 planning, Mon 16 Nov (agreed when merged into `dev`)
 
 Stories #50–#69 · General rules: [`architecture.md`](architecture.md) §2 · Error code in the backend: `common.error` (#31) · Plan and dates: [`mvp-plan.md`](mvp-plan.md)
 
@@ -22,6 +22,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.0 | 10 Nov | Stage 2: countries, categories, products, product details, cart quote (#123) |
 | 1.1 | 14 Nov | Stages 3–5 and bonus: totals in the quote, orders, cafés, delivery zones, time slots, bookings, auth and account, staff, admin, reports with PDF and CSV. New rules for time zones, idempotency, paging, request id and roles. Every change to v1.0 is additive (#142). |
 | 1.2 | 20 Nov | 406 NOT_ACCEPTABLE error row (#155) |
+| 1.3 | 23 Nov | Every endpoint of §2 is built. Additive details found while building: `GET /staff/bookings` returns `{ "items": [...] }` like the other new lists; `POST` and `PATCH /admin/products` take an optional `?country=` (default `UZB`) for the price fields of the response; new `GET /admin/categories` (all categories with `version`). Sales history seed Jun–Nov 2026 (#171). |
 
 ---
 
