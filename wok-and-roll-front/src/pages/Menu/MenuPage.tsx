@@ -84,9 +84,7 @@ export function MenuPage() {
             </Button>
           ))}
         </nav>
-        <p className="menu-toolbar__country">
-          Prices for {country}
-        </p>
+        <p className="menu-toolbar__country">Prices for {country}</p>
       </div>
 
       {isLoading && <Loader label="Loading the menu" />}

@@ -59,10 +59,14 @@ export function CartLine({
       {item.imageUrl ? (
         <img className="cart-line__image" src={item.imageUrl} alt="" />
       ) : (
-        <span className="cart-line__image cart-line__image--placeholder" aria-hidden="true">✳</span>
+        <span className="cart-line__image cart-line__image--placeholder" aria-hidden="true">
+          ✳
+        </span>
       )}
       <div className="cart-line__details">
-        <h2 ref={headingRef} tabIndex={-1}>{quotedLine?.name ?? item.name}</h2>
+        <h2 ref={headingRef} tabIndex={-1}>
+          {quotedLine?.name ?? item.name}
+        </h2>
         {modifiers.length > 0 && (
           <ul className="cart-line__modifiers">
             {modifiers.map((modifier) => (
@@ -70,13 +74,13 @@ export function CartLine({
             ))}
           </ul>
         )}
-        {quotedLine && currency && (
-          <p>{formatPrice(quotedLine.unitPrice, currency)} each</p>
-        )}
+        {quotedLine && currency && <p>{formatPrice(quotedLine.unitPrice, currency)} each</p>}
         {lineError && <p className="cart-line__error">{lineError}</p>}
       </div>
       <div className="cart-line__controls">
-        <label className="cart-line__quantity-label" htmlFor={inputId}>Quantity</label>
+        <label className="cart-line__quantity-label" htmlFor={inputId}>
+          Quantity
+        </label>
         <div className="cart-line__actions">
           <div className="quantity-stepper">
             <button
@@ -139,9 +143,7 @@ export function CartLine({
         </p>
       </div>
       {quotedLine && currency && (
-        <strong className="cart-line__total">
-          {formatPrice(quotedLine.lineTotal, currency)}
-        </strong>
+        <strong className="cart-line__total">{formatPrice(quotedLine.lineTotal, currency)}</strong>
       )}
     </article>
   );

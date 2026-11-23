@@ -66,8 +66,8 @@
   --size-header-mobile: 64px;
   --size-header-desktop: 88px;
   --size-viewport-mobile: 568px;
-  --font-family-display: "DM Serif Display";
-  --font-family-body: "Manrope";
+  --font-family-display: 'DM Serif Display';
+  --font-family-body: 'Manrope';
   --font-size-display-hero: 72px;
   --font-size-display-mobile: 40px;
   --font-size-heading-h1: 64px;

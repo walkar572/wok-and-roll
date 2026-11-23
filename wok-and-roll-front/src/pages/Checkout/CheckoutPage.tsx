@@ -83,7 +83,12 @@ function createIdempotencyKey(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-function validateContact(details: ContactDetails, scenario: Scenario, orderDate: string, today: string) {
+function validateContact(
+  details: ContactDetails,
+  scenario: Scenario,
+  orderDate: string,
+  today: string,
+) {
   const errors: Partial<Record<CheckoutErrorField, string>> = {};
   const name = details.contactName.trim();
   const phone = details.contactPhone.replace(/\s/g, '');
@@ -217,20 +222,22 @@ export function CheckoutPage() {
   const selectedCafe = cafes.find(({ id }) => id === selectedCafeId);
   const selectedDeliveryZone = deliveryZones.find(({ id }) => id === selectedDeliveryZoneId);
   const formRef = useRef<HTMLFormElement>(null);
-  const currentQuote = quote
-    && quote.country === country
-    && quote.scenario === scenario
-    && quote.lines.length === items.length
-    && quote.lines.every((line, index) => (
-      line.productId === items[index].productId
-      && line.quantity === items[index].quantity
-    ))
-    ? quote
-    : undefined;
+  const currentQuote =
+    quote &&
+    quote.country === country &&
+    quote.scenario === scenario &&
+    quote.lines.length === items.length &&
+    quote.lines.every(
+      (line, index) =>
+        line.productId === items[index].productId && line.quantity === items[index].quantity,
+    )
+      ? quote
+      : undefined;
   const slotsCafeId = scenario === 'PICKUP' ? selectedCafeId : selectedDeliveryZone?.cafeId;
-  const slotSelectionKey = scenario === 'PICKUP'
-    ? `PICKUP:${selectedCafeId ?? ''}`
-    : `DELIVERY:${selectedDeliveryZoneId ?? ''}:${slotsCafeId ?? ''}`;
+  const slotSelectionKey =
+    scenario === 'PICKUP'
+      ? `PICKUP:${selectedCafeId ?? ''}`
+      : `DELIVERY:${selectedDeliveryZoneId ?? ''}:${slotsCafeId ?? ''}`;
 
   useEffect(() => {
     setScenario('PICKUP');
@@ -248,7 +255,9 @@ export function CheckoutPage() {
 
   useEffect(() => {
     if (!focusFirstError) return;
-    formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    formRef.current
+      ?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalid="true"]')
+      ?.focus();
     setFocusFirstError(false);
   }, [fieldErrors, focusFirstError, itemErrors]);
 
@@ -278,10 +287,9 @@ export function CheckoutPage() {
       })
       .catch((requestError: unknown) => {
         if (active) {
-          setDeliveryZoneError(guestErrorMessage(
-            requestError,
-            'We could not load delivery zones. Please try again.',
-          ));
+          setDeliveryZoneError(
+            guestErrorMessage(requestError, 'We could not load delivery zones. Please try again.'),
+          );
         }
       })
       .finally(() => {
@@ -312,10 +320,9 @@ export function CheckoutPage() {
       })
       .catch((requestError: unknown) => {
         if (active) {
-          setCafeError(guestErrorMessage(
-            requestError,
-            'We could not load pickup cafés. Please try again.',
-          ));
+          setCafeError(
+            guestErrorMessage(requestError, 'We could not load pickup cafés. Please try again.'),
+          );
         }
       })
       .finally(() => {
@@ -349,10 +356,9 @@ export function CheckoutPage() {
       })
       .catch((requestError: unknown) => {
         if (active) {
-          setSlotsError(guestErrorMessage(
-            requestError,
-            'We could not load time slots. Please try again.',
-          ));
+          setSlotsError(
+            guestErrorMessage(requestError, 'We could not load time slots. Please try again.'),
+          );
         }
       })
       .finally(() => {
@@ -405,15 +411,20 @@ export function CheckoutPage() {
       })
       .catch((requestError: unknown) => {
         if (active) {
-          if (requestError instanceof ApiRequestError && Object.keys(requestError.fields).length > 0) {
+          if (
+            requestError instanceof ApiRequestError &&
+            Object.keys(requestError.fields).length > 0
+          ) {
             const mappedErrors = mapApiFieldErrors(requestError.fields, items);
             setItemErrors(mappedErrors.itemErrors);
             if (Object.keys(mappedErrors.itemErrors).length > 0) setFocusFirstError(true);
           }
-          setQuoteError(guestErrorMessage(
-            requestError,
-            'We could not get the current prices. Please try again.',
-          ));
+          setQuoteError(
+            guestErrorMessage(
+              requestError,
+              'We could not get the current prices. Please try again.',
+            ),
+          );
         }
       })
       .finally(() => {
@@ -457,32 +468,37 @@ export function CheckoutPage() {
     setIsSending(true);
     try {
       idempotencyKey.current ??= createIdempotencyKey();
-      const order = await placeOrder({
-        country,
-        orderDate,
-        scenario,
-        cafeId: scenario === 'PICKUP' ? selectedCafeId ?? null : null,
-        deliveryZoneId: scenario === 'DELIVERY' ? selectedDeliveryZoneId ?? null : null,
-        deliveryAddress: scenario === 'DELIVERY' ? details.deliveryAddress.trim() : null,
-        slotStart,
-        contactName: details.contactName.trim(),
-        contactPhone: details.contactPhone.replace(/\s/g, ''),
-        contactEmail: details.contactEmail.trim() || null,
-        comment: details.comment.trim() || null,
-        expectedTotal: currentQuote.total,
-        items: items.map(({ productId, quantity, modifierIds }) => ({
-          productId,
-          quantity,
-          modifierIds,
-        })),
-      }, idempotencyKey.current);
+      const order = await placeOrder(
+        {
+          country,
+          orderDate,
+          scenario,
+          cafeId: scenario === 'PICKUP' ? (selectedCafeId ?? null) : null,
+          deliveryZoneId: scenario === 'DELIVERY' ? (selectedDeliveryZoneId ?? null) : null,
+          deliveryAddress: scenario === 'DELIVERY' ? details.deliveryAddress.trim() : null,
+          slotStart,
+          contactName: details.contactName.trim(),
+          contactPhone: details.contactPhone.replace(/\s/g, ''),
+          contactEmail: details.contactEmail.trim() || null,
+          comment: details.comment.trim() || null,
+          expectedTotal: currentQuote.total,
+          items: items.map(({ productId, quantity, modifierIds }) => ({
+            productId,
+            quantity,
+            modifierIds,
+          })),
+        },
+        idempotencyKey.current,
+      );
       clearCart();
       navigate('/checkout/success', { state: { order } });
     } catch (requestError: unknown) {
       if (requestError instanceof ApiRequestError && requestError.code === 'PRICE_CHANGED') {
         idempotencyKey.current = undefined;
         setQuote(undefined);
-        setOrderError('The price changed. We refreshed your quote; review the new total and try again.');
+        setOrderError(
+          'The price changed. We refreshed your quote; review the new total and try again.',
+        );
         setRetryCount((count) => count + 1);
       } else if (requestError instanceof ApiRequestError && requestError.code === 'SLOT_FULL') {
         const message = 'That time slot just filled up. Choose another available time.';
@@ -492,21 +508,28 @@ export function CheckoutPage() {
         setOrderError(message);
         slotReloadPending.current = true;
         setSlotsRetryCount((count) => count + 1);
-      } else if (requestError instanceof ApiRequestError && Object.keys(requestError.fields).length > 0) {
+      } else if (
+        requestError instanceof ApiRequestError &&
+        Object.keys(requestError.fields).length > 0
+      ) {
         const mappedErrors = mapApiFieldErrors(requestError.fields, items);
         setFieldErrors(mappedErrors.fieldErrors);
         setItemErrors(mappedErrors.itemErrors);
-        setOrderError(mappedErrors.unhandled.length > 0
-          ? `Please review these order details: ${mappedErrors.unhandled.join('; ')}`
-          : undefined);
+        setOrderError(
+          mappedErrors.unhandled.length > 0
+            ? `Please review these order details: ${mappedErrors.unhandled.join('; ')}`
+            : undefined,
+        );
         if (
-          Object.keys(mappedErrors.fieldErrors).length > 0
-          || Object.keys(mappedErrors.itemErrors).length > 0
+          Object.keys(mappedErrors.fieldErrors).length > 0 ||
+          Object.keys(mappedErrors.itemErrors).length > 0
         ) {
           setFocusFirstError(true);
         }
       } else {
-        setOrderError(guestErrorMessage(requestError, 'We could not place your order. Please try again.'));
+        setOrderError(
+          guestErrorMessage(requestError, 'We could not place your order. Please try again.'),
+        );
       }
     } finally {
       setIsSending(false);
@@ -574,7 +597,11 @@ export function CheckoutPage() {
                 <span>Pickup</span>
               </label>
               <label className="checkout-scenario">
-                <RadioGroup.Item className="checkout-scenario__control" value="DELIVERY" id="delivery">
+                <RadioGroup.Item
+                  className="checkout-scenario__control"
+                  value="DELIVERY"
+                  id="delivery"
+                >
                   <RadioGroup.Indicator className="checkout-scenario__indicator" />
                 </RadioGroup.Item>
                 <span>Delivery</span>
@@ -583,7 +610,9 @@ export function CheckoutPage() {
 
             {scenario === 'DELIVERY' && (
               <div className="input">
-                <label className="input__label" htmlFor="checkout-zone">Delivery zone</label>
+                <label className="input__label" htmlFor="checkout-zone">
+                  Delivery zone
+                </label>
                 {isLoadingZones ? (
                   <Loader label="Loading delivery zones" />
                 ) : deliveryZoneError ? (
@@ -606,10 +635,14 @@ export function CheckoutPage() {
                       id="checkout-zone"
                       value={selectedDeliveryZoneId ?? ''}
                       aria-invalid={Boolean(fieldErrors.deliveryZoneId) || undefined}
-                      aria-describedby={[
-                        selectedDeliveryZone ? 'checkout-zone-details' : undefined,
-                        fieldErrors.deliveryZoneId ? 'checkout-zone-error' : undefined,
-                      ].filter(Boolean).join(' ') || undefined}
+                      aria-describedby={
+                        [
+                          selectedDeliveryZone ? 'checkout-zone-details' : undefined,
+                          fieldErrors.deliveryZoneId ? 'checkout-zone-error' : undefined,
+                        ]
+                          .filter(Boolean)
+                          .join(' ') || undefined
+                      }
                       onChange={(event) => {
                         const nextZoneId = Number(event.target.value);
                         setSelectedDeliveryZoneId(nextZoneId);
@@ -627,8 +660,12 @@ export function CheckoutPage() {
                       ))}
                     </select>
                     {selectedDeliveryZone && (
-                      <p id="checkout-zone-details" className="input__message checkout-zone__details">
-                        Delivery fee {formatPrice(selectedDeliveryZone.fee, selectedDeliveryZone.currency)}.
+                      <p
+                        id="checkout-zone-details"
+                        className="input__message checkout-zone__details"
+                      >
+                        Delivery fee{' '}
+                        {formatPrice(selectedDeliveryZone.fee, selectedDeliveryZone.currency)}.
                       </p>
                     )}
                     {fieldErrors.deliveryZoneId && (
@@ -647,7 +684,9 @@ export function CheckoutPage() {
 
             {scenario === 'PICKUP' && (
               <div className="input">
-                <label className="input__label" htmlFor="checkout-cafe">Pickup café</label>
+                <label className="input__label" htmlFor="checkout-cafe">
+                  Pickup café
+                </label>
                 {isLoadingCafes ? (
                   <Loader label="Loading pickup cafés" />
                 ) : cafeError ? (
@@ -668,10 +707,14 @@ export function CheckoutPage() {
                       id="checkout-cafe"
                       value={selectedCafeId ?? ''}
                       aria-invalid={Boolean(fieldErrors.cafeId) || undefined}
-                      aria-describedby={[
-                        selectedCafe ? 'checkout-cafe-details' : undefined,
-                        fieldErrors.cafeId ? 'checkout-cafe-error' : undefined,
-                      ].filter(Boolean).join(' ') || undefined}
+                      aria-describedby={
+                        [
+                          selectedCafe ? 'checkout-cafe-details' : undefined,
+                          fieldErrors.cafeId ? 'checkout-cafe-error' : undefined,
+                        ]
+                          .filter(Boolean)
+                          .join(' ') || undefined
+                      }
                       onChange={(event) => {
                         const nextCafeId = Number(event.target.value);
                         setSelectedCafeId(nextCafeId);
@@ -688,7 +731,10 @@ export function CheckoutPage() {
                       ))}
                     </select>
                     {selectedCafe && (
-                      <p id="checkout-cafe-details" className="input__message checkout-cafe__details">
+                      <p
+                        id="checkout-cafe-details"
+                        className="input__message checkout-cafe__details"
+                      >
                         {selectedCafe.address}. Open {selectedCafe.opensAt}–{selectedCafe.closesAt}.
                       </p>
                     )}
@@ -717,21 +763,27 @@ export function CheckoutPage() {
             )}
 
             <div className="checkout-date">
-              <span id="checkout-date-label" className="input__label">Order date</span>
+              <span id="checkout-date-label" className="input__label">
+                Order date
+              </span>
               <button
                 type="button"
                 className="input__control checkout-date__trigger"
                 aria-labelledby="checkout-date-label checkout-date-value"
                 aria-controls="checkout-date-picker"
                 aria-expanded={isDatePickerOpen}
-                aria-invalid={Boolean(fieldErrors.orderDate) || undefined}
+                data-invalid={Boolean(fieldErrors.orderDate) || undefined}
                 aria-describedby={fieldErrors.orderDate ? 'checkout-date-error' : undefined}
                 onClick={() => setIsDatePickerOpen((open) => !open)}
               >
                 <span id="checkout-date-value">{formatOrderDate(orderDate)}</span>
               </button>
               {fieldErrors.orderDate && (
-                <span id="checkout-date-error" className="input__message input__message--error" role="alert">
+                <span
+                  id="checkout-date-error"
+                  className="input__message input__message--error"
+                  role="alert"
+                >
                   {fieldErrors.orderDate}
                 </span>
               )}
@@ -763,7 +815,9 @@ export function CheckoutPage() {
             </div>
 
             <div className="input">
-              <label className="input__label" htmlFor="checkout-slot">Time slot</label>
+              <label className="input__label" htmlFor="checkout-slot">
+                Time slot
+              </label>
               {isLoadingSlots ? (
                 <Loader label="Loading time slots" />
               ) : slotsError ? (
@@ -785,10 +839,14 @@ export function CheckoutPage() {
                   value={slotStart}
                   disabled={!timeSlots}
                   aria-invalid={Boolean(fieldErrors.slotStart) || undefined}
-                  aria-describedby={[
-                    timeSlots ? 'checkout-slot-details' : undefined,
-                    fieldErrors.slotStart ? 'checkout-slot-error' : undefined,
-                  ].filter(Boolean).join(' ') || undefined}
+                  aria-describedby={
+                    [
+                      timeSlots ? 'checkout-slot-details' : undefined,
+                      fieldErrors.slotStart ? 'checkout-slot-error' : undefined,
+                    ]
+                      .filter(Boolean)
+                      .join(' ') || undefined
+                  }
                   onChange={(event) => {
                     setSlotStart(event.target.value);
                     if (event.target.value) setIsSlotFull(false);
@@ -799,14 +857,12 @@ export function CheckoutPage() {
                 >
                   <option value="">Choose a time</option>
                   {timeSlots?.slots.map((slot) => {
-                    const unavailableLabel = slot.reason === 'FULL'
-                      ? ' — Full'
-                      : slot.reason === 'PAST'
-                        ? ' — Past'
-                        : '';
+                    const unavailableLabel =
+                      slot.reason === 'FULL' ? ' — Full' : slot.reason === 'PAST' ? ' — Past' : '';
                     return (
                       <option key={slot.start} value={slot.start} disabled={!slot.available}>
-                        {slot.start}–{slot.end}{unavailableLabel}
+                        {slot.start}–{slot.end}
+                        {unavailableLabel}
                       </option>
                     );
                   })}
@@ -888,11 +944,13 @@ export function CheckoutPage() {
                 className="checkout-line-errors"
                 role="group"
                 aria-label={`Errors for ${item.name}, quantity ${item.quantity}`}
-                aria-invalid="true"
+                data-invalid="true"
                 aria-describedby={errorId}
                 tabIndex={-1}
               >
-                <strong>{item.name} × {item.quantity}</strong>
+                <strong>
+                  {item.name} × {item.quantity}
+                </strong>
                 {item.modifiers.length > 0 && (
                   <p>{item.modifiers.map(({ name }) => name).join(', ')}</p>
                 )}
@@ -920,23 +978,24 @@ export function CheckoutPage() {
             size="large"
             loading={isSending}
             disabled={
-              isSending
-              || isSlotFull
-              || !currentQuote
-              || isLoadingQuote
-              || (scenario === 'PICKUP' && (isLoadingCafes || Boolean(cafeError) || !selectedCafeId))
-              || (
-                scenario === 'DELIVERY'
-                && (isLoadingZones || Boolean(deliveryZoneError) || !selectedDeliveryZoneId)
-              )
-              || isLoadingSlots
-              || Boolean(slotsError)
-              || !timeSlots
+              isSending ||
+              isSlotFull ||
+              !currentQuote ||
+              isLoadingQuote ||
+              (scenario === 'PICKUP' &&
+                (isLoadingCafes || Boolean(cafeError) || !selectedCafeId)) ||
+              (scenario === 'DELIVERY' &&
+                (isLoadingZones || Boolean(deliveryZoneError) || !selectedDeliveryZoneId)) ||
+              isLoadingSlots ||
+              Boolean(slotsError) ||
+              !timeSlots
             }
           >
             Place order
           </Button>
-          <Link className="checkout-form__back" to="/cart">Back to cart</Link>
+          <Link className="checkout-form__back" to="/cart">
+            Back to cart
+          </Link>
         </aside>
       </form>
     </section>

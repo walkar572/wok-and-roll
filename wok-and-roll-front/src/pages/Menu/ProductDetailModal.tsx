@@ -79,12 +79,11 @@ export function ProductDetailModal({
     ...(selectedSizeId === undefined ? [] : [selectedSizeId]),
     ...selectedExtraIds,
   ];
-  const modifierTotal = product?.modifiers
-    .filter(({ id }) => modifierIds.includes(id))
-    .reduce((total, modifier) => total + toMinorUnits(modifier.priceDelta), 0) ?? 0;
-  const addTotal = product
-    ? (toMinorUnits(product.price) + modifierTotal) * quantity
-    : 0;
+  const modifierTotal =
+    product?.modifiers
+      .filter(({ id }) => modifierIds.includes(id))
+      .reduce((total, modifier) => total + toMinorUnits(modifier.priceDelta), 0) ?? 0;
+  const addTotal = product ? (toMinorUnits(product.price) + modifierTotal) * quantity : 0;
 
   function addProduct() {
     if (!product || !product.inStock || (sizes.length > 0 && selectedSizeId === undefined)) return;
@@ -103,33 +102,35 @@ export function ProductDetailModal({
       open={productId !== null}
       title={product?.name ?? 'Dish details'}
       onClose={onClose}
-      footer={product ? (
-        <div className="product-modal__footer">
-          <label className="product-modal__quantity">
-            <span>Quantity</span>
-            <input
-              aria-label="Quantity"
-              type="number"
-              min="1"
-              max="99"
-              step="1"
-              value={quantity}
-              onChange={(event) => {
-                const nextQuantity = Number(event.target.value);
-                if (Number.isInteger(nextQuantity) && nextQuantity >= 1 && nextQuantity <= 99) {
-                  setQuantity(nextQuantity);
-                }
-              }}
-            />
-          </label>
-          <Button
-            onClick={addProduct}
-            disabled={!product.inStock || (sizes.length > 0 && selectedSizeId === undefined)}
-          >
-            Add · {formatPrice(addTotal / 100, product.currency)}
-          </Button>
-        </div>
-      ) : undefined}
+      footer={
+        product ? (
+          <div className="product-modal__footer">
+            <label className="product-modal__quantity">
+              <span>Quantity</span>
+              <input
+                aria-label="Quantity"
+                type="number"
+                min="1"
+                max="99"
+                step="1"
+                value={quantity}
+                onChange={(event) => {
+                  const nextQuantity = Number(event.target.value);
+                  if (Number.isInteger(nextQuantity) && nextQuantity >= 1 && nextQuantity <= 99) {
+                    setQuantity(nextQuantity);
+                  }
+                }}
+              />
+            </label>
+            <Button
+              onClick={addProduct}
+              disabled={!product.inStock || (sizes.length > 0 && selectedSizeId === undefined)}
+            >
+              Add · {formatPrice(addTotal / 100, product.currency)}
+            </Button>
+          </div>
+        ) : undefined
+      }
     >
       {isLoading && <Loader label="Loading dish details" />}
       {error && (
@@ -186,11 +187,11 @@ export function ProductDetailModal({
                       type="checkbox"
                       checked={checked}
                       onChange={() => {
-                        setSelectedExtraIds((selected) => (
+                        setSelectedExtraIds((selected) =>
                           checked
                             ? selected.filter((id) => id !== modifier.id)
-                            : [...selected, modifier.id]
-                        ));
+                            : [...selected, modifier.id],
+                        );
                       }}
                     />
                     <span>{modifier.name}</span>

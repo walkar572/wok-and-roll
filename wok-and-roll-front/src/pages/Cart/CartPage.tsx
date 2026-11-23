@@ -19,9 +19,10 @@ interface QuoteError {
 
 function toQuoteError(requestError: unknown): QuoteError {
   const quoteError: QuoteError = {
-    message: requestError instanceof ApiRequestError && requestError.code === 'VALIDATION_ERROR'
-      ? 'Please check the highlighted fields.'
-      : guestErrorMessage(requestError, 'We could not get the current prices. Please try again.'),
+    message:
+      requestError instanceof ApiRequestError && requestError.code === 'VALIDATION_ERROR'
+        ? 'Please check the highlighted fields.'
+        : guestErrorMessage(requestError, 'We could not get the current prices. Please try again.'),
     fields: {},
     quantityErrors: {},
     lineErrors: {},
@@ -51,15 +52,16 @@ export function CartPage() {
   const lineHeadings = useRef(new Map<string, HTMLHeadingElement>());
   const emptyHeading = useRef<HTMLHeadingElement>(null);
   const focusAfterRemove = useRef<number | null>(null);
-  const currentQuote = quote
-    && quote.country === country
-    && quote.lines.length === items.length
-    && quote.lines.every((line, index) => (
-      line.productId === items[index].productId
-      && line.quantity === items[index].quantity
-    ))
-    ? quote
-    : undefined;
+  const currentQuote =
+    quote &&
+    quote.country === country &&
+    quote.lines.length === items.length &&
+    quote.lines.every(
+      (line, index) =>
+        line.productId === items[index].productId && line.quantity === items[index].quantity,
+    )
+      ? quote
+      : undefined;
 
   useEffect(() => {
     let active = true;
@@ -118,9 +120,13 @@ export function CartPage() {
         <p className="eyebrow">Your picks</p>
         <h1 id="cart-title">Your cart</h1>
         <div className="cart-empty">
-          <h2 ref={emptyHeading} tabIndex={-1}>Your cart is waiting</h2>
+          <h2 ref={emptyHeading} tabIndex={-1}>
+            Your cart is waiting
+          </h2>
           <p>There’s nothing in your cart yet. Find a favorite to get started.</p>
-          <Link className="button button--primary" to="/menu">Browse the menu</Link>
+          <Link className="button button--primary" to="/menu">
+            Browse the menu
+          </Link>
         </div>
       </section>
     );
@@ -140,7 +146,9 @@ export function CartPage() {
             {Object.entries(error.fields).length > 0 && (
               <ul>
                 {Object.entries(error.fields).map(([field, message]) => (
-                  <li key={field}>{FIELD_LABELS[field] ?? field}: {message}</li>
+                  <li key={field}>
+                    {FIELD_LABELS[field] ?? field}: {message}
+                  </li>
                 ))}
               </ul>
             )}
@@ -179,12 +187,14 @@ export function CartPage() {
         })}
       </div>
 
-      {currentQuote && (
-        <TotalsBlock quote={currentQuote} />
-      )}
+      {currentQuote && <TotalsBlock quote={currentQuote} />}
       <div className="cart-page__actions">
-        <Link className="button button--primary" to="/checkout">Checkout</Link>
-        <Link className="button button--outline" to="/menu">Continue shopping</Link>
+        <Link className="button button--primary" to="/checkout">
+          Checkout
+        </Link>
+        <Link className="button button--outline" to="/menu">
+          Continue shopping
+        </Link>
       </div>
     </section>
   );

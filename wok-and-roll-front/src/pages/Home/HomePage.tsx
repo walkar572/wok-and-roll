@@ -23,7 +23,9 @@ export function HomePage() {
       })
       .catch((requestError: unknown) => {
         if (!active) return;
-        setError(guestErrorMessage(requestError, 'We could not load our favorites. Please try again.'));
+        setError(
+          guestErrorMessage(requestError, 'We could not load our favorites. Please try again.'),
+        );
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -39,7 +41,11 @@ export function HomePage() {
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero__copy">
           <p className="eyebrow">Japanese soul. Wok-fired energy.</p>
-          <h1 id="home-title">Wok.<br />Roll. Repeat.</h1>
+          <h1 id="home-title">
+            Wok.
+            <br />
+            Roll. Repeat.
+          </h1>
           <p className="home-hero__description">
             Sushi, sizzling noodles and a little something worth slowing down for.
           </p>
@@ -91,7 +97,9 @@ export function HomePage() {
                     loading="lazy"
                   />
                 ) : (
-                  <span className="favorite-card__image-placeholder" aria-hidden="true">✳</span>
+                  <span className="favorite-card__image-placeholder" aria-hidden="true">
+                    ✳
+                  </span>
                 )}
                 <div>
                   <h3>{item.name}</h3>

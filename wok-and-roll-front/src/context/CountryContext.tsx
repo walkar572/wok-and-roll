@@ -1,10 +1,5 @@
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
-import {
-  fallbackCountries,
-  loadCountries,
-  type Country,
-  type CountryCode,
-} from '../services/api';
+import { fallbackCountries, loadCountries, type Country, type CountryCode } from '../services/api';
 
 const STORAGE_KEY = 'selectedCountry';
 
@@ -21,9 +16,7 @@ const CountryContext = createContext<CountryContextValue | null>(null);
 
 function getInitialCountry(): CountryCode {
   const savedCountry = window.localStorage.getItem(STORAGE_KEY);
-  return savedCountry && /^[A-Z]{3}$/.test(savedCountry)
-    ? savedCountry
-    : fallbackCountries[0].code;
+  return savedCountry && /^[A-Z]{3}$/.test(savedCountry) ? savedCountry : fallbackCountries[0].code;
 }
 
 export function CountryProvider({ children }: PropsWithChildren) {
@@ -45,11 +38,9 @@ export function CountryProvider({ children }: PropsWithChildren) {
 
         setCountries(result);
         setCountriesError(undefined);
-        setCountry((selectedCountry) => (
-          result.some(({ code }) => code === selectedCountry)
-            ? selectedCountry
-            : result[0].code
-        ));
+        setCountry((selectedCountry) =>
+          result.some(({ code }) => code === selectedCountry) ? selectedCountry : result[0].code,
+        );
       })
       .catch((error: unknown) => {
         if (!active) return;

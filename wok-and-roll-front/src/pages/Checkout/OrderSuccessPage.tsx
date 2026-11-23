@@ -31,7 +31,9 @@ export function OrderSuccessPage() {
     <section className="checkout-success" aria-labelledby="order-success-title">
       <p className="eyebrow">Order confirmed</p>
       <h1 id="order-success-title">Thanks for your order</h1>
-      <p className="checkout-success__number">Order number: <strong>{order.orderNumber}</strong></p>
+      <p className="checkout-success__number">
+        Order number: <strong>{order.orderNumber}</strong>
+      </p>
       <dl className="checkout-success__details">
         <div>
           <dt>Status</dt>
@@ -43,7 +45,9 @@ export function OrderSuccessPage() {
         </div>
         <div>
           <dt>Time slot</dt>
-          <dd>{order.slotStart}–{order.slotEnd}</dd>
+          <dd>
+            {order.slotStart}–{order.slotEnd}
+          </dd>
         </div>
         <div>
           <dt>{order.scenario === 'PICKUP' ? 'Pickup café' : 'Delivery address'}</dt>
@@ -55,7 +59,9 @@ export function OrderSuccessPage() {
         </div>
       </dl>
       <TotalsBlock quote={order} />
-      <Link className="button button--primary" to="/menu">Back to menu</Link>
+      <Link className="button button--primary" to="/menu">
+        Back to menu
+      </Link>
     </section>
   );
 }

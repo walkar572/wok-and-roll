@@ -22,7 +22,10 @@ export function TotalsBlock({ quote }: TotalsBlockProps) {
         </div>
         <div>
           <dt>Discount ({quote.discountRate}%)</dt>
-          <dd>{quote.discount > 0 ? '-' : ''}{formatPrice(quote.discount, quote.currency)}</dd>
+          <dd>
+            {quote.discount > 0 ? '-' : ''}
+            {formatPrice(quote.discount, quote.currency)}
+          </dd>
         </div>
         <div>
           <dt>Delivery fee</dt>
