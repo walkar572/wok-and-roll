@@ -1061,8 +1061,8 @@ summary:focus-visible,
   }
 }
 
-/* The account button moves into the menu panel on small screens (header width). */
-@media (max-width: 600px) {
+/* The account button moves into the menu panel on small screens (the mobile header). */
+@media (max-width: 767px) {
   .header-account {
     display: none;
   }

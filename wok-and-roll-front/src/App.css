@@ -751,7 +751,7 @@ a {
   font-size: 11px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .site-header__inner {
     width: calc(100% - 40px);
     min-height: 68px;
