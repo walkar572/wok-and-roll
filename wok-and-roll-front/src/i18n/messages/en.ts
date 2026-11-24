@@ -180,6 +180,7 @@ export const en = {
   },
   totals: {
     label: 'Price summary',
+    lines: 'Dishes',
     subtotal: 'Subtotal',
     vat: 'VAT ({rate}%)',
     amountInclVat: 'Amount incl. VAT',
@@ -192,7 +193,7 @@ export const en = {
     phone: 'Phone',
     emailOptional: 'Email (optional)',
     commentOptional: 'Comment (optional)',
-    phoneHint: 'International format, for example +447700900123.',
+    phoneHint: 'International format, for example {example}.',
     contactTitle: 'Contact details',
   },
   validation: {
@@ -344,7 +345,6 @@ export const en = {
     notFoundPanelText: 'Only orders placed while you were logged in are in your account.',
     status: 'Status',
     placed: 'Placed',
-    items: 'Dishes',
   },
   booking: {
     eyebrow: 'Eat in',

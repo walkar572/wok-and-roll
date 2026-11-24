@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { TotalsBlock } from '../../components/common';
+import { Receipt } from '../../components/common';
 import { PagePlaceholder } from '../../components/layout/PagePlaceholder';
 import { useAuth } from '../../context/AuthContext';
 import { cafeAddress, cafeName, clock, useI18n, zoneName } from '../../i18n';
@@ -39,44 +39,48 @@ export function OrderSuccessPage() {
       <p className="checkout-success__number">
         {t('success.number')} <strong>{order.orderNumber}</strong>
       </p>
-      <dl className="checkout-success__details">
-        <div>
-          <dt>{t('success.status')}</dt>
-          <dd>{t(`status.${order.status}`)}</dd>
+      <div className="receipt-layout">
+        <dl className="checkout-success__details">
+          <div>
+            <dt>{t('success.status')}</dt>
+            <dd>{t(`status.${order.status}`)}</dd>
+          </div>
+          <div>
+            <dt>{t('success.orderDate')}</dt>
+            <dd>{formatDate(order.orderDate)}</dd>
+          </div>
+          <div>
+            <dt>{t('success.timeSlot')}</dt>
+            <dd>
+              {clock(order.slotStart)}–{clock(order.slotEnd)}
+            </dd>
+          </div>
+          <div>
+            <dt>
+              {order.scenario === 'PICKUP' ? t('success.pickupCafe') : t('success.deliveryAddress')}
+            </dt>
+            <dd>
+              {order.scenario === 'PICKUP'
+                ? `${cafeName(order.cafe.name)}, ${cafeAddress(order.cafe.address)}`
+                : `${order.deliveryAddress ?? ''}${
+                    order.deliveryZone ? ` (${zoneName(order.deliveryZone.name)})` : ''
+                  }`}
+            </dd>
+          </div>
+        </dl>
+        <div className="receipt-layout__side">
+          <Receipt quote={order} />
+          <div className="receipt-layout__actions">
+            <Link className="button button--primary button--large" to="/menu">
+              {t('success.backToMenu')}
+            </Link>
+            {auth && (
+              <Link className="button button--outline" to="/account">
+                {t('success.myOrders')}
+              </Link>
+            )}
+          </div>
         </div>
-        <div>
-          <dt>{t('success.orderDate')}</dt>
-          <dd>{formatDate(order.orderDate)}</dd>
-        </div>
-        <div>
-          <dt>{t('success.timeSlot')}</dt>
-          <dd>
-            {clock(order.slotStart)}–{clock(order.slotEnd)}
-          </dd>
-        </div>
-        <div>
-          <dt>
-            {order.scenario === 'PICKUP' ? t('success.pickupCafe') : t('success.deliveryAddress')}
-          </dt>
-          <dd>
-            {order.scenario === 'PICKUP'
-              ? `${cafeName(order.cafe.name)}, ${cafeAddress(order.cafe.address)}`
-              : `${order.deliveryAddress ?? ''}${
-                  order.deliveryZone ? ` (${zoneName(order.deliveryZone.name)})` : ''
-                }`}
-          </dd>
-        </div>
-      </dl>
-      <TotalsBlock quote={order} />
-      <div className="cart-page__actions">
-        <Link className="button button--primary" to="/menu">
-          {t('success.backToMenu')}
-        </Link>
-        {auth && (
-          <Link className="button button--outline" to="/account">
-            {t('success.myOrders')}
-          </Link>
-        )}
       </div>
     </section>
   );

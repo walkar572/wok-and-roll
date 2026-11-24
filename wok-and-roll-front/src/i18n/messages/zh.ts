@@ -177,6 +177,7 @@ export const zh: Messages = {
   },
   totals: {
     label: '价格汇总',
+    lines: '菜品',
     subtotal: '小计',
     vat: '增值税（{rate}%）',
     amountInclVat: '含税金额',
@@ -189,7 +190,7 @@ export const zh: Messages = {
     phone: '电话',
     emailOptional: '电子邮箱（可选）',
     commentOptional: '备注（可选）',
-    phoneHint: '国际格式，例如 +8613812345678。',
+    phoneHint: '国际格式，例如 {example}。',
     contactTitle: '联系方式',
   },
   validation: {
@@ -341,7 +342,6 @@ export const zh: Messages = {
     notFoundPanelText: '账户中只包含登录后下的订单。',
     status: '状态',
     placed: '下单时间',
-    items: '菜品',
   },
   booking: {
     eyebrow: '堂食',

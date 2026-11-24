@@ -177,6 +177,7 @@ export const uz: Messages = {
   },
   totals: {
     label: 'Narxlar xulosasi',
+    lines: 'Taomlar',
     subtotal: 'Oraliq summa',
     vat: 'QQS ({rate}%)',
     amountInclVat: 'QQS bilan summa',
@@ -189,7 +190,7 @@ export const uz: Messages = {
     phone: 'Telefon',
     emailOptional: 'Email (ixtiyoriy)',
     commentOptional: 'Izoh (ixtiyoriy)',
-    phoneHint: 'Xalqaro formatda, masalan +998901234567.',
+    phoneHint: 'Xalqaro formatda, masalan {example}.',
     contactTitle: 'Aloqa maʼlumotlari',
   },
   validation: {
@@ -343,7 +344,6 @@ export const uz: Messages = {
     notFoundPanelText: 'Hisobingizda faqat tizimga kirgan holda berilgan buyurtmalar saqlanadi.',
     status: 'Holati',
     placed: 'Berilgan',
-    items: 'Taomlar',
   },
   booking: {
     eyebrow: 'Kafeda',

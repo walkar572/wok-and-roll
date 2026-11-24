@@ -3,7 +3,7 @@ import * as RadioGroup from '@radix-ui/react-radio-group';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, ErrorMessage, Input, Loader, TotalsBlock } from '../../components/common';
+import { Button, ErrorMessage, Input, Loader, Receipt } from '../../components/common';
 import { useCart, type CartItem } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import {
@@ -11,6 +11,7 @@ import {
   cafeName,
   clock,
   modifierName,
+  phoneHint,
   productName,
   t as translate,
   useI18n,
@@ -861,7 +862,7 @@ export function CheckoutPage() {
             />
             <Input
               label={t('fields.phone')}
-              hint={t('fields.phoneHint')}
+              hint={phoneHint(country)}
               type="tel"
               autoComplete="tel"
               value={details.contactPhone}
@@ -935,7 +936,7 @@ export function CheckoutPage() {
               </div>
             );
           })}
-          {currentQuote && <TotalsBlock quote={currentQuote} />}
+          {currentQuote && <Receipt quote={currentQuote} />}
           {fieldErrorMessages.length > 0 && (
             <div className="checkout-error-summary" role="alert">
               <strong>{t('checkout.checkDetails')}</strong>

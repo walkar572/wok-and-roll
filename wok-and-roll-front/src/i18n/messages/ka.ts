@@ -177,6 +177,7 @@ export const ka: Messages = {
   },
   totals: {
     label: 'ფასების შეჯამება',
+    lines: 'კერძები',
     subtotal: 'შუალედური ჯამი',
     vat: 'დღგ ({rate}%)',
     amountInclVat: 'ჯამი დღგ-ით',
@@ -189,7 +190,7 @@ export const ka: Messages = {
     phone: 'ტელეფონი',
     emailOptional: 'ელფოსტა (არასავალდებულო)',
     commentOptional: 'კომენტარი (არასავალდებულო)',
-    phoneHint: 'საერთაშორისო ფორმატით, მაგალითად +995591234567.',
+    phoneHint: 'საერთაშორისო ფორმატით, მაგალითად {example}.',
     contactTitle: 'საკონტაქტო მონაცემები',
   },
   validation: {
@@ -342,7 +343,6 @@ export const ka: Messages = {
     notFoundPanelText: 'ანგარიშში ინახება მხოლოდ შესვლის შემდეგ გაკეთებული შეკვეთები.',
     status: 'სტატუსი',
     placed: 'გაფორმდა',
-    items: 'კერძები',
   },
   booking: {
     eyebrow: 'კაფეში',

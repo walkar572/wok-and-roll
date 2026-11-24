@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, ErrorMessage, Input } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
-import { t as translate, useI18n } from '../../i18n';
+import { useCountry } from '../../context/CountryContext';
+import { phoneHint, t as translate, useI18n } from '../../i18n';
 import { ApiRequestError } from '../../services/api';
 import { apiFieldMessage } from '../../services/apiMessages';
 import type { Role } from '../../services/authToken';
@@ -55,6 +56,7 @@ function validate(mode: Mode, values: Record<Field, string>) {
 export function LoginPage() {
   const { login, register, notice, dismissNotice } = useAuth();
   const { t } = useI18n();
+  const { country } = useCountry();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = safeNext(params.get('next'));
@@ -231,7 +233,7 @@ export function LoginPage() {
               type="tel"
               autoComplete="tel"
               value={values.phone}
-              hint={t('fields.phoneHint')}
+              hint={phoneHint(country)}
               error={errors.phone}
               onChange={(event) => update('phone', event.target.value)}
             />

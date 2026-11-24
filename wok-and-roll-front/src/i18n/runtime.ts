@@ -120,6 +120,28 @@ export function cityName(name: string): string {
   return catalogTexts(currentLocale).cities[name] ?? name;
 }
 
+// A number of each country for the hint under a phone field, from the ranges for drama where the
+// country has one (UK 07700 900xxx, US 555-01xx).
+const PHONE_EXAMPLES: Record<string, string> = {
+  UZB: '+998901234567',
+  KAZ: '+77011234567',
+  GEO: '+995591234567',
+  UKR: '+380671234567',
+  CHN: '+8613812345678',
+  GBR: '+447700900123',
+  USA: '+16175550123',
+};
+
+/** The hint under a phone field, with a number of the chosen country (not of the language). */
+export function phoneHint(country: string): string {
+  return t('fields.phoneHint', { example: PHONE_EXAMPLES[country] ?? PHONE_EXAMPLES.UZB });
+}
+
+/** The city and its country ("Kyiv, Ukraine"), or only the country while it has no city. */
+export function placeName(country: string, city?: string): string {
+  return city ? `${cityName(city)}, ${countryName(country)}` : countryName(country);
+}
+
 /** A clock time of the API (HH:mm) for the screen: "22:00", in American English "10:00 PM". */
 export function clock(time: string): string {
   return formatClock(time, currentLocale);

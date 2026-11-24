@@ -4,7 +4,7 @@ import 'react-day-picker/style.css';
 import { Button, ErrorMessage, Input, Loader } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
-import { cafeAddress, cafeName, clock, t as translate, useI18n } from '../../i18n';
+import { cafeAddress, cafeName, clock, phoneHint, t as translate, useI18n } from '../../i18n';
 import { DAY_PICKER_LOCALE } from '../../i18n/dayPicker';
 import { apiCodeMessage, apiFieldMessage } from '../../services/apiMessages';
 import { ApiRequestError, guestErrorMessage, loadCafes, type Cafe } from '../../services/api';
@@ -503,7 +503,7 @@ export function BookingPage() {
               type="tel"
               autoComplete="tel"
               value={contact.contactPhone}
-              hint={t('fields.phoneHint')}
+              hint={phoneHint(country)}
               error={errors.contactPhone}
               onChange={(event) => {
                 setContact((current) => ({ ...current, contactPhone: event.target.value }));

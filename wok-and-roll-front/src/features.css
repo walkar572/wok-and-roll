@@ -803,53 +803,8 @@ summary:focus-visible,
   border-color: var(--error-600);
 }
 
-.order-details__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-  align-items: start;
-  gap: var(--spacing-2xl);
+.order-details .receipt-layout {
   margin-top: var(--spacing-lg);
-}
-
-.order-details__layout .cart-summary {
-  width: 100%;
-  margin: 0;
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  background: var(--color-bg-surface);
-}
-
-.order-details__subtitle {
-  margin: var(--spacing-lg) 0 var(--spacing-sm);
-  font-size: var(--font-size-heading-h4);
-}
-
-.order-lines {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.order-lines li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: baseline;
-  gap: var(--spacing-md);
-  border-top: 1px solid var(--color-border-default);
-  padding: var(--spacing-12) 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.order-lines li > div {
-  display: grid;
-  gap: 2px;
-}
-
-.order-lines li > div span,
-.order-lines li > span {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-body-small);
 }
 
 /* ---- booking ------------------------------------------------------------------------------ */
@@ -976,13 +931,6 @@ summary:focus-visible,
   }
 }
 
-@media (max-width: 900px) {
-  .order-details__layout {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-}
-
 @media (max-width: 767px) {
   .reports-page,
   .account-page,
@@ -1040,15 +988,6 @@ summary:focus-visible,
 
   .order-card__actions .button {
     flex: 1 1 120px;
-  }
-
-  .order-lines li {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .order-lines li > span {
-    grid-column: 1;
-    grid-row: 2;
   }
 
   .auth-card {

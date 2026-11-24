@@ -1345,21 +1345,32 @@ a.cafe-card__book {
   border-top: 1px solid var(--color-border-default);
 }
 
+/* The total sits next to the name and the controls under them, so the line fits the column
+   beside the receipt. */
 .cart-line {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 20px;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'image details total'
+    'image controls controls';
+  align-items: baseline;
+  gap: 12px 20px;
   border-bottom: 1px solid var(--color-border-default);
   padding: 20px 0;
 }
 
 .cart-line__image {
+  grid-area: image;
+  align-self: start;
   width: 88px;
   aspect-ratio: 1;
   border-radius: var(--radius-md);
   object-fit: cover;
   background: var(--color-bg-subtle);
+}
+
+.cart-line__details {
+  grid-area: details;
 }
 
 .cart-line__details h2 {
@@ -1391,6 +1402,7 @@ a.cafe-card__book {
 
 .cart-line__controls {
   display: grid;
+  grid-area: controls;
   gap: 4px;
   color: var(--color-text-secondary);
   font-size: var(--font-size-meta-small);
@@ -1469,8 +1481,9 @@ a.cafe-card__book {
 }
 
 .cart-line__total {
-  min-width: 112px;
+  grid-area: total;
   text-align: right;
+  white-space: nowrap;
 }
 
 .cart-page__error {
@@ -1486,46 +1499,175 @@ a.cafe-card__book {
   margin: 4px 0 0;
 }
 
-.cart-summary {
-  width: min(100%, 400px);
-  margin: 24px 0 0 auto;
-}
-
-.cart-summary dl {
+/* Cart, success and order pages: the dishes or the details on the left, the receipt on the right
+   (one column from 900px down, the receipt under them). */
+.receipt-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  align-items: start;
+  gap: 48px;
+}
+
+.receipt-layout__side,
+.receipt-layout__actions {
+  display: grid;
+  gap: 20px;
+}
+
+.receipt-layout__actions {
   gap: 12px;
-  margin: 0;
 }
 
-.cart-summary dl > div {
-  display: flex;
-  justify-content: space-between;
+.receipt-layout__actions .button {
+  text-decoration: none;
+}
+
+/* The receipt: white paper with torn (zigzag) top and bottom edges, printed in a monospace font,
+   dashed rules between its parts. The mask cuts the teeth and the drop shadow follows them. */
+.receipt {
+  filter: drop-shadow(0 1px 1px rgb(32 31 27 / 0.12)) drop-shadow(0 10px 20px rgb(32 31 27 / 0.08));
+}
+
+.receipt__paper {
+  --receipt-edge:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 12px 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 51%
+      repeat-x;
+
+  display: grid;
   gap: 16px;
+  padding: 34px 24px 36px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-body-small);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-mask: var(--receipt-edge);
+  mask: var(--receipt-edge);
 }
 
-.cart-summary dt,
-.cart-summary dd {
+.receipt__head {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.receipt__head p {
   margin: 0;
 }
 
-.cart-summary dt {
+.receipt__head .receipt__brand {
+  margin-bottom: 6px;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-display), Georgia, serif;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.receipt__brand span {
+  color: var(--color-text-brand);
+}
+
+.receipt__lines,
+.receipt__totals,
+.receipt__foot {
+  margin: 0;
+  border-top: 1px dashed var(--rice-400);
+  padding: 16px 0 0;
+}
+
+.receipt__lines,
+.receipt__totals {
+  display: grid;
+}
+
+.receipt__lines {
+  gap: 12px;
+  list-style: none;
+}
+
+.receipt__totals {
+  gap: 6px;
+}
+
+/* A name and its amount share a row while they fit; on a narrow slip the amount goes to its own
+   line on the right instead of breaking the name word by word. */
+.receipt__lines li,
+.receipt__totals > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+}
+
+.receipt__totals dt,
+.receipt__totals dd {
+  margin: 0;
+}
+
+.receipt__dish,
+.receipt__totals dt {
   flex: 1 1 auto;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.cart-summary dd {
-  flex: 0 0 auto;
+.receipt__dish {
+  font-weight: 600;
+}
+
+.receipt__amount,
+.receipt__totals dd {
   margin-left: auto;
   text-align: right;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
-.cart-summary__total {
-  border-top: 1px solid var(--color-border-default);
-  padding-top: 12px;
+.receipt__note {
+  flex-basis: 100%;
+  color: var(--color-text-secondary);
+}
+
+.receipt__totals .receipt__total {
+  margin-top: 8px;
+  border-top: 3px double var(--color-text-primary);
+  padding-top: 10px;
   font-size: var(--font-size-body-large);
-  font-weight: 700;
+  font-weight: 600;
+}
+
+.receipt__foot {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-label-small);
+  letter-spacing: 0.08em;
+}
+
+/* Two stripe patterns of 13 and 23 px: together they repeat only after 299 px, like a real code. */
+.receipt__barcode {
+  width: min(100%, 220px);
+  height: 40px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--color-text-primary) 0 2px,
+      #0000 2px 5px,
+      var(--color-text-primary) 5px 6px,
+      #0000 6px 9px,
+      var(--color-text-primary) 9px 12px,
+      #0000 12px 13px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      #0000 0 17px,
+      var(--color-text-primary) 17px 18px,
+      #0000 18px 23px
+    );
 }
 
 .cart-page__actions {
@@ -2020,7 +2162,11 @@ a.cafe-card__book {
 
   .cart-line {
     grid-template-columns: 64px minmax(0, 1fr);
-    gap: 12px;
+    grid-template-areas:
+      'image details'
+      'image total'
+      'image controls';
+    gap: 8px 12px;
     padding: 16px 0;
   }
 
@@ -2032,13 +2178,12 @@ a.cafe-card__book {
     font-size: var(--font-size-body-medium);
   }
 
-  .cart-line__controls {
-    grid-column: 2;
+  .cart-line__total {
+    text-align: left;
   }
 
-  .cart-line__total {
-    grid-column: 2;
-    text-align: left;
+  .receipt__paper {
+    padding-inline: 16px;
   }
 
   .cart-page__error {
@@ -2261,15 +2406,18 @@ a.cafe-card__book {
   overflow-wrap: anywhere;
 }
 
+/* Sticky under the sticky header; a long receipt scrolls inside, so Place order stays reachable.
+   The padding keeps the receipt shadow inside the scroll box. */
 .checkout-form__summary {
   position: sticky;
-  top: 24px;
+  top: calc(var(--size-header-desktop) + 16px);
   display: grid;
+  max-height: calc(100vh - var(--size-header-desktop) - 32px);
   gap: 20px;
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  background: var(--color-bg-surface);
+  margin: -8px -12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 12px;
 }
 
 .checkout-line-errors {
@@ -2301,11 +2449,6 @@ a.cafe-card__book {
 
 .checkout-line-errors ul {
   padding-left: 20px;
-}
-
-.checkout-form__summary .cart-summary {
-  width: 100%;
-  margin: 0;
 }
 
 .checkout-form__summary > .button {
@@ -2353,8 +2496,16 @@ a.cafe-card__book {
   margin: 0;
 }
 
-.checkout-success .cart-summary {
-  margin: 0 0 24px;
+@media (max-width: 900px) {
+  .receipt-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .receipt-layout__side {
+    justify-self: center;
+    width: min(100%, 440px);
+  }
 }
 
 @media (max-width: 900px) {
@@ -2365,7 +2516,10 @@ a.cafe-card__book {
 
   .checkout-form__summary {
     position: static;
-    width: 100%;
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+    padding: 0;
   }
 }
 
@@ -2387,10 +2541,6 @@ a.cafe-card__book {
 
   .checkout-page__error {
     grid-template-columns: 1fr;
-  }
-
-  .checkout-form__summary {
-    padding: 16px;
   }
 
   .checkout-success__details > div {

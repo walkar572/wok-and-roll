@@ -177,6 +177,7 @@ export const uk: Messages = {
   },
   totals: {
     label: 'Підсумок цін',
+    lines: 'Страви',
     subtotal: 'Проміжна сума',
     vat: 'ПДВ ({rate}%)',
     amountInclVat: 'Сума з ПДВ',
@@ -189,7 +190,7 @@ export const uk: Messages = {
     phone: 'Телефон',
     emailOptional: 'Email (необовʼязково)',
     commentOptional: 'Коментар (необовʼязково)',
-    phoneHint: 'У міжнародному форматі, наприклад +380671234567.',
+    phoneHint: 'У міжнародному форматі, наприклад {example}.',
     contactTitle: 'Контактні дані',
   },
   validation: {
@@ -342,7 +343,6 @@ export const uk: Messages = {
     notFoundPanelText: 'В обліковому записі є лише замовлення, оформлені після входу.',
     status: 'Статус',
     placed: 'Оформлено',
-    items: 'Страви',
   },
   booking: {
     eyebrow: 'У кафе',

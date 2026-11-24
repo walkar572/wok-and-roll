@@ -37,9 +37,6 @@ const american: Overrides<Messages> = {
     vat: 'Tax ({rate}%)',
     amountInclVat: 'Amount incl. tax',
   },
-  fields: {
-    phoneHint: 'International format, for example +16175550123.',
-  },
   validation: {
     orderDate: 'Choose a date from today through the next 7 days.',
     cafe: 'Choose a pickup café.',

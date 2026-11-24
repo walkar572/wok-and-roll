@@ -72,6 +72,8 @@
   --font-family-display:
     'DM Serif Display', 'Playfair Display', 'Noto Serif Georgian', 'Noto Serif SC';
   --font-family-body: 'Manrope', 'Noto Sans Georgian', 'Noto Sans SC';
+  /* The receipt print (cart, checkout, orders). */
+  --font-family-mono: 'IBM Plex Mono', 'Noto Sans Georgian', 'Noto Sans SC', monospace;
   --font-size-display-hero: 72px;
   --font-size-display-mobile: 40px;
   --font-size-heading-h1: 64px;

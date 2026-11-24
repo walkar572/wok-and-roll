@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, ErrorMessage, Loader, TotalsBlock } from '../../components/common';
+import { Button, ErrorMessage, Loader, Receipt } from '../../components/common';
 import { getCartItemKey, useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
-import { countryName, t as translate, useI18n } from '../../i18n';
+import { placeName, t as translate, useI18n } from '../../i18n';
 import { apiCodeMessage, apiFieldMessage } from '../../services/apiMessages';
 import { ApiRequestError, guestErrorMessage, quoteCart, type CartQuote } from '../../services/api';
 import { CartLine } from './CartLine';
@@ -46,7 +46,7 @@ function toQuoteError(requestError: unknown): QuoteError {
 }
 
 export function CartPage() {
-  const { country } = useCountry();
+  const { country, city } = useCountry();
   const { items, setItemQuantity, removeItem } = useCart();
   const { t } = useI18n();
   const [quote, setQuote] = useState<CartQuote>();
@@ -141,10 +141,9 @@ export function CartPage() {
       <p className="eyebrow">{t('cart.eyebrow')}</p>
       <h1 id="cart-title">{t('cart.title')}</h1>
       <p className="cart-page__description">
-        {t('cart.description', { country: countryName(country) })}
+        {t('cart.description', { country: placeName(country, city) })}
       </p>
 
-      {isLoading && <Loader label={t('cart.loadingPrices')} />}
       {error && (
         <div className="cart-page__error">
           <ErrorMessage title={t('cart.pricesError')}>
@@ -170,42 +169,47 @@ export function CartPage() {
         </div>
       )}
 
-      <div className="cart-lines">
-        {items.map((item, index) => {
-          const itemKey = getCartItemKey(item.productId, item.modifierIds);
+      <div className="receipt-layout">
+        <div className="cart-lines">
+          {items.map((item, index) => {
+            const itemKey = getCartItemKey(item.productId, item.modifierIds);
 
-          return (
-            <CartLine
-              key={itemKey}
-              item={item}
-              quotedLine={currentQuote?.lines[index]}
-              currency={currentQuote?.currency}
-              quantityError={error?.quantityErrors[index]}
-              lineError={error?.lineErrors[index]}
-              headingRef={(node) => {
-                if (node) lineHeadings.current.set(itemKey, node);
-                else lineHeadings.current.delete(itemKey);
-              }}
-              onQuantityChange={(quantity) => {
-                setItemQuantity(item.productId, item.modifierIds, quantity);
-              }}
-              onRemove={() => {
-                focusAfterRemove.current = index;
-                removeItem(item.productId, item.modifierIds);
-              }}
-            />
-          );
-        })}
-      </div>
+            return (
+              <CartLine
+                key={itemKey}
+                item={item}
+                quotedLine={currentQuote?.lines[index]}
+                currency={currentQuote?.currency}
+                quantityError={error?.quantityErrors[index]}
+                lineError={error?.lineErrors[index]}
+                headingRef={(node) => {
+                  if (node) lineHeadings.current.set(itemKey, node);
+                  else lineHeadings.current.delete(itemKey);
+                }}
+                onQuantityChange={(quantity) => {
+                  setItemQuantity(item.productId, item.modifierIds, quantity);
+                }}
+                onRemove={() => {
+                  focusAfterRemove.current = index;
+                  removeItem(item.productId, item.modifierIds);
+                }}
+              />
+            );
+          })}
+        </div>
 
-      {currentQuote && <TotalsBlock quote={currentQuote} />}
-      <div className="cart-page__actions">
-        <Link className="button button--primary" to="/checkout">
-          {t('cart.checkout')}
-        </Link>
-        <Link className="button button--outline" to="/menu">
-          {t('cart.continueShopping')}
-        </Link>
+        <div className="receipt-layout__side">
+          {isLoading && <Loader label={t('cart.loadingPrices')} />}
+          {currentQuote && <Receipt quote={currentQuote} />}
+          <div className="receipt-layout__actions">
+            <Link className="button button--primary button--large" to="/checkout">
+              {t('cart.checkout')}
+            </Link>
+            <Link className="button button--outline" to="/menu">
+              {t('cart.continueShopping')}
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

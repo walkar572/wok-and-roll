@@ -6,8 +6,7 @@ import { useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import {
   categoryName,
-  cityName,
-  countryName,
+  placeName,
   productDescription,
   productName,
   useI18n,
@@ -96,9 +95,7 @@ export function MenuPage() {
           ))}
         </nav>
         <p className="menu-toolbar__country">
-          {t('menu.pricesFor', {
-            country: city ? `${cityName(city)}, ${countryName(country)}` : countryName(country),
-          })}
+          {t('menu.pricesFor', { country: placeName(country, city) })}
         </p>
       </div>
 

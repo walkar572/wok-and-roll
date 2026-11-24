@@ -177,6 +177,7 @@ export const kk: Messages = {
   },
   totals: {
     label: 'Бағалар қорытындысы',
+    lines: 'Тағамдар',
     subtotal: 'Аралық сома',
     vat: 'ҚҚС ({rate}%)',
     amountInclVat: 'ҚҚС қосылған сома',
@@ -189,7 +190,7 @@ export const kk: Messages = {
     phone: 'Телефон',
     emailOptional: 'Email (міндетті емес)',
     commentOptional: 'Түсініктеме (міндетті емес)',
-    phoneHint: 'Халықаралық форматта, мысалы +77011234567.',
+    phoneHint: 'Халықаралық форматта, мысалы {example}.',
     contactTitle: 'Байланыс деректері',
   },
   validation: {
@@ -342,7 +343,6 @@ export const kk: Messages = {
     notFoundPanelText: 'Аккаунтта тек жүйеге кіріп берілген тапсырыстар сақталады.',
     status: 'Күйі',
     placed: 'Берілген',
-    items: 'Тағамдар',
   },
   booking: {
     eyebrow: 'Кафеде',
