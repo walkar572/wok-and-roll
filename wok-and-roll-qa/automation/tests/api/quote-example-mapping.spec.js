@@ -14,6 +14,7 @@ const countries = [
   { code: 'UKR', vatRate: 8, tiers: tiers([300, 1600, 2300, 3300, 16000]) },
   { code: 'CHN', vatRate: 18, tiers: tiers([55, 280, 400, 550, 2800]) },
   { code: 'GBR', vatRate: 20, tiers: tiers([6, 30, 45, 60, 300]) },
+  { code: 'USA', vatRate: 7, tiers: tiers([8, 40, 55, 80, 400]) },
 ];
 
 function toMinorUnits(value) {

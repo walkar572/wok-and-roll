@@ -1,7 +1,7 @@
 # Wok & Roll
 
-Teamwork 2026, Team 12. A web app for a sushi and wok restaurant chain in six countries
-(Uzbekistan, Kazakhstan, Georgia, Ukraine, China, the United Kingdom): menu with modifiers, cart and checkout with
+Teamwork 2026, Team 12. A web app for a sushi and wok restaurant chain in seven countries
+(Uzbekistan, Kazakhstan, Georgia, Ukraine, China, the United Kingdom, the United States): menu with modifiers and roll sets, cart and checkout with
 regional prices and VAT, pickup or delivery with time slots, table booking, accounts with order
 history, role-based tools for staff and admins, and sales reports with PDF and CSV export.
 
@@ -37,7 +37,7 @@ reports have data at once.
 
 Dish photos live in `wok-and-roll-front/public/images` (512 × 512 PNG, the dish on a cream
 background where the photo allows it). Until a file is there, the dish shows a neutral
-placeholder; a photo can be replaced by a file with the same name. Nineteen photos are free stock
+placeholder; a photo can be replaced by a file with the same name. Twenty-five photos are free stock
 photos under the [Pexels license](https://www.pexels.com/license/), cropped and, where the table
 allowed it, put on the cream background:
 [California roll](https://www.pexels.com/photo/sushi-roll-on-white-ceramic-plate-10692544/),
@@ -59,7 +59,13 @@ from the menu since v1.8),
 [matcha latte](https://www.pexels.com/photo/a-glass-of-matcha-latte-8004562/),
 [jasmine tea](https://www.pexels.com/photo/cup-of-aromatic-jasmine-tea-served-on-table-in-garden-7138780/),
 [salmon sashimi](https://www.pexels.com/photo/sushi-on-a-wooden-bowl-8472633/),
-[mango sticky rice](https://www.pexels.com/photo/mango-and-rice-with-dipping-sauce-on-a-white-plate-19856579/).
+[mango sticky rice](https://www.pexels.com/photo/mango-and-rice-with-dipping-sauce-on-a-white-plate-19856579/),
+[Philadelphia set](https://www.pexels.com/photo/36772661/),
+[salmon set](https://www.pexels.com/photo/7719911/),
+[dragon set](https://www.pexels.com/photo/20570605/),
+[classic set](https://www.pexels.com/photo/17894270/),
+[party set](https://www.pexels.com/photo/36317039/),
+[lunch combo](https://www.pexels.com/photo/2098085/).
 
 The café map on the home page uses [MapLibre GL](https://maplibre.org/) with free vector tiles
 from [OpenFreeMap](https://openfreemap.org/) (no API key). Map data © OpenStreetMap
@@ -82,10 +88,10 @@ Guests can order and book a table without an account.
 
 | Area | What works |
 |---|---|
-| Header | Stays at the top while the page scrolls (menu, country and basket always one tap away); soft rounded highlight on hover; on a phone a black menu grows out of the menu button, and the country list and the menu never open over each other |
-| Languages | The country switcher shows every country with its language and currency in that language (United Kingdom · English · GBP). The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English (dishes, messages, money and dates too); the brand "Wok & Roll" and the "Wok. Roll." of the home title stay |
-| Home | A slideshow of dishes from the menu with their price in the chosen country (arrows, swipe, pause; it stops on hover and with reduced motion); the cafés of the country on a map and in a list with address, hours, "open now" in the café's time zone, phone and "Book a table" (the booking form opens with that café); four favourite dishes |
-| Menu and cart | 24 dishes in 5 categories (sushi and rolls, from the wok, sides, desserts, drinks); dish cards with the ingredients and the portion (pieces, grams, ml) that grow a little and light up on hover, country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
+| Header | Stays at the top while the page scrolls (menu, city, language and basket always one tap away); soft rounded highlight on hover; on a phone a black menu grows out of the menu button, has the city switcher, and the language list and the menu never open over each other |
+| City and language | Chosen apart and saved apart. The city switcher (Tashkent, Almaty, Tbilisi, Kyiv, Shanghai, London, Boston, each with its country and currency) changes the prices, the currency, the cafés and the delivery zones; the language switcher (every language written in itself) changes only the texts: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, English (UK), English (US) — dishes, messages, money and dates too, a 12-hour clock in American English; the brand "Wok & Roll" and the "Wok. Roll." of the home title stay |
+| Home | A slideshow of dishes from the menu with their price in the chosen country (arrows, swipe, pause; it stops on hover and with reduced motion); the cafés of the chosen city on a map and in a list, with a city switcher above them, address, hours, "open now" in the café's time zone, phone and "Book a table" (the booking form opens with that café); four favourite dishes |
+| Menu and cart | 30 dishes in 6 categories (sushi and rolls, sets, from the wok, sides, desserts, drinks); 7 roll sets 15–19 % cheaper than their rolls one by one (the card shows the saving, the dishes of the set and their price struck through); dish cards with the ingredients and the portion (pieces, grams, ml) that grow a little and light up on hover, regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields, totals from the server, idempotent order placement |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |
 | Accounts | Register, log in, log out, session expiry; My orders with paging and order details |

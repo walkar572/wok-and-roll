@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
-const { uz } = require('./helpers/text');
-const { countrySwitcher } = require('./helpers/country');
+const { uz, citySelect } = require('./helpers/text');
+const { languageSwitcher } = require('./helpers/region');
 
 test('the header stays on screen while the page scrolls, with the basket one tap away', async ({ page }) => {
   await page.goto('/');
@@ -19,7 +19,7 @@ test('the header stays on screen while the page scrolls, with the basket one tap
 test.describe('mobile menu', () => {
   test.use({ viewport: { width: 390, height: 760 } });
 
-  test('opens under its button, and the country list never opens over it', async ({ page }) => {
+  test('opens under its button, and the language list never opens over it', async ({ page }) => {
     await page.goto('/');
     const toggle = page.getByRole('button', { name: uz.openMenu });
     await toggle.click();
@@ -29,12 +29,22 @@ test.describe('mobile menu', () => {
     await expect(page.getByRole('button', { name: uz.closeMenu })).toHaveAttribute('aria-expanded', 'true');
     await expect(menu.getByRole('link', { name: uz.menuTitle, exact: true })).toBeVisible();
 
-    // The country list closes the menu: the two never cover each other.
-    await countrySwitcher(page).click();
+    // The language list closes the menu: the two never cover each other.
+    await languageSwitcher(page).click();
     await expect(page.getByRole('listbox')).toBeVisible();
     await expect(menu).toBeHidden();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('listbox')).toBeHidden();
+
+    // On a phone the city is chosen in the menu; its list keeps the menu open.
+    await toggle.click();
+    await expect(menu).toBeVisible();
+    await menu.getByRole('combobox', { name: citySelect }).click();
+    await page.getByRole('option', { name: /^London\s/ }).click();
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole('combobox', { name: citySelect })).toHaveText('London');
+    await page.getByRole('button', { name: uz.closeMenu }).click();
+    await expect(menu).toBeHidden();
 
     // Escape closes the menu and gives the focus back to its button.
     await toggle.click();

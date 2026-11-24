@@ -10,6 +10,17 @@ const cities = {
   UKR: [50.3, 50.6, 30.3, 30.7], // Kyiv
   CHN: [31.1, 31.4, 121.3, 121.7], // Shanghai
   GBR: [51.4, 51.6, -0.3, 0.1], // London
+  USA: [42.3, 42.4, -71.2, -71.0], // Boston
+};
+
+const cityNames = {
+  UZB: 'Tashkent',
+  KAZ: 'Almaty',
+  GEO: 'Tbilisi',
+  UKR: 'Kyiv',
+  CHN: 'Shanghai',
+  GBR: 'London',
+  USA: 'Boston',
 };
 
 test.describe('cafés API', () => {
@@ -21,6 +32,9 @@ test.describe('cafés API', () => {
 
       expect(items).toHaveLength(2);
       for (const cafe of items) {
+        // v1.9: the city the guest chooses, the one of the address.
+        expect(cafe.city, cafe.name).toBe(cityNames[country]);
+        expect(cafe.address, cafe.name).toMatch(new RegExp(', ' + cityNames[country] + '$'));
         expect(typeof cafe.latitude, cafe.name).toBe('number');
         expect(typeof cafe.longitude, cafe.name).toBe('number');
         expect(cafe.latitude, cafe.name).toBeGreaterThan(south);

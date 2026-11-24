@@ -28,6 +28,8 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.6 | 24 Nov | Sixth country (additive): `GBR`, United Kingdom, `GBP`, VAT 20 %, `Europe/London`, with prices, thresholds and zone fees converted like the others (§5), 2 cafés in London and a sales history. The interface is British English for GBR. |
 | 1.7 | 24 Nov | Place of a café on the map (additive): `latitude` and `longitude` in §3.6. The home page shows the cafés of the country on a map next to their list. |
 | 1.8 | 24 Nov | Bigger menu (data only, no new fields): 24 dishes in 5 categories. New categories `Desserts` and `Drinks` (the lemonade moves there); 15 new dishes, priced and in stock in all six countries; extras "Soft egg" (ramen) and "Oat milk" (matcha latte). Edamame is hidden (`visible = false`) and replaced by chili garlic peanuts; past orders keep the name they were ordered with. |
+| 1.9 | 24 Nov | Seventh country and the city (additive): `USA`, United States, `USD`, tax 7 % (Massachusetts meals tax 6.25 % + Boston 0.75 %), `America/New_York`, 2 cafés in Boston, prices and fees converted like the others (§5). `city` of a café (§3.6) and `cities` of a country (§3.1). The interface lets the guest choose the city (it gives the country) and the language apart; American English is the 7th language. |
+| 1.10 | 24 Nov | Roll sets (additive): category `Sets` with 7 sets, each 15–19 % under its dishes bought one by one. `regularPrice` and `setItems` in §3.3 and §3.4; a set is ordered and priced like any dish (§5 does not change). |
 
 ---
 
@@ -37,16 +39,16 @@ This file is the single source of truth for the API. Backend builds it, frontend
 |---|---|
 | Base URL | `/api/v1`. The frontend always calls relative paths (`/api/v1/countries`); Vite proxies `/api` to `http://localhost:8080` (`API_PROXY_TARGET`). Never hard-code the port. |
 | Format | JSON, UTF-8, `Content-Type: application/json`. Field names in camelCase. |
-| Country | 3-letter code: `UZB`, `KAZ`, `GEO`, `UKR`, `CHN`, `GBR` (v1.6). In GET requests it is the `country` query parameter; in the cart quote it is a body field. |
+| Country | 3-letter code: `UZB`, `KAZ`, `GEO`, `UKR`, `CHN`, `GBR` (v1.6), `USA` (v1.9). In GET requests it is the `country` query parameter; in the cart quote it is a body field. |
 | Money | JSON number with exactly 2 decimals (`62.00`), always together with `currency` (ISO 4217: `UZS`, `KZT`, `GEL`, `UAH`, `CNY`). Prices are in local currency, **before VAT**. |
 | Rates | Percent number: `"vatRate": 15.00` means 15 %. |
 | IDs | Positive integers from the database. |
 | Lists | Stage 2 lists stay plain JSON arrays without paging (small, fixed data). New lists that can grow (`me/orders`, `staff/*`, `admin/products`) use paging (§1.1). Other new endpoints return an object, so fields can be added later without breaking clients. |
 | Auth | Public: the guest flow (menu, cart quote, cafés, zones, slots, orders, bookings) and `auth/register`, `auth/login`. Everything else needs `Authorization: Bearer <token>` (§3.11, §8). |
-| Language | The API is English (codes, names, messages). The web interface is shown in the language of the chosen country (UZB Uzbek, KAZ Kazakh, GEO Georgian, UKR Ukrainian, CHN Chinese, GBR British English) and translates error messages by `code` and field; only the brand name stays as it is (v1.4). |
+| Language | The API is English (codes, names, messages). The web interface has 7 languages: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English, American English. Since v1.9 the guest chooses the language and the city apart: the city gives the country (prices, currency, cafés), the language only the texts; the first visit is in the language of the country of the city. Error messages are translated by `code` and field; only the brand name stays as it is (v1.4). |
 | Health check | `GET /api/health` → `{"status":"UP"}` (outside `/api/v1`, already on `dev`). |
 | Dates and times | A date is `YYYY-MM-DD` (`orderDate`). A clock time is `HH:mm`, 24 h (`slotStart: "12:30"`). Both are **local to the café's country** (next row). A moment is ISO 8601 in UTC with `Z` (`createdAt: "2026-11-18T09:15:00Z"`) and is stored as `timestamptz`. |
-| Time zones | Each country has an IANA time zone: UZB `Asia/Tashkent`, KAZ `Asia/Almaty`, GEO `Asia/Tbilisi`, UKR `Europe/Kyiv`, CHN `Asia/Shanghai`, GBR `Europe/London`. "Today" and "now" for orders, slots and bookings are taken in that zone with one helper, `CountryClock`; never `LocalDate.now()` without a zone. Needs tz data 2024a or newer (JDK 21.0.3+), where all of Kazakhstan is UTC+5. |
+| Time zones | Each country has an IANA time zone: UZB `Asia/Tashkent`, KAZ `Asia/Almaty`, GEO `Asia/Tbilisi`, UKR `Europe/Kyiv`, CHN `Asia/Shanghai`, GBR `Europe/London`, USA `America/New_York`. "Today" and "now" for orders, slots and bookings are taken in that zone with one helper, `CountryClock`; never `LocalDate.now()` without a zone. Needs tz data 2024a or newer (JDK 21.0.3+), where all of Kazakhstan is UTC+5. |
 | Enums | Strings in UPPER_SNAKE_CASE (`PICKUP`, `DELIVERY`, `CONFIRMED`). A client shows an unknown value as text and does not crash. |
 | Unknown fields | The server ignores unknown request fields; clients ignore unknown response fields. This is what makes additive changes safe (§9). |
 | Request id | Every response has `X-Request-Id`. A client may send its own (`[A-Za-z0-9-]`, at most 64 characters); otherwise the server creates a UUID. The same id is in the server log and in every error body as `requestId`. QA adds it to bug reports. |
@@ -92,7 +94,7 @@ The examples use the real seed data on `dev` (#33). Café, zone, order and repor
 
 ### 3.1 `GET /api/v1/countries`
 
-No parameters. Returns all 6 countries, ordered as in the seed (UZB first; the frontend uses UZB on the first visit).
+No parameters. Returns all 7 countries, ordered as in the seed (UZB first; the frontend uses UZB on the first visit).
 
 ```json
 [
@@ -101,13 +103,14 @@ No parameters. Returns all 6 countries, ordered as in the seed (UZB first; the f
   { "code": "GEO", "name": "Georgia",    "currency": "GEL", "vatRate": 12.00 },
   { "code": "UKR", "name": "Ukraine",    "currency": "UAH", "vatRate": 8.00 },
   { "code": "CHN", "name": "China",      "currency": "CNY", "vatRate": 18.00 },
-  { "code": "GBR", "name": "United Kingdom", "currency": "GBP", "vatRate": 20.00 }
+  { "code": "GBR", "name": "United Kingdom", "currency": "GBP", "vatRate": 20.00 },
+  { "code": "USA", "name": "United States", "currency": "USD", "vatRate": 7.00 }
 ]
 ```
 
 | Field | Type | Notes |
 |---|---|---|
-| `code` | string | `UZB` … `GBR` |
+| `code` | string | `UZB` … `USA` |
 | `name` | string | Shown in the switcher |
 | `currency` | string | ISO 4217, used by `Intl.NumberFormat` |
 | `vatRate` | number | Percent, from `vat_rate` |
@@ -116,11 +119,13 @@ Responses: `200`.
 
 **v1.1 (Sprint 3, #143):** every country also has `timeZone`, the IANA name of its time zone (§1), for example `{ "code": "UZB", "name": "Uzbekistan", "currency": "UZS", "vatRate": 15.00, "timeZone": "Asia/Tashkent" }`. The date picker uses it for "today".
 
+**v1.9:** every country also has `cities`, the cities of its active cafés, A to Z (`["Tashkent"]`; empty while a country has no café). The city switcher of the interface lists them with their country and currency.
+
 ### 3.2 `GET /api/v1/categories?country=UZB`
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 
 Returns visible categories that have at least one visible dish with a price in this country, ordered by `sort_order`.
 
@@ -138,7 +143,7 @@ Responses: `200` · `400` (missing or unknown `country`, see §4).
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `categoryId` | no | Positive integer. Without it, all categories. An unknown id returns `[]`. |
 
 Returns visible dishes that **have a price in this country**; a dish with no `regional_price` row for the country is not returned (#51). Out-of-stock dishes **are** returned with `inStock: false`, so the UI can show the label and disable Add. Order: category `sort_order`, then dish `id`. The example is shortened to 2 of the 3 wok dishes.
@@ -189,12 +194,16 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
 | `currency` | string | Same as the country's currency |
 | `inStock` | boolean | Per country (`regional_price.in_stock`) |
 | `hasModifiers` | boolean | `true` if the dish has at least one modifier priced in this country. The card opens the modal for these dishes. |
+| `regularPrice` | number or `null` | v1.10, sets only: what the dishes of the set cost one by one in this country (sum of quantity × price, before VAT). `null` for a dish, and for a set when one of its dishes has no price here (no saving is shown from a part of the set). |
+| `setItems` | array | v1.10: the dishes of a set in their order, `{ "productId": 11, "name": "Philadelphia roll", "quantity": 2 }`; empty for a dish. A dish of a set may be hidden or out of stock on its own; the set has its own price and stock. |
 
 Responses: `200` · `400` (missing or unknown `country`, `categoryId` not a number).
 
+**v1.10: sets.** A set is a product (category `Sets`) made of other products (`product_set_item`). Its `price` is its own regional price; `regularPrice` is the sum of its dishes, so the card can show the saving (Philadelphia set in UZB: `199000.00` against `239000.00`, −17 %). The cart, the quote and the order treat a set like any dish: one line, its own price.
+
 ### 3.4 `GET /api/v1/products/{id}?country=UZB`
 
-The product modal (#52, #114). All fields of §3.3, plus `modifiers`.
+The product modal (#52, #114). All fields of §3.3 (also `regularPrice` and `setItems`, v1.10), plus `modifiers`.
 
 ```json
 {
@@ -247,7 +256,7 @@ Prices the cart on the server. The cart page shows **only** these numbers (#53, 
 
 | Field | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `items` | yes | 1–50 lines |
 | `items[i].productId` | yes | Exists, visible, has a price in this country, `inStock` is `true` |
 | `items[i].quantity` | yes | JSON number, whole, **1–99**. `0` or `1.5` is rejected with `VALIDATION_ERROR` (see §4) |
@@ -333,12 +342,12 @@ Cafés of the chain. Every café takes pickup orders and table bookings, and is 
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 6 codes |
+| `country` | yes | One of the 7 codes |
 
 ```json
 {
   "items": [
-    { "id": 1, "country": "UZB", "name": "Wok & Roll Chilanzar", "address": "12 Bunyodkor Ave, Tashkent",
+    { "id": 1, "country": "UZB", "name": "Wok & Roll Chilanzar", "city": "Tashkent", "address": "12 Bunyodkor Ave, Tashkent",
       "phone": "+998712000001", "opensAt": "10:00", "closesAt": "22:00", "timeZone": "Asia/Tashkent",
       "latitude": 41.272187, "longitude": 69.203167 }
   ]
@@ -348,6 +357,7 @@ Cafés of the chain. Every café takes pickup orders and table bookings, and is 
 Active cafés of the country, ordered by name. Seed: 2 cafés per country. Responses: `200` · `400` (missing or unknown `country`).
 
 - v1.7: `latitude` and `longitude` are WGS 84 degrees with 6 decimals. Both are numbers or both are `null` (the database refuses one without the other): a café without a place is still offered for pickup and booking, only not on the map. The seed places are the street addresses, found with OpenStreetMap Nominatim.
+- v1.9: `city` is the city of the café in English, as in its address (never empty). The home page shows the cafés of the city the guest chose.
 
 ### 3.7 `GET /api/v1/delivery-zones?country=UZB`
 
@@ -434,7 +444,7 @@ Places an order. Headers: `Idempotency-Key` (optional, UUID); `Authorization` (o
 
 | Field | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `orderDate` | yes | `YYYY-MM-DD`, from today to 7 days ahead in the country's time zone. Before today → `PAST_DATE`; later than 7 days → `VALIDATION_ERROR` |
 | `scenario` | yes | `PICKUP` or `DELIVERY` |
 | `cafeId` | `PICKUP` | A café of this country (`UNKNOWN_CAFE`). Must be empty for `DELIVERY` (the zone's café is used) |
@@ -650,7 +660,7 @@ Responses: `200` · `201` · `400` · `401` · `403` · `404` · `409`.
 ```
 
 - **Which orders:** `order_date` in the period and `status` not `CANCELLED` (`NEW`, `CONFIRMED` and `DONE` are sales; a new order shows at once).
-- `regions` always has **all 6 countries** in the order of `GET /countries`, with zeros when a country has no orders.
+- `regions` always has **all 7 countries** in the order of `GET /countries`, with zeros when a country has no orders.
 - Sums of the **saved** order values; old orders are never priced again (erd.md, "Why", point 3).
 - Each country is in its own currency, no conversion (mentor, 2 Nov). There is **no sum across countries** except `totalOrders`.
 - `averageCheck = total / orders`, HALF_UP to 2 decimals; `0.00` when there are no orders.
@@ -676,7 +686,7 @@ Responses: `200` · `400` · `401` · `403`.
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `year` | yes | From 2024 to next year |
 
 ```json
@@ -743,7 +753,7 @@ Every error has the same body (already implemented in `common.error`):
 | HTTP | `code` | When | `fields` |
 |---|---|---|---|
 | 400 | `VALIDATION_ERROR` | Bean Validation on a parameter or body field: unknown `country` in a GET request, missing `country` or `items` in the quote, more than 50 lines, `quantity` missing, not a whole number or out of 1–99 | field → message |
-| 400 | `UNKNOWN_COUNTRY` | Quote: the country code is not one of the 6 countries | `country` |
+| 400 | `UNKNOWN_COUNTRY` | Quote: the country code is not one of the 7 countries | `country` |
 | 400 | `UNKNOWN_PRODUCT` | Quote: the dish does not exist, or the dish or its category is hidden | `items[i].productId` |
 | 400 | `PRODUCT_NOT_SOLD` | Quote: the dish has no price in this country | `items[i].productId` |
 | 400 | `OUT_OF_STOCK` | Quote: the dish is out of stock in this country | `items[i].productId` |
@@ -797,7 +807,7 @@ Every error has the same body (already implemented in `common.error`):
 
 | Request problem | Status and body |
 |---|---|
-| `GET /api/v1/products?country=USA` | `400 {"code":"VALIDATION_ERROR","message":"Request validation failed","fields":{"country":"must be one of UZB, KAZ, GEO, UKR, CHN, GBR"}}` |
+| `GET /api/v1/products?country=FRA` | `400 {"code":"VALIDATION_ERROR","message":"Request validation failed","fields":{"country":"must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"}}` |
 | `GET /api/v1/products` (no country) | `400 {"code":"BAD_REQUEST","message":"Required parameter is missing","fields":{"country":"Required parameter is missing"}}` |
 | `GET /api/v1/products/99?country=UZB` | `404 {"code":"NOT_FOUND","message":"Product 99 is not sold in UZB","fields":{}}` |
 | Quote with `"quantity": 0` in line 0 | `400 {"code":"VALIDATION_ERROR","message":"Request validation failed","fields":{"items[0].quantity":"must be a whole number from 1 to 99"}}` |
@@ -839,7 +849,7 @@ Worked example with delivery (the quote above, zone fee 20.00): 170.00 → VAT 2
 
 The two worked examples and `pricing-examples.json` use the demo scale of the project plan (thresholds 100 / 500 / 700 / 1000 / 5000); the backend unit tests check the formula with them.
 
-**v1.4: real prices.** The seed now has prices at the level of a Tashkent sushi bar (a roll 69,000–79,000 UZS), converted to the other currencies (1 USD ≈ 12,700 UZS · 510 KZT · 2.70 GEL · 41.5 UAH · 7.15 CNY · 0.79 GBP) and rounded to café prices. Thresholds and zone fees are converted the same way:
+**v1.4: real prices.** The seed now has prices at the level of a Tashkent sushi bar (a roll 69,000–79,000 UZS), converted to the other currencies (1 USD ≈ 12,700 UZS · 510 KZT · 2.70 GEL · 41.5 UAH · 7.15 CNY · 0.79 GBP; the US prices are rounded to 5 cents) and rounded to café prices. Thresholds and zone fees are converted the same way:
 
 | Country | Currency | 3 % from | 5 % from | 7 % from | 10 % from | 15 % from | Delivery zones |
 |---|---|---|---|---|---|---|---|
@@ -849,6 +859,9 @@ The two worked examples and `pricing-examples.json` use the demo scale of the pr
 | UKR | UAH | 300 | 1,600 | 2,300 | 3,300 | 16,000 | 50 / 65 / 100 |
 | CHN | CNY | 55 | 280 | 400 | 550 | 2,800 | 8 / 11 / 17 |
 | GBR | GBP | 6 | 30 | 45 | 60 | 300 | 0.95 / 1.25 / 1.85 |
+| USA | USD | 8 | 40 | 55 | 80 | 400 | 1.20 / 1.55 / 2.35 |
+
+In the US the menu prices are before tax too, as US menus are; the 7 % is added in the cart like VAT elsewhere.
 
 Example on the seed (UZB, pickup): 2 × Salmon avocado roll 79,000 = 158,000.00 → VAT 15 % = 23,700.00 → 181,700.00 → 3 % = 5,451.00 → total **176,249.00 UZS**; with the Tashkent: Center zone (20,000.00) **196,249.00 UZS**.
 
@@ -863,16 +876,21 @@ The shared expected numbers for unit tests, API tests and manual tests are in [`
 **TypeScript** (frontend `src/services/api/types.ts`, also for QA):
 
 ```ts
-export type CountryCode = 'UZB' | 'KAZ' | 'GEO' | 'UKR' | 'CHN' | 'GBR';
+export type CountryCode = 'UZB' | 'KAZ' | 'GEO' | 'UKR' | 'CHN' | 'GBR' | 'USA';
 
-export interface Country { code: CountryCode; name: string; currency: string; vatRate: number }
+export interface Country {
+  code: CountryCode; name: string; currency: string; vatRate: number;
+  timeZone: string; cities: string[]; // v1.1, v1.9
+}
 export interface Category { id: number; name: string }
 
 export interface Product {
   id: number; categoryId: number; name: string; description: string | null;
   imageUrl: string | null; pieces: number | null; weightGrams: number | null; volumeMl: number | null;
   price: number; currency: string; inStock: boolean; hasModifiers: boolean;
+  regularPrice: number | null; setItems: SetItem[]; // v1.10
 }
+export interface SetItem { productId: number; name: string; quantity: number }
 
 export type ModifierType = 'SIZE' | 'EXTRA';
 export interface Modifier { id: number; type: ModifierType; name: string; priceDelta: number }

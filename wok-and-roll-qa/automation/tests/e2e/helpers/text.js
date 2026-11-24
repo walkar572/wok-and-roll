@@ -1,5 +1,5 @@
-// Interface texts the E2E tests look for. The language follows the country: UZB (the default) is
-// Uzbek, KAZ is Kazakh (wok-and-roll-front/src/i18n/messages).
+// Interface texts the E2E tests look for (wok-and-roll-front/src/i18n/messages). The first visit is
+// in Uzbek, the language of the default city, Tashkent; the language is chosen apart from the city.
 const uz = {
   udon: 'Achchiq udon',
   udonAction: /^(Batafsil|Tanlash): Achchiq udon$/,
@@ -27,6 +27,10 @@ const uz = {
   cafeHours: 'Har kuni, 10:00–22:00',
   // "Open now · until 22:00" or "Closed · opens at 10:00": it depends on the time in Tashkent.
   cafeStatus: /Hozir ochiq · 22:00 gacha|Yopiq · 10:00 da ochiladi/,
+  tashkent: 'Toshkent',
+  almaty: 'Olmaota',
+  london: 'London',
+  boston: 'Boston',
 };
 
 const kk = {
@@ -37,9 +41,12 @@ const kk = {
   cartTitle: 'Себет',
   vat: (rate) => 'ҚҚС (' + rate + '%)',
   priceSummary: 'Бағалар қорытындысы',
+  almaty: 'Алматы',
 };
 
-// The country switcher, in any language: "Mamlakat va til, hozir: …" / "Ел мен тіл, қазір: …".
-const countrySelect = /Mamlakat|Ел мен тіл|Country/;
+// The two switchers of the header, in any language: "Shahar, hozir: Toshkent, Oʻzbekiston",
+// "Тіл, қазір: Қазақша", "Language, now: English (US)".
+const citySelect = /^(Shahar|Қала|ქალაქი|Місто|城市|City),/;
+const languageSelect = /^(Til|Тіл|ენა|Мова|语言|Language),/;
 
-module.exports = { uz, kk, countrySelect };
+module.exports = { uz, kk, citySelect, languageSelect };

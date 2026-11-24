@@ -138,7 +138,7 @@ test.describe('orders API', () => {
 
   test('returns the expected status, code and field key for order validation failures', async ({ request }) => {
     const context = await orderContext(request);
-    await expectApiError(await postOrder(request, { ...context.order, country: 'USA' }), 400, 'UNKNOWN_COUNTRY', 'country');
+    await expectApiError(await postOrder(request, { ...context.order, country: 'FRA' }), 400, 'UNKNOWN_COUNTRY', 'country');
 
     const tooFarAhead = { ...context.order, orderDate: localDateOffset(8, await countryTimeZone(request, countryCode)) };
     await expectApiError(await postOrder(request, tooFarAhead), 400, 'VALIDATION_ERROR', 'orderDate');

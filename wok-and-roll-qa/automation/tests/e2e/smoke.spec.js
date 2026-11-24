@@ -1,11 +1,12 @@
 const { test, expect } = require('@playwright/test');
 const { uz } = require('./helpers/text');
-const { countrySwitcher } = require('./helpers/country');
+const { citySwitcher, languageSwitcher } = require('./helpers/region');
 
-test('home shows the country and menu page opens', async ({ page }) => {
+test('home shows the city and the language, and the menu page opens', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/.+/);
-  await expect(countrySwitcher(page)).toHaveText('UZB');
+  await expect(citySwitcher(page)).toHaveText(uz.tashkent);
+  await expect(languageSwitcher(page)).toHaveText('UZ');
 
   await page.goto('/menu');
   await expect(page).toHaveURL(/\/menu\/?$/);
