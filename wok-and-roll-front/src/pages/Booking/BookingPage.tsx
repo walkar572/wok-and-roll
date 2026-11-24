@@ -4,7 +4,7 @@ import 'react-day-picker/style.css';
 import { Button, ErrorMessage, Input, Loader } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
-import { cafeAddress, cafeName, t as translate, useI18n } from '../../i18n';
+import { cafeAddress, cafeName, clock, t as translate, useI18n } from '../../i18n';
 import { DAY_PICKER_LOCALE } from '../../i18n/dayPicker';
 import { apiCodeMessage, apiFieldMessage } from '../../services/apiMessages';
 import { ApiRequestError, guestErrorMessage, loadCafes, type Cafe } from '../../services/api';
@@ -278,7 +278,7 @@ export function BookingPage() {
           <div>
             <dt>{t('booking.time')}</dt>
             <dd>
-              {booking.time}–{booking.endTime}
+              {clock(booking.time)}–{clock(booking.endTime)}
             </dd>
           </div>
           <div>
@@ -370,8 +370,8 @@ export function BookingPage() {
                     <p id="booking-cafe-details" className="input__message">
                       {t('booking.cafeDetails', {
                         address: cafeAddress(cafe.address),
-                        opens: cafe.opensAt,
-                        closes: cafe.closesAt,
+                        opens: clock(cafe.opensAt),
+                        closes: clock(cafe.closesAt),
                       })}
                       {cafe.phone ? ` ${t('booking.cafePhone', { phone: cafe.phone })}` : ''}
                     </p>
@@ -453,7 +453,7 @@ export function BookingPage() {
                   <option value="">{t('booking.chooseTime')}</option>
                   {times.map((option) => (
                     <option key={option.value} value={option.value} disabled={option.disabled}>
-                      {option.value}
+                      {clock(option.value)}
                       {option.disabled ? ` — ${t('booking.tooSoon')}` : ''}
                     </option>
                   ))}
@@ -560,7 +560,7 @@ export function BookingPage() {
             </div>
             <div>
               <dt>{t('booking.time')}</dt>
-              <dd>{time || '—'}</dd>
+              <dd>{time ? clock(time) : '—'}</dd>
             </div>
             <div>
               <dt>{t('booking.guests')}</dt>

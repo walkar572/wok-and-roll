@@ -2505,3 +2505,214 @@ a.cafe-card__book {
     animation: none;
   }
 }
+
+/* ---- City and language (contract v1.9) ---------------------------------------------------------
+   The city switcher uses the pill and the menu of the language switcher. The city gives the
+   prices, the cafés and the delivery; the language only the texts. */
+.city-trigger {
+  min-width: 0;
+  max-width: 220px;
+}
+
+.country-trigger {
+  white-space: nowrap;
+}
+
+.city-trigger__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-option {
+  grid-template-columns: minmax(0, 1fr) 20px;
+  padding-left: 14px;
+}
+
+.language-control .country-trigger {
+  min-width: 0;
+}
+
+/* Above the cafés of the home page: a bigger pill with its label. */
+.home-cafes .section-heading {
+  flex-wrap: wrap;
+}
+
+.city-control--section,
+.city-control--menu {
+  gap: 10px;
+}
+
+.city-control__label {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.city-control--section .country-trigger {
+  min-height: var(--size-control);
+  gap: 8px;
+  border-color: var(--color-text-primary);
+  padding: 0 14px 0 16px;
+  background: var(--color-bg-surface);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.city-control--section .country-trigger__globe {
+  color: var(--color-text-brand);
+}
+
+.city-control--section .country-trigger:hover,
+.city-control--section .country-trigger[data-state='open'] {
+  background: var(--color-bg-card-hover);
+  box-shadow: 0 8px 20px rgb(38 30 20 / 10%);
+}
+
+/* In the black mobile menu: white on black, the whole width. */
+.city-control--menu {
+  margin: 8px 4px 2px;
+  border-top: 1px solid rgb(255 255 255 / 14%);
+  padding-top: 12px;
+}
+
+.city-control--menu .city-control__label {
+  color: rgb(255 255 255 / 64%);
+  font-size: 12px;
+}
+
+.city-control--menu .country-trigger {
+  flex: 1;
+  max-width: none;
+  min-height: 44px;
+  justify-content: flex-start;
+  border-color: rgb(255 255 255 / 32%);
+  color: #fff;
+  font-size: 15px;
+}
+
+.city-control--menu .country-trigger__globe {
+  color: var(--color-bg-accent);
+}
+
+.city-control--menu .country-trigger__chevron {
+  margin-left: auto;
+}
+
+.city-control--menu .country-trigger:hover,
+.city-control--menu .country-trigger[data-state='open'] {
+  border-color: #fff;
+  background: rgb(255 255 255 / 10%);
+}
+
+@media (max-width: 767px) {
+  /* No room in the bar: the phone chooses the city in the menu and above the cafés. */
+  .city-control--header {
+    display: none;
+  }
+
+  .city-control--section .country-trigger__globe,
+  .city-control--menu .country-trigger__globe {
+    display: block;
+  }
+
+  .city-control--section {
+    width: 100%;
+  }
+
+  .city-control--section .country-trigger {
+    flex: 1;
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .city-control--section .country-trigger__chevron {
+    margin-left: auto;
+  }
+}
+
+/* ---- Sets (contract v1.10): the saving on the photo, the dishes one by one struck through ------ */
+.menu-card {
+  position: relative;
+}
+
+.saving-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border-radius: var(--radius-full);
+  padding: 2px 12px;
+  color: var(--color-text-on-brand);
+  background: var(--color-bg-brand);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.menu-card__saving {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+  box-shadow: 0 6px 16px rgb(38 30 20 / 22%);
+}
+
+.dish-price {
+  display: inline-flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+}
+
+.dish-price__regular {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-meta-small);
+  font-variant-numeric: tabular-nums;
+  text-decoration-thickness: 1px;
+}
+
+.product-modal__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-modal__set {
+  margin-top: 4px;
+}
+
+.product-modal__set-title {
+  margin: 0 0 6px;
+  color: var(--color-text-brand);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.product-modal__set ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-small);
+}
+
+/* Tablets: the navigation, the brand and both switchers share one bar. The language keeps its
+   code (no globe), the city its pin and a short name. */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .language-control .country-trigger__globe {
+    display: none;
+  }
+
+  .language-control .country-trigger,
+  .city-control--header .country-trigger {
+    gap: 4px;
+    padding: 0 10px 0 12px;
+  }
+
+  .city-control--header .city-trigger__name {
+    max-width: 96px;
+  }
+}

@@ -13,6 +13,7 @@ import { formatDate, formatDateTime } from '../../utils/dates';
 import {
   cafeAddress,
   cafeName,
+  clock,
   modifierName,
   productName,
   t as translate,
@@ -96,7 +97,7 @@ export function OrderDetailsPage() {
                   {order.scenario === 'PICKUP' ? t('checkout.pickup') : t('checkout.delivery')}
                 </dt>
                 <dd>
-                  {formatDate(order.orderDate)}, {order.slotStart}–{order.slotEnd}
+                  {formatDate(order.orderDate)}, {clock(order.slotStart)}–{clock(order.slotEnd)}
                 </dd>
               </div>
               <div>

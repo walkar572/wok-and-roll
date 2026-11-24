@@ -9,6 +9,7 @@ import { useCountry } from '../../context/CountryContext';
 import {
   cafeAddress,
   cafeName,
+  clock,
   modifierName,
   productName,
   t as translate,
@@ -696,8 +697,8 @@ export function CheckoutPage() {
                       >
                         {t('checkout.cafeDetails', {
                           address: cafeAddress(selectedCafe.address),
-                          opens: selectedCafe.opensAt,
-                          closes: selectedCafe.closesAt,
+                          opens: clock(selectedCafe.opensAt),
+                          closes: clock(selectedCafe.closesAt),
                         })}
                       </p>
                     )}
@@ -829,7 +830,7 @@ export function CheckoutPage() {
                           : '';
                     return (
                       <option key={slot.start} value={slot.start} disabled={!slot.available}>
-                        {slot.start}–{slot.end}
+                        {clock(slot.start)}–{clock(slot.end)}
                         {unavailableLabel}
                       </option>
                     );

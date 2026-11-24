@@ -2,14 +2,10 @@
 // for Intl. The provider in index.tsx sets the locale; services can import this file without a
 // circular import through the contexts.
 import { catalogTexts } from './catalog';
-import {
-  DEFAULT_LOCALE,
-  INTL_LOCALE,
-  LANGUAGE_NAME,
-  localeForCountry,
-  type Locale,
-} from './locales';
+import { formatClock } from './format';
+import { DEFAULT_LOCALE, INTL_LOCALE, type Locale } from './locales';
 import { en, type Messages } from './messages/en';
+import { enUS } from './messages/enUS';
 import { ka } from './messages/ka';
 import { kk } from './messages/kk';
 import { uk } from './messages/uk';
@@ -18,7 +14,7 @@ import { zh } from './messages/zh';
 
 export type { Locale } from './locales';
 
-const MESSAGES: Record<Locale, Messages> = { uz, kk, ka, uk, zh, en };
+const MESSAGES: Record<Locale, Messages> = { uz, kk, ka, uk, zh, 'en-GB': en, 'en-US': enUS };
 
 type Path<T> = {
   [K in keyof T & string]: T[K] extends string ? K : `${K}.${Path<T[K]>}`;
@@ -119,13 +115,12 @@ export function countryName(code: string, fallback?: string): string {
   return catalogTexts(currentLocale).countries[code] ?? fallback ?? code;
 }
 
-/** The name of a country in its own language: "Oʻzbekiston", "United Kingdom". */
-export function countryEndonym(code: string, fallback?: string): string {
-  return catalogTexts(localeForCountry(code)).countries[code] ?? fallback ?? code;
+/** The name of a city of the API (English) in the current language: "Toshkent", "Бостон". */
+export function cityName(name: string): string {
+  return catalogTexts(currentLocale).cities[name] ?? name;
 }
 
-/** The language a country gets: its name in itself and its BCP 47 tag for `lang`. */
-export function languageOfCountry(code: string): { name: string; tag: string } {
-  const locale = localeForCountry(code);
-  return { name: LANGUAGE_NAME[locale], tag: INTL_LOCALE[locale] };
+/** A clock time of the API (HH:mm) for the screen: "22:00", in American English "10:00 PM". */
+export function clock(time: string): string {
+  return formatClock(time, currentLocale);
 }

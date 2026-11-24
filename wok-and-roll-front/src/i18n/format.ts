@@ -3,7 +3,7 @@
 // Browsers do not ship Intl data for every language: Chromium formats Uzbek like English
 // ("UZS 55,000.00", month "M06") and falls back to the browser language for Kazakh and Georgian
 // (Russian month names). So these three languages are formatted here with fixed rules; Ukrainian,
-// Chinese and British English use Intl, which every browser supports.
+// Chinese and English (British and American) use Intl, which every browser supports.
 import { INTL_LOCALE, type Locale } from './locales';
 
 interface OwnFormat {
@@ -130,7 +130,14 @@ const OWN: Partial<Record<Locale, OwnFormat>> = {
   },
 };
 
-const SYMBOLS: Record<string, string> = { KZT: '₸', GEL: '₾', UAH: '₴', CNY: '¥', GBP: '£' };
+const SYMBOLS: Record<string, string> = {
+  KZT: '₸',
+  GEL: '₾',
+  UAH: '₴',
+  CNY: '¥',
+  GBP: '£',
+  USD: '$',
+};
 const NBSP = ' ';
 
 /** 55000 -> "55 000,00" (no-break space between thousands, decimal comma). */
@@ -193,8 +200,21 @@ export function formatCalendarDate(date: Date, locale: Locale): string {
   }).format(date);
 }
 
-/** A moment in local time: the date and HH:mm. */
+/**
+ * A clock time of the API (HH:mm, 24 h) as it is read in the language: "22:00", and in American
+ * English "10:00 PM". Only for the screen; the API always gets HH:mm.
+ */
+export function formatClock(time: string, locale: Locale): string {
+  if (locale !== 'en-US') return time;
+  const match = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!match) return time;
+  const hour = Number(match[1]);
+  const twelve = hour % 12 === 0 ? 12 : hour % 12;
+  return `${twelve}:${match[2]}${NBSP}${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+/** A moment in local time: the date and the clock time. */
 export function formatMoment(date: Date, locale: Locale): string {
   const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  return `${formatCalendarDate(date, locale)}, ${time}`;
+  return `${formatCalendarDate(date, locale)}, ${formatClock(time, locale)}`;
 }

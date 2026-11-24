@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { TotalsBlock } from '../../components/common';
 import { PagePlaceholder } from '../../components/layout/PagePlaceholder';
 import { useAuth } from '../../context/AuthContext';
-import { cafeAddress, cafeName, useI18n, zoneName } from '../../i18n';
+import { cafeAddress, cafeName, clock, useI18n, zoneName } from '../../i18n';
 import type { OrderResponse } from '../../services/api';
 import { formatDate } from '../../utils/dates';
 
@@ -51,7 +51,7 @@ export function OrderSuccessPage() {
         <div>
           <dt>{t('success.timeSlot')}</dt>
           <dd>
-            {order.slotStart}–{order.slotEnd}
+            {clock(order.slotStart)}–{clock(order.slotEnd)}
           </dd>
         </div>
         <div>

@@ -12,7 +12,8 @@ import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader } from '../../components/common';
 import { Icon } from '../../components/common/Icon';
 import { useCountry } from '../../context/CountryContext';
-import { cafeAddress, cafeName, countryName, useI18n } from '../../i18n';
+import { CitySwitcher } from '../../components/layout/CitySwitcher';
+import { cafeAddress, cafeName, cityName, clock, countryName, useI18n } from '../../i18n';
 import { guestErrorMessage, loadCafes, type Cafe } from '../../services/api';
 import type { CafeMapLabels, MapCafe } from './CafeMap';
 
@@ -61,14 +62,15 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
- * "Our cafés" on the home page: the cafés of the country on a map and in a list. Every card has
- * the address, the opening hours with "open now" in the café's own time zone, the phone and a
- * link to book a table there. The list is complete without the map.
+ * "Our cafés" on the home page: the cafés of the chosen city on a map and in a list. The city
+ * switcher above them changes the city of the whole site (its prices too), not the language. Every
+ * card has the address, the opening hours with "open now" in the café's own time zone, the phone
+ * and a link to book a table there. The list is complete without the map.
  */
 export function CafesSection() {
-  const { country } = useCountry();
+  const { country, city } = useCountry();
   const { t, locale } = useI18n();
-  const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [countryCafes, setCafes] = useState<Cafe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [retryCount, setRetryCount] = useState(0);
@@ -107,6 +109,12 @@ export function CafesSection() {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // An older server sends no city: then every café of the country is in its (only) city.
+  const cafes = useMemo(
+    () => countryCafes.filter((cafe) => !city || !cafe.city || cafe.city === city),
+    [countryCafes, city],
+  );
 
   const mapCafes = useMemo<MapCafe[]>(
     () =>
@@ -177,6 +185,7 @@ export function CafesSection() {
           <h2 id="cafes-title">{t('home.cafes.title')}</h2>
           <p className="home-cafes__description">{t('home.cafes.description')}</p>
         </div>
+        <CitySwitcher variant="section" />
       </div>
 
       {isLoading && <Loader label={t('home.cafes.loading')} />}
@@ -189,7 +198,7 @@ export function CafesSection() {
         </div>
       )}
       {!isLoading && !error && cafes.length === 0 && (
-        <p>{t('home.cafes.empty', { country: countryName(country) })}</p>
+        <p>{t('home.cafes.empty', { country: city ? cityName(city) : countryName(country) })}</p>
       )}
 
       {!isLoading && cafes.length > 0 && (
@@ -199,7 +208,7 @@ export function CafesSection() {
               {mapFailed
                 ? mapFallback
                 : mapNear && (
-                    <MapBoundary key={country} fallback={mapFallback}>
+                    <MapBoundary key={`${country}-${city}`} fallback={mapFallback}>
                       <Suspense fallback={null}>
                         <CafeMap
                           cafes={mapCafes}
@@ -236,8 +245,8 @@ export function CafesSection() {
                         <p className={`cafe-status${isOpen ? ' is-open' : ''}`}>
                           <span className="cafe-status__dot" aria-hidden="true" />
                           {isOpen
-                            ? t('home.cafes.openNow', { time: cafe.closesAt })
-                            : t('home.cafes.closedNow', { time: cafe.opensAt })}
+                            ? t('home.cafes.openNow', { time: clock(cafe.closesAt) })
+                            : t('home.cafes.closedNow', { time: clock(cafe.opensAt) })}
                         </p>
                       )}
                     </div>
@@ -248,7 +257,10 @@ export function CafesSection() {
                       </li>
                       <li>
                         <Icon name="clock" />
-                        {t('home.cafes.hours', { opens: cafe.opensAt, closes: cafe.closesAt })}
+                        {t('home.cafes.hours', {
+                          opens: clock(cafe.opensAt),
+                          closes: clock(cafe.closesAt),
+                        })}
                       </li>
                       {cafe.phone && (
                         <li>

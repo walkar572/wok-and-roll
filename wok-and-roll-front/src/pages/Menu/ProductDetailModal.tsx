@@ -17,6 +17,7 @@ import {
   portionText,
 } from '../../i18n';
 import { DishImage } from '../../components/common/DishImage';
+import { DishPrice, SavingBadge, setSaving } from './sets';
 
 interface ProductDetailModalProps {
   productId: number | null;
@@ -94,6 +95,7 @@ export function ProductDetailModal({
       .filter(({ id }) => modifierIds.includes(id))
       .reduce((total, modifier) => total + toMinorUnits(modifier.priceDelta), 0) ?? 0;
   const addTotal = product ? (toMinorUnits(product.price) + modifierTotal) * quantity : 0;
+  const saving = product ? setSaving(product) : null;
 
   function addProduct() {
     if (!product || !product.inStock || (sizes.length > 0 && selectedSizeId === undefined)) return;
@@ -166,13 +168,31 @@ export function ProductDetailModal({
               loading="eager"
             />
           )}
-          {productDescription(product.name, product.description) && (
-            <p>{productDescription(product.name, product.description)}</p>
+          {product.setItems.length > 0 ? (
+            <div className="product-modal__set">
+              <p className="product-modal__set-title">{t('menu.setOf')}</p>
+              <ul>
+                {product.setItems.map((item) => (
+                  <li key={item.productId}>
+                    {item.quantity > 1
+                      ? t('menu.setItem', { count: item.quantity, name: productName(item.name) })
+                      : productName(item.name)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            productDescription(product.name, product.description) && (
+              <p>{productDescription(product.name, product.description)}</p>
+            )
           )}
           {portionText(product) && (
             <p className="dish-portion product-modal__portion">{portionText(product)}</p>
           )}
-          <p className="product-modal__price">{formatPrice(product.price, product.currency)}</p>
+          <p className="product-modal__price">
+            <DishPrice product={product} />
+            {saving !== null && <SavingBadge percent={saving} />}
+          </p>
           {!product.inStock && (
             <ErrorMessage variant="warning">
               {t('product.outOfStockIn', { country: countryName(country) })}

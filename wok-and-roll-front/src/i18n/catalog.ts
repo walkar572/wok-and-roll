@@ -4,13 +4,16 @@
 import type { Locale } from './locales';
 
 interface CatalogTexts {
-  products: Record<string, [name: string, description: string]>;
+  /** A set has no description here: the menu lists its dishes instead (contract v1.10). */
+  products: Record<string, [name: string, description?: string]>;
   categories: Record<string, string>;
   modifiers: Record<string, string>;
   zones: Record<string, string>;
   cafes: Record<string, string>;
   addresses: Record<string, string>;
   countries: Record<string, string>;
+  /** The cities of the cafés (contract v1.9), the English name of the API is the key. */
+  cities: Record<string, string>;
 }
 
 const catalog: Record<Locale, CatalogTexts> = {
@@ -19,10 +22,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Salmon avocado roll': ['Losos va avokadoli roll', 'Losos, avokado, bodring.'],
       'Tuna nigiri': ['Tunets nigiri', 'Ziravorli guruch ustida tunets.'],
       'California roll': ['Kaliforniya roll', 'Qisqichbaqa, avokado, bodring, kunjut.'],
-      'Wok & Roll set for two': [
-        'Wok & Roll ikki kishilik seti',
-        'Losos va avokadoli roll, Kaliforniya roll va gyoza.',
-      ],
+      'Wok & Roll set for two': ['Wok & Roll ikki kishilik seti'],
       'Firecracker udon': ['Achchiq udon', 'Udon ugra, tovuq, qalampir, kunjut.'],
       'Miso mushroom rice': ['Qoʻziqorinli miso guruch', 'Shiitake, mavsumiy koʻkatlar, miso.'],
       'Teriyaki chicken noodles': [
@@ -68,10 +68,17 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Jasmine green tea': ['Yasminli koʻk choy', 'Yasminli koʻk choy, bir kishilik choynak.'],
       'Salmon sashimi': ['Losos sashimi', 'Yangi losos boʻlaklari, soya sousi, vasabi.'],
       'Mango sticky rice': ['Mangoli yopishqoq guruch', 'Yopishqoq guruch, mango, kokos qaymogʻi.'],
+      'Philadelphia set': ['Filadelfiya seti'],
+      'Salmon set': ['Losos seti'],
+      'Dragon set': ['Ajdar seti'],
+      'Classic set': ['Klassik set'],
+      'Party set': ['Bayram seti'],
+      'Lunch combo': ['Tushlik kombosi'],
     },
     categories: {
       'Sushi & rolls': 'Sushi va rollar',
       'From the wok': 'Wokdan',
+      Sets: 'Setlar',
       Sides: 'Gazaklar',
       Desserts: 'Desertlar',
       Drinks: 'Ichimliklar',
@@ -106,6 +113,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'London: Westminster': 'London: Vestminster',
       'London: Shoreditch': 'London: Shordich',
       'London: Greenwich': 'London: Grinvich',
+      'Boston: Back Bay': 'Boston: Back Bay',
+      'Boston: Downtown': 'Boston: Markaz',
+      'Boston: Dorchester': 'Boston: Dorchester',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll Chilonzor',
@@ -125,6 +135,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '200 Century Ave, Shanghai': 'Asr shoh koʻchasi, 200, Shanxay',
       '12 Greek St, London': 'Greek koʻchasi, 12, London',
       '45 Curtain Rd, London': 'Curtain yoʻli, 45, London',
+      '230 Newbury St, Boston': 'Newbury koʻchasi, 230, Boston',
+      '60 Seaport Blvd, Boston': 'Seaport bulvari, 60, Boston',
     },
     countries: {
       UZB: 'Oʻzbekiston',
@@ -133,6 +145,16 @@ const catalog: Record<Locale, CatalogTexts> = {
       UKR: 'Ukraina',
       CHN: 'Xitoy',
       GBR: 'Buyuk Britaniya',
+      USA: 'AQSH',
+    },
+    cities: {
+      Tashkent: 'Toshkent',
+      Almaty: 'Olmaota',
+      Tbilisi: 'Tbilisi',
+      Kyiv: 'Kiyev',
+      Shanghai: 'Shanxay',
+      London: 'London',
+      Boston: 'Boston',
     },
   },
   kk: {
@@ -140,10 +162,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Salmon avocado roll': ['Лосось пен авокадо роллы', 'Лосось, авокадо, қияр.'],
       'Tuna nigiri': ['Тунец нигири', 'Дәмдеуішті күріштегі тунец.'],
       'California roll': ['Калифорния роллы', 'Краб, авокадо, қияр, күнжіт.'],
-      'Wok & Roll set for two': [
-        'Wok & Roll екі адамдық сеті',
-        'Лосось пен авокадо роллы, Калифорния роллы және гёдза.',
-      ],
+      'Wok & Roll set for two': ['Wok & Roll екі адамдық сеті'],
       'Firecracker udon': ['Ащы удон', 'Удон кеспесі, тауық еті, чили, күнжіт.'],
       'Miso mushroom rice': ['Саңырауқұлақты мисо күріші', 'Шиитаке, маусымдық көкөніс, мисо.'],
       'Teriyaki chicken noodles': [
@@ -195,10 +214,17 @@ const catalog: Record<Locale, CatalogTexts> = {
         'Манго қосылған жабысқақ күріш',
         'Жабысқақ күріш, манго, кокос кілегейі.',
       ],
+      'Philadelphia set': ['Филадельфия сеті'],
+      'Salmon set': ['Лосось сеті'],
+      'Dragon set': ['Айдаһар сеті'],
+      'Classic set': ['Классикалық сет'],
+      'Party set': ['Мерекелік сет'],
+      'Lunch combo': ['Түскі ас комбосы'],
     },
     categories: {
       'Sushi & rolls': 'Суши мен роллдар',
       'From the wok': 'Воктан',
+      Sets: 'Сеттер',
       Sides: 'Қосымша тағамдар',
       Desserts: 'Десерттер',
       Drinks: 'Сусындар',
@@ -233,6 +259,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'London: Westminster': 'Лондон: Вестминстер',
       'London: Shoreditch': 'Лондон: Шордич',
       'London: Greenwich': 'Лондон: Гринвич',
+      'Boston: Back Bay': 'Бостон: Бэк-Бэй',
+      'Boston: Downtown': 'Бостон: Орталық',
+      'Boston: Dorchester': 'Бостон: Дорчестер',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll Шиланзар',
@@ -247,6 +276,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pudong': 'Wok & Roll Пудун',
       'Wok & Roll Soho': 'Wok & Roll Сохо',
       'Wok & Roll Shoreditch': 'Wok & Roll Шордич',
+      'Wok & Roll Back Bay': 'Wok & Roll Бэк-Бэй',
+      'Wok & Roll Seaport': 'Wok & Roll Сипорт',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': 'Бунёдкор даңғылы, 12, Ташкент',
@@ -261,6 +292,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '200 Century Ave, Shanghai': 'Ғасыр даңғылы, 200, Шанхай',
       '12 Greek St, London': 'Грик көшесі, 12, Лондон',
       '45 Curtain Rd, London': 'Кертен жолы, 45, Лондон',
+      '230 Newbury St, Boston': 'Ньюбери көшесі, 230, Бостон',
+      '60 Seaport Blvd, Boston': 'Сипорт бульвары, 60, Бостон',
     },
     countries: {
       UZB: 'Өзбекстан',
@@ -269,6 +302,16 @@ const catalog: Record<Locale, CatalogTexts> = {
       UKR: 'Украина',
       CHN: 'Қытай',
       GBR: 'Ұлыбритания',
+      USA: 'АҚШ',
+    },
+    cities: {
+      Tashkent: 'Ташкент',
+      Almaty: 'Алматы',
+      Tbilisi: 'Тбилиси',
+      Kyiv: 'Киев',
+      Shanghai: 'Шанхай',
+      London: 'Лондон',
+      Boston: 'Бостон',
     },
   },
   ka: {
@@ -276,10 +319,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Salmon avocado roll': ['ორაგულისა და ავოკადოს როლი', 'ორაგული, ავოკადო, კიტრი.'],
       'Tuna nigiri': ['თინუსის ნიგირი', 'თინუსი შეზავებულ ბრინჯზე.'],
       'California roll': ['კალიფორნიის როლი', 'კიბორჩხალა, ავოკადო, კიტრი, სეზამი.'],
-      'Wok & Roll set for two': [
-        'Wok & Roll სეტი ორისთვის',
-        'ორაგულისა და ავოკადოს როლი, კალიფორნიის როლი და გიოძა.',
-      ],
+      'Wok & Roll set for two': ['Wok & Roll სეტი ორისთვის'],
       'Firecracker udon': ['ცხარე უდონი', 'უდონის ატრია, ქათამი, ჩილი, სეზამი.'],
       'Miso mushroom rice': ['მისოს ბრინჯი სოკოთი', 'შიიტაკე, სეზონური მწვანილი, მისო.'],
       'Teriyaki chicken noodles': [
@@ -325,10 +365,17 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Jasmine green tea': ['მწვანე ჩაი ჟასმინით', 'მწვანე ჩაი ჟასმინით, ჩაიდანი ერთ პირზე.'],
       'Salmon sashimi': ['ორაგულის საშიმი', 'ახალი ორაგულის ნაჭრები, სოიოს სოუსი, ვასაბი.'],
       'Mango sticky rice': ['წებოვანი ბრინჯი მანგოთი', 'წებოვანი ბრინჯი, მანგო, ქოქოსის ნაღები.'],
+      'Philadelphia set': ['ფილადელფიის სეტი'],
+      'Salmon set': ['ორაგულის სეტი'],
+      'Dragon set': ['დრაკონის სეტი'],
+      'Classic set': ['კლასიკური სეტი'],
+      'Party set': ['წვეულების სეტი'],
+      'Lunch combo': ['სადილის კომბო'],
     },
     categories: {
       'Sushi & rolls': 'სუში და როლები',
       'From the wok': 'ვოკიდან',
+      Sets: 'სეტები',
       Sides: 'გარნირები',
       Desserts: 'დესერტები',
       Drinks: 'სასმელები',
@@ -363,6 +410,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'London: Westminster': 'ლონდონი: ვესტმინსტერი',
       'London: Shoreditch': 'ლონდონი: შორდიჩი',
       'London: Greenwich': 'ლონდონი: გრინვიჩი',
+      'Boston: Back Bay': 'ბოსტონი: ბექ-ბეი',
+      'Boston: Downtown': 'ბოსტონი: ცენტრი',
+      'Boston: Dorchester': 'ბოსტონი: დორჩესტერი',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll ჩილანზარი',
@@ -377,6 +427,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pudong': 'Wok & Roll პუდუნი',
       'Wok & Roll Soho': 'Wok & Roll სოჰო',
       'Wok & Roll Shoreditch': 'Wok & Roll შორდიჩი',
+      'Wok & Roll Back Bay': 'Wok & Roll ბექ-ბეი',
+      'Wok & Roll Seaport': 'Wok & Roll სიპორტი',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': 'ბუნიოდკორის გამზ. 12, ტაშკენტი',
@@ -391,6 +443,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '200 Century Ave, Shanghai': 'საუკუნის გამზ. 200, შანხაი',
       '12 Greek St, London': 'გრიკ-სტრიტი 12, ლონდონი',
       '45 Curtain Rd, London': 'კერტენ-როუდი 45, ლონდონი',
+      '230 Newbury St, Boston': 'ნიუბერი-სტრიტი 230, ბოსტონი',
+      '60 Seaport Blvd, Boston': 'სიპორტ-ბულვარი 60, ბოსტონი',
     },
     countries: {
       UZB: 'უზბეკეთი',
@@ -399,6 +453,16 @@ const catalog: Record<Locale, CatalogTexts> = {
       UKR: 'უკრაინა',
       CHN: 'ჩინეთი',
       GBR: 'დიდი ბრიტანეთი',
+      USA: 'აშშ',
+    },
+    cities: {
+      Tashkent: 'ტაშკენტი',
+      Almaty: 'ალმათი',
+      Tbilisi: 'თბილისი',
+      Kyiv: 'კიევი',
+      Shanghai: 'შანხაი',
+      London: 'ლონდონი',
+      Boston: 'ბოსტონი',
     },
   },
   uk: {
@@ -406,10 +470,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Salmon avocado roll': ['Рол з лососем і авокадо', 'Лосось, авокадо, огірок.'],
       'Tuna nigiri': ['Нігірі з тунцем', 'Тунець на приправленому рисі.'],
       'California roll': ['Каліфорнія рол', 'Краб, авокадо, огірок, кунжут.'],
-      'Wok & Roll set for two': [
-        'Сет Wok & Roll на двох',
-        'Рол з лососем і авокадо, Каліфорнія рол і ґьодза.',
-      ],
+      'Wok & Roll set for two': ['Сет Wok & Roll на двох'],
       'Firecracker udon': ['Гострий удон', 'Локшина удон, курка, чилі, кунжут.'],
       'Miso mushroom rice': ['Рис місо з грибами', 'Шиїтаке, сезонна зелень, місо.'],
       'Teriyaki chicken noodles': [
@@ -455,10 +516,17 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Jasmine green tea': ['Зелений чай з жасмином', 'Зелений чай з жасмином, чайник на одного.'],
       'Salmon sashimi': ['Сашимі з лосося', 'Скибочки свіжого лосося, соєвий соус, васабі.'],
       'Mango sticky rice': ['Клейкий рис з манго', 'Клейкий рис, манго, кокосові вершки.'],
+      'Philadelphia set': ['Сет «Філадельфія»'],
+      'Salmon set': ['Сет із лососем'],
+      'Dragon set': ['Сет «Дракон»'],
+      'Classic set': ['Класичний сет'],
+      'Party set': ['Сет для вечірки'],
+      'Lunch combo': ['Обідне комбо'],
     },
     categories: {
       'Sushi & rolls': 'Суші та роли',
       'From the wok': 'З воку',
+      Sets: 'Сети',
       Sides: 'Закуски',
       Desserts: 'Десерти',
       Drinks: 'Напої',
@@ -493,6 +561,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'London: Westminster': 'Лондон: Вестмінстер',
       'London: Shoreditch': 'Лондон: Шордіч',
       'London: Greenwich': 'Лондон: Ґрінвіч',
+      'Boston: Back Bay': 'Бостон: Бек-Бей',
+      'Boston: Downtown': 'Бостон: Центр',
+      'Boston: Dorchester': 'Бостон: Дорчестер',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll Чиланзар',
@@ -507,6 +578,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pudong': 'Wok & Roll Пудун',
       'Wok & Roll Soho': 'Wok & Roll Сохо',
       'Wok & Roll Shoreditch': 'Wok & Roll Шордіч',
+      'Wok & Roll Back Bay': 'Wok & Roll Бек-Бей',
+      'Wok & Roll Seaport': 'Wok & Roll Сіпорт',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': 'просп. Бунедкор, 12, Ташкент',
@@ -521,6 +594,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '200 Century Ave, Shanghai': 'просп. Століття, 200, Шанхай',
       '12 Greek St, London': 'вул. Грік-стріт, 12, Лондон',
       '45 Curtain Rd, London': 'вул. Кертен-роуд, 45, Лондон',
+      '230 Newbury St, Boston': 'вул. Ньюбері-стріт, 230, Бостон',
+      '60 Seaport Blvd, Boston': 'бульв. Сіпорт, 60, Бостон',
     },
     countries: {
       UZB: 'Узбекистан',
@@ -529,6 +604,16 @@ const catalog: Record<Locale, CatalogTexts> = {
       UKR: 'Україна',
       CHN: 'Китай',
       GBR: 'Велика Британія',
+      USA: 'США',
+    },
+    cities: {
+      Tashkent: 'Ташкент',
+      Almaty: 'Алмати',
+      Tbilisi: 'Тбілісі',
+      Kyiv: 'Київ',
+      Shanghai: 'Шанхай',
+      London: 'Лондон',
+      Boston: 'Бостон',
     },
   },
   zh: {
@@ -536,7 +621,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Salmon avocado roll': ['三文鱼牛油果卷', '三文鱼、牛油果、黄瓜。'],
       'Tuna nigiri': ['金枪鱼握寿司', '调味米饭配金枪鱼。'],
       'California roll': ['加州卷', '蟹肉、牛油果、黄瓜、芝麻。'],
-      'Wok & Roll set for two': ['Wok & Roll 双人套餐', '三文鱼牛油果卷、加州卷和日式煎饺。'],
+      'Wok & Roll set for two': ['Wok & Roll 双人套餐'],
       'Firecracker udon': ['香辣乌冬面', '乌冬面、鸡肉、辣椒、芝麻。'],
       'Miso mushroom rice': ['味噌蘑菇饭', '香菇、时令青菜、味噌。'],
       'Teriyaki chicken noodles': ['照烧鸡肉面', '鸡蛋面、鸡肉、照烧酱、蔬菜。'],
@@ -558,10 +643,17 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Jasmine green tea': ['茉莉绿茶', '茉莉绿茶，一人份茶壶。'],
       'Salmon sashimi': ['三文鱼刺身', '新鲜三文鱼片、酱油、芥末。'],
       'Mango sticky rice': ['芒果糯米饭', '糯米、芒果、椰浆。'],
+      'Philadelphia set': ['费城卷套餐'],
+      'Salmon set': ['三文鱼套餐'],
+      'Dragon set': ['龙卷套餐'],
+      'Classic set': ['经典套餐'],
+      'Party set': ['派对套餐'],
+      'Lunch combo': ['午餐组合'],
     },
     categories: {
       'Sushi & rolls': '寿司和卷',
       'From the wok': '炒锅菜',
+      Sets: '套餐',
       Sides: '小食',
       Desserts: '甜点',
       Drinks: '饮品',
@@ -596,6 +688,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'London: Westminster': '伦敦：威斯敏斯特',
       'London: Shoreditch': '伦敦：肖尔迪奇',
       'London: Greenwich': '伦敦：格林尼治',
+      'Boston: Back Bay': '波士顿：后湾',
+      'Boston: Downtown': '波士顿：市中心',
+      'Boston: Dorchester': '波士顿：多切斯特',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll 奇兰扎尔店',
@@ -610,6 +705,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pudong': 'Wok & Roll 浦东店',
       'Wok & Roll Soho': 'Wok & Roll 苏豪店',
       'Wok & Roll Shoreditch': 'Wok & Roll 肖尔迪奇店',
+      'Wok & Roll Back Bay': 'Wok & Roll 后湾店',
+      'Wok & Roll Seaport': 'Wok & Roll 海港店',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': '塔什干 布尼奥德科尔大街 12 号',
@@ -624,6 +721,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '200 Century Ave, Shanghai': '上海 世纪大道 200 号',
       '12 Greek St, London': '伦敦 希腊街 12 号',
       '45 Curtain Rd, London': '伦敦 科廷路 45 号',
+      '230 Newbury St, Boston': '波士顿 纽伯里街 230 号',
+      '60 Seaport Blvd, Boston': '波士顿 海港大道 60 号',
     },
     countries: {
       UZB: '乌兹别克斯坦',
@@ -632,11 +731,21 @@ const catalog: Record<Locale, CatalogTexts> = {
       UKR: '乌克兰',
       CHN: '中国',
       GBR: '英国',
+      USA: '美国',
+    },
+    cities: {
+      Tashkent: '塔什干',
+      Almaty: '阿拉木图',
+      Tbilisi: '第比利斯',
+      Kyiv: '基辅',
+      Shanghai: '上海',
+      London: '伦敦',
+      Boston: '波士顿',
     },
   },
   // British English: the API names are English already. Only the British spelling of a few
   // descriptions and zone names, and the country names.
-  en: {
+  'en-GB': {
     products: {
       'Firecracker udon': ['Firecracker udon', 'Udon noodles, chicken, chilli, sesame.'],
       Edamame: ['Edamame', 'Steamed soya beans with sea salt.'],
@@ -675,7 +784,29 @@ const catalog: Record<Locale, CatalogTexts> = {
       UKR: 'Ukraine',
       CHN: 'China',
       GBR: 'United Kingdom',
+      USA: 'United States',
     },
+    cities: {},
+  },
+  // American English: the API is in American English already (chili, shrimp, center). Only the
+  // country names.
+  'en-US': {
+    products: {},
+    categories: {},
+    modifiers: {},
+    zones: {},
+    cafes: {},
+    addresses: {},
+    countries: {
+      UZB: 'Uzbekistan',
+      KAZ: 'Kazakhstan',
+      GEO: 'Georgia',
+      UKR: 'Ukraine',
+      CHN: 'China',
+      GBR: 'United Kingdom',
+      USA: 'United States',
+    },
+    cities: {},
   },
 };
 

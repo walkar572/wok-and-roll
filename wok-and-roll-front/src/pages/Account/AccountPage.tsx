@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
-import { t as translate, useI18n } from '../../i18n';
+import { clock, t as translate, useI18n } from '../../i18n';
 import { loadMyOrders, type OrderSummary } from '../../services/accountApi';
 import { formatPrice, guestErrorMessage } from '../../services/api';
 import { formatDate, formatDateTime } from '../../utils/dates';
@@ -103,7 +103,7 @@ export function AccountPage() {
                     {order.scenario === 'PICKUP' ? t('checkout.pickup') : t('checkout.delivery')} ·{' '}
                     {t('account.when', {
                       date: formatDate(order.orderDate),
-                      time: order.slotStart,
+                      time: clock(order.slotStart),
                     })}{' '}
                     · {t('account.items', { count: order.itemCount })}
                   </p>

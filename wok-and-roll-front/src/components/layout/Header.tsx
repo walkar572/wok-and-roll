@@ -2,18 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../common/Icon';
 import { useAuth } from '../../context/AuthContext';
-import { useCountry } from '../../context/CountryContext';
 import { useCart } from '../../context/CartContext';
-import { countryName, useI18n } from '../../i18n';
+import { useI18n } from '../../i18n';
 import { AccountMenu } from './AccountMenu';
-import { CountrySwitcher } from './CountrySwitcher';
+import { CitySwitcher } from './CitySwitcher';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { accountLinks, mainLinks, Navigation, visibleLinks } from './Navigation';
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const header = useRef<HTMLElement>(null);
-  const { country, currentCountry } = useCountry();
   const menuToggle = useRef<HTMLButtonElement>(null);
   const location = useLocation();
   const { itemCount } = useCart();
@@ -51,15 +50,20 @@ export function Header() {
   }, []);
 
   // Escape closes the mobile menu and gives the focus back to its button; a tap outside the
-  // header closes it too.
+  // header closes it too. The city list of the menu opens outside the header (a portal): Escape
+  // and taps in that list only close the list.
   useEffect(() => {
     if (!menuOpen) return undefined;
+    function inCityList(target: EventTarget | null) {
+      return target instanceof Element && target.closest('[data-radix-popper-content-wrapper]');
+    }
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape' || inCityList(event.target)) return;
       setMenuOpen(false);
       menuToggle.current?.focus();
     }
     function closeOnOutsidePointer(event: PointerEvent) {
+      if (inCityList(event.target)) return;
       if (!header.current?.contains(event.target as Node)) setMenuOpen(false);
     }
     document.addEventListener('keydown', closeOnEscape);
@@ -69,6 +73,10 @@ export function Header() {
       document.removeEventListener('pointerdown', closeOnOutsidePointer);
     };
   }, [menuOpen]);
+
+  function closeMenuWhenOpen(open: boolean) {
+    if (open) setMenuOpen(false);
+  }
 
   return (
     <header ref={header} className={`site-header figma-header${scrolled ? ' is-scrolled' : ''}`}>
@@ -80,13 +88,11 @@ export function Header() {
           Wok &amp; Roll
         </Link>
         <div className="header-tools">
-          {/* One menu at a time: the country list closes the mobile menu, and while the list
-              is open a tap outside it (on the menu button too) only closes the list. */}
-          <CountrySwitcher
-            onOpenChange={(open) => {
-              if (open) setMenuOpen(false);
-            }}
-          />
+          {/* One menu at a time: a list closes the mobile menu, and while a list is open a tap
+              outside it (on the menu button too) only closes the list. The city and the
+              language are chosen apart. */}
+          <CitySwitcher onOpenChange={closeMenuWhenOpen} />
+          <LanguageSwitcher onOpenChange={closeMenuWhenOpen} />
           <div className="header-account">
             <AccountMenu />
           </div>
@@ -132,7 +138,8 @@ export function Header() {
             </Link>
           )}
         </div>
-        <p>{countryName(country, currentCountry.name)}</p>
+        {/* On a phone the header has no room for the city: it is chosen here. */}
+        <CitySwitcher variant="menu" />
       </div>
     </header>
   );

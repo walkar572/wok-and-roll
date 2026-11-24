@@ -6,6 +6,7 @@ import { useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import {
   categoryName,
+  cityName,
   countryName,
   productDescription,
   productName,
@@ -13,7 +14,6 @@ import {
   portionText,
 } from '../../i18n';
 import {
-  formatPrice,
   guestErrorMessage,
   loadCategories,
   loadProducts,
@@ -22,9 +22,10 @@ import {
   type Product,
 } from '../../services/api';
 import { ProductDetailModal } from './ProductDetailModal';
+import { DishPrice, SavingBadge, setComposition, setSaving } from './sets';
 
 export function MenuPage() {
-  const { country } = useCountry();
+  const { country, city } = useCountry();
   const { addItem } = useCart();
   const { t } = useI18n();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -95,7 +96,9 @@ export function MenuPage() {
           ))}
         </nav>
         <p className="menu-toolbar__country">
-          {t('menu.pricesFor', { country: countryName(country) })}
+          {t('menu.pricesFor', {
+            country: city ? `${cityName(city)}, ${countryName(country)}` : countryName(country),
+          })}
         </p>
       </div>
 
@@ -118,8 +121,11 @@ export function MenuPage() {
         <div className="menu-grid">
           {products.map((product) => {
             const name = productName(product.name);
-            const description = productDescription(product.name, product.description);
+            // A set lists its dishes instead of the ingredients.
+            const description =
+              setComposition(product) ?? productDescription(product.name, product.description);
             const portion = portionText(product);
+            const saving = setSaving(product);
             const action = product.hasModifiers ? t('menu.customize') : t('menu.details');
             return (
               <article className="menu-card" key={product.id}>
@@ -132,6 +138,9 @@ export function MenuPage() {
                 <div className="menu-card__content">
                   <div className="menu-card__heading">
                     <h2>{name}</h2>
+                    {saving !== null && (
+                      <SavingBadge className="menu-card__saving" percent={saving} />
+                    )}
                     {!product.inStock && (
                       <span className="menu-card__stock">{t('menu.outOfStock')}</span>
                     )}
@@ -143,7 +152,7 @@ export function MenuPage() {
                     </div>
                   )}
                   <div className="menu-card__footer">
-                    <strong>{formatPrice(product.price, product.currency)}</strong>
+                    <DishPrice product={product} />
                     <Button
                       className="menu-card__action"
                       variant="outline"

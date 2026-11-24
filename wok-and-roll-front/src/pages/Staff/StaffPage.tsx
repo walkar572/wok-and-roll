@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader, Toast } from '../../components/common';
 import { useCountry } from '../../context/CountryContext';
-import { cafeName, t as translate, useI18n, type MessageKey } from '../../i18n';
+import { cafeName, clock, t as translate, useI18n, type MessageKey } from '../../i18n';
 import {
   changeOrderStatus,
   loadStaffBookings,
@@ -191,7 +191,7 @@ export function StaffPage() {
                   <li key={order.orderNumber} className="order-card">
                     <div className="order-card__main">
                       <h3>
-                        {order.slotStart}–{order.slotEnd} · {order.orderNumber}
+                        {clock(order.slotStart)}–{clock(order.slotEnd)} · {order.orderNumber}
                       </h3>
                       <p>
                         {order.scenario === 'PICKUP'
@@ -240,7 +240,7 @@ export function StaffPage() {
                   <li key={booking.bookingNumber} className="order-card">
                     <div className="order-card__main">
                       <h3>
-                        {booking.time}–{booking.endTime} · {booking.bookingNumber}
+                        {clock(booking.time)}–{clock(booking.endTime)} · {booking.bookingNumber}
                       </h3>
                       <p>
                         {t('staff.guests', { count: booking.guests })} ·{' '}

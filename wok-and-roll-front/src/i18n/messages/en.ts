@@ -1,6 +1,7 @@
-// The message keys and the British English text, the language of the United Kingdom (GBR). It is
-// also the template every translation must match key for key, and the fallback if a key is ever
-// missing. British spelling and words: favourite, customise, catalogue, basket, collection.
+// The message keys and the British English text (English (UK)). It is also the template every
+// translation must match key for key, and the fallback if a key is ever missing. British spelling
+// and words: favourite, customise, catalogue, basket, collection. American English (enUS.ts) only
+// changes the texts that differ.
 // Placeholders: {name}.
 
 export const en = {
@@ -27,9 +28,12 @@ export const en = {
     admin: 'Menu admin',
     skipToContent: 'Skip to content',
     brandHome: 'Wok & Roll — home page',
-    country: 'Country',
-    countryCurrent: 'Country and language, now: {name}',
-    countryLanguage: 'Country and language',
+    language: 'Language',
+    languageCurrent: 'Language, now: {name}',
+    languageList: 'Language of the site',
+    city: 'City',
+    cityCurrent: 'City, now: {name}',
+    cityList: 'City: prices, cafés and delivery',
     loadingCountries: 'Loading countries',
     sampleData: 'Sample data',
     countryUnavailable: 'Country data unavailable',
@@ -124,6 +128,10 @@ export const en = {
     customize: 'Customise',
     details: 'Details',
     noPhoto: 'No photo yet',
+    setOf: 'In the set',
+    setItem: '{count}\u00a0×\u00a0{name}',
+    separately: 'Separately: {price}',
+    save: 'Save {percent}%',
   },
   product: {
     dishDetails: 'Dish details',

@@ -78,6 +78,7 @@ export function mockLoadCafes(country: CountryCode): Cafe[] {
       id: 1,
       country: 'UZB',
       name: 'Wok & Roll Chilanzar',
+      city: 'Tashkent',
       address: '12 Bunyodkor Ave, Tashkent',
       phone: '+998712000001',
       opensAt: '10:00',

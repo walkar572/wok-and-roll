@@ -12,6 +12,8 @@ export interface Country {
   currency: string;
   vatRate: number;
   timeZone: string;
+  /** Cities with a café (contract v1.9), A to Z; the guest chooses one of them. */
+  cities: string[];
 }
 
 export interface Category {
@@ -34,6 +36,17 @@ export interface Product {
   currency: string;
   inStock: boolean;
   hasModifiers: boolean;
+  /** A set (contract v1.10): its dishes one by one in this country; null for a dish. */
+  regularPrice: number | null;
+  /** The dishes of a set in their order; empty for a dish. */
+  setItems: SetItem[];
+}
+
+/** One dish of a set and how many of it the set has. */
+export interface SetItem {
+  productId: number;
+  name: string;
+  quantity: number;
 }
 
 export interface ProductModifier {
@@ -92,6 +105,8 @@ export interface Cafe {
   id: number;
   country: CountryCode;
   name: string;
+  /** English, as in the address (contract v1.9). */
+  city: string;
   address: string;
   phone: string | null;
   opensAt: string;
@@ -208,12 +223,62 @@ export function guestErrorMessage(error: unknown, fallback: string): string {
 }
 
 export const fallbackCountries: Country[] = [
-  { code: 'UZB', name: 'Uzbekistan', currency: 'UZS', vatRate: 15, timeZone: 'Asia/Tashkent' },
-  { code: 'KAZ', name: 'Kazakhstan', currency: 'KZT', vatRate: 20, timeZone: 'Asia/Almaty' },
-  { code: 'GEO', name: 'Georgia', currency: 'GEL', vatRate: 12, timeZone: 'Asia/Tbilisi' },
-  { code: 'UKR', name: 'Ukraine', currency: 'UAH', vatRate: 8, timeZone: 'Europe/Kyiv' },
-  { code: 'CHN', name: 'China', currency: 'CNY', vatRate: 18, timeZone: 'Asia/Shanghai' },
-  { code: 'GBR', name: 'United Kingdom', currency: 'GBP', vatRate: 20, timeZone: 'Europe/London' },
+  {
+    code: 'UZB',
+    name: 'Uzbekistan',
+    currency: 'UZS',
+    vatRate: 15,
+    timeZone: 'Asia/Tashkent',
+    cities: ['Tashkent'],
+  },
+  {
+    code: 'KAZ',
+    name: 'Kazakhstan',
+    currency: 'KZT',
+    vatRate: 20,
+    timeZone: 'Asia/Almaty',
+    cities: ['Almaty'],
+  },
+  {
+    code: 'GEO',
+    name: 'Georgia',
+    currency: 'GEL',
+    vatRate: 12,
+    timeZone: 'Asia/Tbilisi',
+    cities: ['Tbilisi'],
+  },
+  {
+    code: 'UKR',
+    name: 'Ukraine',
+    currency: 'UAH',
+    vatRate: 8,
+    timeZone: 'Europe/Kyiv',
+    cities: ['Kyiv'],
+  },
+  {
+    code: 'CHN',
+    name: 'China',
+    currency: 'CNY',
+    vatRate: 18,
+    timeZone: 'Asia/Shanghai',
+    cities: ['Shanghai'],
+  },
+  {
+    code: 'GBR',
+    name: 'United Kingdom',
+    currency: 'GBP',
+    vatRate: 20,
+    timeZone: 'Europe/London',
+    cities: ['London'],
+  },
+  {
+    code: 'USA',
+    name: 'United States',
+    currency: 'USD',
+    vatRate: 7,
+    timeZone: 'America/New_York',
+    cities: ['Boston'],
+  },
 ];
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -469,7 +534,9 @@ function parseCountries(value: unknown): Country[] {
       !Number.isFinite(item.vatRate) ||
       item.vatRate < 0 ||
       item.vatRate > 100 ||
-      (item.timeZone !== undefined && (typeof item.timeZone !== 'string' || !item.timeZone.trim()))
+      (item.timeZone !== undefined &&
+        (typeof item.timeZone !== 'string' || !item.timeZone.trim())) ||
+      (item.cities !== undefined && !isNameList(item.cities))
     ) {
       throw new Error('Countries API returned an invalid country.');
     }
@@ -483,6 +550,8 @@ function parseCountries(value: unknown): Country[] {
         typeof item.timeZone === 'string'
           ? item.timeZone
           : (fallbackCountries.find(({ code }) => code === item.code)?.timeZone ?? 'UTC'),
+      // An older server sends no cities: the country is still offered, by its name.
+      cities: isNameList(item.cities) ? item.cities : [],
     };
   });
 
@@ -491,6 +560,12 @@ function parseCountries(value: unknown): Country[] {
   }
 
   return parsed;
+}
+
+function isNameList(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((name) => typeof name === 'string' && name.trim() !== '')
+  );
 }
 
 function parseCategory(item: unknown): Category {
@@ -539,7 +614,12 @@ function parseProduct(item: unknown): Product {
     typeof item.currency !== 'string' ||
     !/^[A-Z]{3}$/.test(item.currency) ||
     typeof item.inStock !== 'boolean' ||
-    typeof item.hasModifiers !== 'boolean'
+    typeof item.hasModifiers !== 'boolean' ||
+    (item.regularPrice != null &&
+      (typeof item.regularPrice !== 'number' ||
+        !Number.isFinite(item.regularPrice) ||
+        item.regularPrice < 0)) ||
+    (item.setItems !== undefined && !Array.isArray(item.setItems))
   ) {
     throw new Error('Products API returned an invalid product.');
   }
@@ -557,7 +637,22 @@ function parseProduct(item: unknown): Product {
     currency: item.currency,
     inStock: item.inStock,
     hasModifiers: item.hasModifiers,
+    regularPrice: typeof item.regularPrice === 'number' ? item.regularPrice : null,
+    setItems: Array.isArray(item.setItems) ? item.setItems.map(parseSetItem) : [],
   };
+}
+
+function parseSetItem(value: unknown): SetItem {
+  if (
+    !isRecord(value) ||
+    !isPositiveInteger(value.productId) ||
+    typeof value.name !== 'string' ||
+    !value.name.trim() ||
+    !isPositiveInteger(value.quantity)
+  ) {
+    throw new Error('Products API returned an invalid dish of a set.');
+  }
+  return { productId: value.productId, name: value.name, quantity: value.quantity };
 }
 
 function parseProductDetails(item: unknown): ProductDetail {
@@ -593,6 +688,7 @@ function parseCafe(value: unknown): Cafe {
     typeof value.country !== 'string' ||
     typeof value.name !== 'string' ||
     !value.name.trim() ||
+    (value.city !== undefined && typeof value.city !== 'string') ||
     typeof value.address !== 'string' ||
     !value.address.trim() ||
     (value.phone !== null && typeof value.phone !== 'string') ||
@@ -609,6 +705,8 @@ function parseCafe(value: unknown): Cafe {
     id: value.id,
     country: value.country,
     name: value.name,
+    // An older server sends no city: the café belongs to the first city of its country.
+    city: typeof value.city === 'string' ? value.city : '',
     address: value.address,
     phone: value.phone,
     opensAt: value.opensAt,
