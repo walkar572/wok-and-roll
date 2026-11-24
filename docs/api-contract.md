@@ -22,8 +22,9 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.0 | 10 Nov | Stage 2: countries, categories, products, product details, cart quote (#123) |
 | 1.1 | 14 Nov | Stages 3–5 and bonus: totals in the quote, orders, cafés, delivery zones, time slots, bookings, auth and account, staff, admin, reports with PDF and CSV. New rules for time zones, idempotency, paging, request id and roles. Every change to v1.0 is additive (#142). |
 | 1.2 | 20 Nov | 406 NOT_ACCEPTABLE error row (#155) |
-| 1.4 | 24 Nov | Real price levels (§5): prices, discount thresholds and delivery fees in each currency at the level of Tashkent, converted at November 2026 rates. The interface language follows the country; the API stays English. |
 | 1.3 | 23 Nov | Every endpoint of §2 is built. Additive details found while building: `GET /staff/bookings` returns `{ "items": [...] }` like the other new lists; `POST` and `PATCH /admin/products` take an optional `?country=` (default `UZB`) for the price fields of the response; new `GET /admin/categories` (all categories with `version`). Sales history seed Jun–Nov 2026 (#171). |
+| 1.4 | 24 Nov | Real price levels (§5): prices, discount thresholds and delivery fees in each currency at the level of Tashkent, converted at November 2026 rates. The interface language follows the country; the API stays English. |
+| 1.5 | 24 Nov | Portion of a dish (additive): `pieces`, `weightGrams`, `volumeMl` in §3.3, §3.4 and the admin API §3.15. The description now holds only the ingredients; the card shows the portion on its own line ("8 pcs · 250 g"). |
 
 ---
 
@@ -146,6 +147,9 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
     "name": "Firecracker udon",
     "description": "Udon noodles, chicken, chili, sesame.",
     "imageUrl": "/images/udon.png",
+    "pieces": null,
+    "weightGrams": 350,
+    "volumeMl": null,
     "price": 48.00,
     "currency": "UZS",
     "inStock": true,
@@ -156,7 +160,10 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
     "categoryId": 2,
     "name": "Teriyaki chicken noodles",
     "description": "Egg noodles, chicken, teriyaki sauce, vegetables.",
-    "imageUrl": null,
+    "imageUrl": "/images/teriyaki-noodles.png",
+    "pieces": null,
+    "weightGrams": 350,
+    "volumeMl": null,
     "price": 52.00,
     "currency": "UZS",
     "inStock": true,
@@ -169,8 +176,11 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
 |---|---|---|
 | `id`, `categoryId` | integer | |
 | `name` | string | |
-| `description` | string or `null` | |
+| `description` | string or `null` | The ingredients only (v1.5); the portion has its own fields |
 | `imageUrl` | string or `null` | Path served by the frontend (`/images/...`). `null` = show the placeholder. |
+| `pieces` | integer or `null` | Pieces in a portion (rolls, nigiri, gyoza, sets); `null` when not counted (v1.5) |
+| `weightGrams` | integer or `null` | Weight of a portion in grams (v1.5) |
+| `volumeMl` | integer or `null` | Volume of a drink in millilitres (v1.5). The card shows the three as "8 pcs · 250 g" in the language of the interface |
 | `price` | number | Base price in local currency, before VAT |
 | `currency` | string | Same as the country's currency |
 | `inStock` | boolean | Per country (`regional_price.in_stock`) |
@@ -189,6 +199,9 @@ The product modal (#52, #114). All fields of §3.3, plus `modifiers`.
   "name": "Firecracker udon",
   "description": "Udon noodles, chicken, chili, sesame.",
   "imageUrl": "/images/udon.png",
+  "pieces": null,
+  "weightGrams": 350,
+  "volumeMl": null,
   "price": 48.00,
   "currency": "UZS",
   "inStock": true,
@@ -595,15 +608,15 @@ Staff see all cafés (the MVP has no link between a user and a café). Responses
 
 | Endpoint | Body | Result |
 |---|---|---|
-| `GET /api/v1/admin/products?country=UZB` | — | Paging (§1.1). All products, hidden ones too: `id`, `categoryId`, `categoryName`, `name`, `description`, `imageUrl`, `visible`, `version`, and for this country `price`, `currency`, `inStock`, `priceVersion` (`null` when the dish is not sold there) |
-| `POST /api/v1/admin/products` | `{ categoryId, name, description, imageUrl, visible }` | `201` with the product and `Location` |
-| `PATCH /api/v1/admin/products/{id}` | Any of `name`, `description`, `imageUrl`, `categoryId`, `visible`, plus `version` (required) | `200` with the product. Only the sent fields change |
+| `GET /api/v1/admin/products?country=UZB` | — | Paging (§1.1). All products, hidden ones too: `id`, `categoryId`, `categoryName`, `name`, `description`, `imageUrl`, `pieces`, `weightGrams`, `volumeMl`, `visible`, `version`, and for this country `price`, `currency`, `inStock`, `priceVersion` (`null` when the dish is not sold there) |
+| `POST /api/v1/admin/products` | `{ categoryId, name, description, imageUrl, pieces, weightGrams, volumeMl, visible }` | `201` with the product and `Location` |
+| `PATCH /api/v1/admin/products/{id}` | Any of `name`, `description`, `imageUrl`, `pieces`, `weightGrams`, `volumeMl`, `categoryId`, `visible`, plus `version` (required) | `200` with the product. Only the sent fields change; `0` removes a portion field |
 | `PUT /api/v1/admin/products/{id}/prices/{country}` | `{ price, inStock, version }` | `200` with `{ productId, country, price, currency, inStock, version }`. Creates the regional price when it is missing (`version` is then ignored) |
 | `POST /api/v1/admin/categories` | `{ name, sortOrder, visible }` | `201` |
 | `PATCH /api/v1/admin/categories/{id}` | Any of `name`, `sortOrder`, `visible`, plus `version` | `200` |
 
 - **Optimistic locking:** `UPDATE … SET …, version = version + 1 WHERE id = :id AND version = :version`. No row updated → `409 VERSION_CONFLICT` ("Changed by someone else, reload"). Two admins can never overwrite each other silently.
-- `price` is `0.00`–`9999999999.99` with at most 2 decimals; more decimals → `VALIDATION_ERROR` (no silent rounding). `imageUrl` must start with `/images/`.
+- `price` is `0.00`–`9999999999.99` with at most 2 decimals; more decimals → `VALIDATION_ERROR` (no silent rounding). `imageUrl` must start with `/images/`. `pieces` is 1–999, `weightGrams` and `volumeMl` are 1–9999 (on PATCH `0` removes the value).
 - There is no DELETE: hiding (`visible: false`) keeps old orders and reports correct (erd.md, "Why", point 6).
 - The public menu shows changes at once (no cache).
 
@@ -849,7 +862,8 @@ export interface Category { id: number; name: string }
 
 export interface Product {
   id: number; categoryId: number; name: string; description: string | null;
-  imageUrl: string | null; price: number; currency: string; inStock: boolean; hasModifiers: boolean;
+  imageUrl: string | null; pieces: number | null; weightGrams: number | null; volumeMl: number | null;
+  price: number; currency: string; inStock: boolean; hasModifiers: boolean;
 }
 
 export type ModifierType = 'SIZE' | 'EXTRA';

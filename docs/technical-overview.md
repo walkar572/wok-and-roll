@@ -20,7 +20,7 @@ calculates totals, it shows the numbers of the quote.
 | `country`, `currency` | `code` (UZB…), `currency_code`, `time_zone` | 5 countries, each with its own currency and IANA time zone |
 | `vat_rate` | `country_id`, `rate` | one rate per country, percent |
 | `discount_threshold` | `country_id`, `min_amount`, `discount_rate` | 5 tiers per country, local currency |
-| `category`, `product` | `name`, `visible`, `version` | hidden instead of deleted, so old orders stay correct |
+| `category`, `product` | `name`, `visible`, `version`; `pieces`, `weight_grams`, `volume_ml` | hidden instead of deleted, so old orders stay correct; the portion is shown as "8 pcs · 250 g" |
 | `regional_price` | `product_id`, `country_id`, `price`, `in_stock`, `version` | no row = not sold in that country |
 | `modifier`, `modifier_price` | `type` SIZE / EXTRA, `price_delta` per country | exactly one SIZE if a dish has sizes |
 | `cafe`, `delivery_zone` | opening hours, `slot_capacity`; zone `fee`, `cafe_id` | a zone is cooked by one café of the same country |

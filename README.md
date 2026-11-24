@@ -35,8 +35,14 @@ The database starts with the menu (real prices at the level of Tashkent, convert
 currency), cafés, delivery zones and about 3,400 orders from June to November 2026, so the
 reports have data at once.
 
-Dish photos live in `wok-and-roll-front/public/images` (512 × 512 PNG). Until a file is there,
-the dish shows a neutral placeholder.
+Dish photos live in `wok-and-roll-front/public/images` (512 × 512 PNG, the dish on a cream
+background). Until a file is there, the dish shows a neutral placeholder. Four photos are free
+stock photos under the [Pexels license](https://www.pexels.com/license/), cropped and put on the
+cream background:
+[California roll](https://www.pexels.com/photo/sushi-roll-on-white-ceramic-plate-10692544/),
+[set for two](https://www.pexels.com/photo/close-up-photo-of-sushi-served-on-table-248444/),
+[teriyaki noodles](https://www.pexels.com/photo/close-up-of-chicken-noodles-dish-24738507/),
+[edamame](https://www.pexels.com/photo/close-up-of-fresh-edamame-beans-in-bowl-28460867/).
 
 ### Demo accounts
 
@@ -56,7 +62,7 @@ Guests can order and book a table without an account.
 | Area | What works |
 |---|---|
 | Languages | The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese (dishes, messages, money and dates too) |
-| Menu and cart | Country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
+| Menu and cart | Dish cards with the ingredients and the portion (pieces, grams, ml), country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields, totals from the server, idempotent order placement |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |
 | Accounts | Register, log in, log out, session expiry; My orders with paging and order details |

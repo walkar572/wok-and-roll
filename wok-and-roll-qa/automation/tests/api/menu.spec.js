@@ -53,6 +53,10 @@ test.describe('menu API', () => {
         expect(product.name).toEqual(expect.any(String));
         expect(product.description === null || typeof product.description === 'string').toBe(true);
         expect(product.imageUrl === null || typeof product.imageUrl === 'string').toBe(true);
+        for (const field of ['pieces', 'weightGrams', 'volumeMl']) {
+          const value = product[field];
+          expect(value === null || (Number.isInteger(value) && value > 0), product.name + ' ' + field).toBe(true);
+        }
         expect(product.currency).toBe(country.currency);
         expect(hasAtMostTwoDecimalPlaces(product.price), country.code + ' ' + product.name + ' price').toBe(true);
         expect(product.inStock).toEqual(expect.any(Boolean));
@@ -61,6 +65,14 @@ test.describe('menu API', () => {
       const udon = products.find(({ name }) => name === 'Firecracker udon');
       expect(udon).toBeDefined();
       expect(udon).toMatchObject(seededUdonPrices[country.code]);
+      expect(udon).toMatchObject({ pieces: null, weightGrams: 350, volumeMl: null });
+      const salmon = products.find(({ name }) => name === 'Salmon avocado roll');
+      expect(salmon).toMatchObject({ description: 'Salmon, avocado, cucumber.', pieces: 8, weightGrams: 250 });
+      const lemonade = products.find(({ name }) => name === 'Yuzu lemonade');
+      expect(lemonade).toMatchObject({ weightGrams: null, volumeMl: 400 });
+      for (const product of products) {
+        expect(product.imageUrl, product.name + ' has a photo').toMatch(/^\/images\/[a-z-]+\.png$/);
+      }
       const outOfStock = products.find(({ name }) => name === 'Tuna nigiri');
       expect(outOfStock).toBeDefined();
       expect(outOfStock.inStock).toBe(false);
