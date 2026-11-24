@@ -31,6 +31,8 @@ const uz = {
   almaty: 'Olmaota',
   london: 'London',
   boston: 'Boston',
+  allCities: 'Barcha shaharlar',
+  chooseCity: 'Shahringizni tanlang',
 };
 
 const kk = {
