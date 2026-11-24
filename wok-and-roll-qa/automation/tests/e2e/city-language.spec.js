@@ -42,7 +42,13 @@ test('the city changes the prices and the currency, the language stays; both sur
   await page.getByRole('link', { name: kk.cartLink }).click();
   await expect(page.getByRole('heading', { name: kk.cartTitle, exact: true })).toBeVisible();
   await expect(page.getByText(kk.vat(kaz.expected.vatRate), { exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: kk.priceSummary })).toContainText(cartTotalInKazakhstan);
+  const receipt = page.getByRole('region', { name: kk.priceSummary });
+  await expect(receipt).toContainText(cartTotalInKazakhstan);
+  // The receipt lists the dish with its quantity and unit price too.
+  const receiptLine = receipt.getByRole('listitem');
+  await expect(receiptLine).toHaveCount(1);
+  await expect(receiptLine).toContainText(kk.udon);
+  await expect(receiptLine).toContainText(/1\s×\s2\s190,00\s*₸/);
 });
 
 test('British English and pounds in London; the brand words of the title stay', async ({ page }) => {
