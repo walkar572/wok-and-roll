@@ -4,6 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, ErrorMessage, Input, Loader, Receipt } from '../../components/common';
+import { ChooseCity } from '../../components/layout/ChooseCity';
 import { useCart, type CartItem } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import {
@@ -149,7 +150,7 @@ function mapApiFieldErrors(fields: Record<string, string>, cartItems: CartItem[]
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { country, currentCountry } = useCountry();
+  const { country, currentCountry, allCities } = useCountry();
   const { items, clearCart } = useCart();
   const { t, locale } = useI18n();
   const today = dateKeyInTimeZone(currentCountry.timeZone);
@@ -507,6 +508,16 @@ export function CheckoutPage() {
         actionLabel={t('checkout.explore')}
         actionTo="/menu"
       />
+    );
+  }
+
+  if (allCities) {
+    return (
+      <section className="checkout-page" aria-labelledby="checkout-title">
+        <p className="eyebrow">{t('checkout.eyebrow')}</p>
+        <h1 id="checkout-title">{t('checkout.title')}</h1>
+        <ChooseCity />
+      </section>
     );
   }
 

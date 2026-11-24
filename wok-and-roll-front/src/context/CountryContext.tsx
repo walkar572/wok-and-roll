@@ -3,6 +3,7 @@ import { fallbackCountries, loadCountries, type Country, type CountryCode } from
 
 const COUNTRY_KEY = 'selectedCountry';
 const CITY_KEY = 'selectedCity';
+const ALL_KEY = 'allCities';
 
 /** A city the guest can choose, with the country it belongs to (contract v1.9). */
 export interface City {
@@ -25,6 +26,13 @@ type CountryContextValue = {
   setCountry: (country: CountryCode) => void;
   /** Chooses a city and with it its country. The language does not change. */
   setCity: (city: City) => void;
+  /**
+   * "All cities": the guest looks at every café of every city. Prices and ordering need one city,
+   * so the menu, the cart, checkout and booking ask for a city until one is chosen. `country` and
+   * `city` keep the last chosen city meanwhile, so nothing that needs a country breaks.
+   */
+  allCities: boolean;
+  showAllCities: () => void;
 };
 
 const CountryContext = createContext<CountryContextValue | null>(null);
@@ -45,6 +53,7 @@ function getInitialCountry(): CountryCode {
 export function CountryProvider({ children }: PropsWithChildren) {
   const [country, setCountry] = useState<CountryCode>(getInitialCountry);
   const [chosenCity, setChosenCity] = useState<string | null>(() => readSaved(CITY_KEY));
+  const [allCities, setAllCities] = useState(() => readSaved(ALL_KEY) === '1');
   const [countries, setCountries] = useState<Country[]>(fallbackCountries);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
   const [countriesError, setCountriesError] = useState<string>();
@@ -94,8 +103,19 @@ export function CountryProvider({ children }: PropsWithChildren) {
   function setCity(next: City) {
     setChosenCity(next.name);
     setCountry(next.country.code);
+    setAllCities(false);
     try {
       window.localStorage.setItem(CITY_KEY, next.name);
+      window.localStorage.removeItem(ALL_KEY);
+    } catch {
+      // Private mode: the choice is kept for this visit only.
+    }
+  }
+
+  function showAllCities() {
+    setAllCities(true);
+    try {
+      window.localStorage.setItem(ALL_KEY, '1');
     } catch {
       // Private mode: the choice is kept for this visit only.
     }
@@ -113,6 +133,8 @@ export function CountryProvider({ children }: PropsWithChildren) {
         countriesError,
         setCountry,
         setCity,
+        allCities,
+        showAllCities,
       }}
     >
       {children}

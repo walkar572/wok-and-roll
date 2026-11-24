@@ -29,6 +29,8 @@ export const uz: Messages = {
     city: 'Shahar',
     cityCurrent: 'Shahar, hozir: {name}',
     cityList: 'Shahar: narxlar, kafelar va yetkazib berish',
+    allCities: 'Barcha shaharlar',
+    allCitiesHint: 'Xaritada barcha kafelar; buyurtmasiz',
     loadingCountries: 'Mamlakatlar yuklanmoqda',
     sampleData: 'Namuna maʼlumotlar',
     countryUnavailable: 'Mamlakat maʼlumotlari mavjud emas',
@@ -84,6 +86,9 @@ export const uz: Messages = {
       eyebrow: 'Bizni toping',
       title: 'Kafelarimiz',
       description: 'Buyurtmangizni oʻzingiz olib keting yoki eng yaqin kafeda stol band qiling.',
+      allDescription:
+        'Barcha shaharlardagi barcha Wok & Roll kafelari. Menyu va narxlarni koʻrish uchun shaharni tanlang.',
+      chooseCity: 'Tanlash: {city}',
       loading: 'Kafelar yuklanmoqda',
       error: 'Kafelarni yuklab boʻlmadi. Qaytadan urinib koʻring.',
       unavailable: 'Kafelar mavjud emas',
@@ -651,6 +656,10 @@ export const uz: Messages = {
       showOrders: 'Buyurtmalar',
       showBookings: 'Bandlovlar',
     },
+  },
+  chooseCity: {
+    title: 'Shahringizni tanlang',
+    text: 'Menyu, narxlar va buyurtma shaharga bogʻliq. Davom etish uchun shaharni tanlang.',
   },
   noAccess: {
     eyebrow: '403',

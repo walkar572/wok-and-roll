@@ -9,6 +9,9 @@ function cityKey(country: string, city: string): string {
   return `${country}:${city}`;
 }
 
+/** The value of "All cities": no country code has a star. */
+const ALL = '*';
+
 /**
  * The city switcher (contract v1.9). The city gives the country: its prices and currency, its
  * cafés with their phones and hours, its delivery zones. The language does not change. Used in the
@@ -17,19 +20,37 @@ function cityKey(country: string, city: string): string {
 export function CitySwitcher({
   variant = 'header',
   onOpenChange,
+  allowAll = false,
 }: {
   /** header: in the header bar; section: above the cafés; menu: in the black mobile menu. */
   variant?: 'header' | 'section' | 'menu';
   /** The header closes its mobile menu while the list is open. */
   onOpenChange?: (open: boolean) => void;
+  /** Offers "All cities" first (the shop); a work list of one café (staff) needs a real city. */
+  allowAll?: boolean;
 }) {
-  const { cities, city, country, currentCountry, isLoadingCountries, countriesError, setCity } =
-    useCountry();
+  const {
+    cities,
+    city,
+    country,
+    currentCountry,
+    isLoadingCountries,
+    countriesError,
+    setCity,
+    allCities,
+    showAllCities,
+  } = useCountry();
   const { t } = useI18n();
   const idBase = useId();
-  const current = city ? cityName(city) : countryName(country, currentCountry.name);
+  const showingAll = allowAll && allCities;
+  const current = showingAll
+    ? t('nav.allCities')
+    : city
+      ? cityName(city)
+      : countryName(country, currentCountry.name);
   const label = t('nav.cityCurrent', {
-    name: city ? `${current}, ${countryName(country, currentCountry.name)}` : current,
+    name:
+      city && !showingAll ? `${current}, ${countryName(country, currentCountry.name)}` : current,
   });
 
   return (
@@ -40,9 +61,13 @@ export function CitySwitcher({
         </span>
       )}
       <Select.Root
-        value={city ? cityKey(country, city) : undefined}
+        value={showingAll ? ALL : city ? cityKey(country, city) : undefined}
         onOpenChange={onOpenChange}
         onValueChange={(value) => {
+          if (value === ALL) {
+            showAllCities();
+            return;
+          }
           const next = cities.find((item) => cityKey(item.country.code, item.name) === value);
           if (next) setCity(next);
         }}
@@ -68,6 +93,26 @@ export function CitySwitcher({
             <Select.Viewport className="country-menu__list">
               <Select.Group>
                 <Select.Label className="country-menu__title">{t('nav.cityList')}</Select.Label>
+                {allowAll && (
+                  <Select.Item
+                    className="country-option city-option city-option--all"
+                    value={ALL}
+                    textValue={t('nav.allCities')}
+                    aria-labelledby={`${idBase}-all-name ${idBase}-all-meta`}
+                  >
+                    <span className="country-option__text">
+                      <span className="country-option__name" id={`${idBase}-all-name`}>
+                        <Select.ItemText>{t('nav.allCities')}</Select.ItemText>
+                      </span>
+                      <span className="country-option__meta" id={`${idBase}-all-meta`}>
+                        {t('nav.allCitiesHint')}
+                      </span>
+                    </span>
+                    <Select.ItemIndicator className="country-option__check">
+                      <Icon name="check" />
+                    </Select.ItemIndicator>
+                  </Select.Item>
+                )}
                 {cities.map((item) => {
                   const value = cityKey(item.country.code, item.name);
                   const id = `${idBase}-${item.country.code}-${item.name.replace(/\W/g, '')}`;

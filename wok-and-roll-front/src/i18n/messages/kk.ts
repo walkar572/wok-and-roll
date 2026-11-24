@@ -29,6 +29,8 @@ export const kk: Messages = {
     city: 'Қала',
     cityCurrent: 'Қала, қазір: {name}',
     cityList: 'Қала: бағалар, кафелер және жеткізу',
+    allCities: 'Барлық қалалар',
+    allCitiesHint: 'Картадағы барлық кафе; тапсырыссыз',
     loadingCountries: 'Елдер жүктелуде',
     sampleData: 'Үлгі деректер',
     countryUnavailable: 'Ел деректері қолжетімсіз',
@@ -84,6 +86,9 @@ export const kk: Messages = {
       eyebrow: 'Бізді табыңыз',
       title: 'Біздің кафелер',
       description: 'Тапсырысты өзіңіз алып кетіңіз немесе ең жақын кафеде үстел брондаңыз.',
+      allDescription:
+        'Барлық қалалардағы барлық Wok & Roll кафелері. Мәзір мен бағаларды көру үшін қаланы таңдаңыз.',
+      chooseCity: 'Таңдау: {city}',
       loading: 'Кафелер жүктелуде',
       error: 'Кафелерді жүктеу мүмкін болмады. Қайталап көріңіз.',
       unavailable: 'Кафелер қолжетімсіз',
@@ -649,6 +654,10 @@ export const kk: Messages = {
       showOrders: 'Тапсырыстар',
       showBookings: 'Брондар',
     },
+  },
+  chooseCity: {
+    title: 'Қалаңызды таңдаңыз',
+    text: 'Мәзір, бағалар мен тапсырыс қалаға байланысты. Жалғастыру үшін қаланы таңдаңыз.',
   },
   noAccess: {
     eyebrow: '403',

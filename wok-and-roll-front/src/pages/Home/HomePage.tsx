@@ -21,7 +21,7 @@ const HERO_DISHES = [
 ] as const;
 
 export function HomePage() {
-  const { country } = useCountry();
+  const { country, allCities } = useCountry();
   const { t } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +62,8 @@ export function HomePage() {
         key: name,
         image: product?.imageUrl ?? image,
         name: productName(name),
-        price: product ? formatPrice(product.price, product.currency) : undefined,
+        // no price for "All cities": a price belongs to one country
+        price: product && !allCities ? formatPrice(product.price, product.currency) : undefined,
       },
     ];
   });
@@ -139,7 +140,7 @@ export function HomePage() {
                         {portion && <p className="dish-portion">{portion}</p>}
                       </div>
                     )}
-                    <span>{formatPrice(item.price, item.currency)}</span>
+                    {!allCities && <span>{formatPrice(item.price, item.currency)}</span>}
                   </div>
                 </Link>
               );

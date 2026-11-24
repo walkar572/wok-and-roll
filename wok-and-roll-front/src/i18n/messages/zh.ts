@@ -29,6 +29,8 @@ export const zh: Messages = {
     city: '城市',
     cityCurrent: '城市，当前：{name}',
     cityList: '城市：价格、餐厅和配送',
+    allCities: '所有城市',
+    allCitiesHint: '地图上的所有门店；不可下单',
     loadingCountries: '正在加载国家',
     sampleData: '示例数据',
     countryUnavailable: '国家数据不可用',
@@ -84,6 +86,8 @@ export const zh: Messages = {
       eyebrow: '欢迎光临',
       title: '我们的门店',
       description: '到店自取订单，或在离您最近的门店预订餐桌。',
+      allDescription: '所有城市的全部 Wok & Roll 门店。选择城市即可查看菜单和价格。',
+      chooseCity: '选择：{city}',
       loading: '正在加载门店',
       error: '无法加载门店，请重试。',
       unavailable: '门店信息不可用',
@@ -640,6 +644,10 @@ export const zh: Messages = {
       showOrders: '订单',
       showBookings: '预订',
     },
+  },
+  chooseCity: {
+    title: '请选择您的城市',
+    text: '菜单、价格和下单都取决于城市。请选择一个城市以继续。',
   },
   noAccess: {
     eyebrow: '403',

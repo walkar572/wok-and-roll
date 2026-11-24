@@ -32,6 +32,8 @@ export const en = {
     city: 'City',
     cityCurrent: 'City, now: {name}',
     cityList: 'City: prices, cafés and delivery',
+    allCities: 'All cities',
+    allCitiesHint: 'Every café on the map; no ordering',
     loadingCountries: 'Loading countries',
     sampleData: 'Sample data',
     countryUnavailable: 'Country data unavailable',
@@ -87,6 +89,9 @@ export const en = {
       eyebrow: 'Come and see us',
       title: 'Our cafés',
       description: 'Collect your order or book a table at the café nearest to you.',
+      allDescription:
+        'Every Wok & Roll café in every city. Choose a city to see its menu and prices.',
+      chooseCity: 'Choose {city}',
       loading: 'Loading our cafés',
       error: 'We could not load our cafés. Please try again.',
       unavailable: 'Cafés unavailable',
@@ -650,6 +655,10 @@ export const en = {
       showOrders: 'Orders',
       showBookings: 'Bookings',
     },
+  },
+  chooseCity: {
+    title: 'Choose your city',
+    text: 'The menu, prices and ordering depend on the city. Choose one to continue.',
   },
   noAccess: {
     eyebrow: '403',

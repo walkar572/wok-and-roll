@@ -29,6 +29,8 @@ export const ka: Messages = {
     city: 'ქალაქი',
     cityCurrent: 'ქალაქი, ახლა: {name}',
     cityList: 'ქალაქი: ფასები, კაფეები და მიწოდება',
+    allCities: 'ყველა ქალაქი',
+    allCitiesHint: 'ყველა კაფე რუკაზე; შეკვეთის გარეშე',
     loadingCountries: 'ქვეყნები იტვირთება',
     sampleData: 'სანიმუშო მონაცემები',
     countryUnavailable: 'ქვეყნის მონაცემები მიუწვდომელია',
@@ -84,6 +86,9 @@ export const ka: Messages = {
       eyebrow: 'გვიპოვეთ',
       title: 'ჩვენი კაფეები',
       description: 'წაიღეთ შეკვეთა თავად ან დაჯავშნეთ მაგიდა უახლოეს კაფეში.',
+      allDescription:
+        'Wok & Roll-ის ყველა კაფე ყველა ქალაქში. მენიუსა და ფასების სანახავად აირჩიეთ ქალაქი.',
+      chooseCity: 'არჩევა: {city}',
       loading: 'კაფეები იტვირთება',
       error: 'კაფეების ჩატვირთვა ვერ მოხერხდა. სცადეთ ხელახლა.',
       unavailable: 'კაფეები მიუწვდომელია',
@@ -648,6 +653,10 @@ export const ka: Messages = {
       showOrders: 'შეკვეთები',
       showBookings: 'ჯავშნები',
     },
+  },
+  chooseCity: {
+    title: 'აირჩიეთ თქვენი ქალაქი',
+    text: 'მენიუ, ფასები და შეკვეთა ქალაქზეა დამოკიდებული. გასაგრძელებლად აირჩიეთ ქალაქი.',
   },
   noAccess: {
     eyebrow: '403',

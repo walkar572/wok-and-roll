@@ -1023,3 +1023,164 @@ summary:focus-visible,
     border: 2px solid Highlight;
   }
 }
+
+/* ---- all cities ---------------------------------------------------------------------------- */
+
+/* "All cities" opens the city list, apart from the cities under it. */
+.city-option--all {
+  margin-bottom: 4px;
+  box-shadow: 0 1px 0 var(--color-border-default);
+}
+
+/* Every café: the map across the whole width (it frames all of them), then the cafés city by
+   city, each city with the button that chooses it. */
+.cafes-layout--all {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cafes-layout--all .cafe-map {
+  min-height: 420px;
+}
+
+.cafes-all {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  align-items: start;
+  gap: var(--spacing-lg);
+}
+
+.cafes-city {
+  display: grid;
+  gap: var(--spacing-12);
+}
+
+.cafes-city__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-sm) var(--spacing-12);
+}
+
+.cafes-city__head h3 {
+  margin: 0;
+  font-size: var(--font-size-heading-h4);
+}
+
+.cafes-city__head p {
+  margin: 2px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-small);
+}
+
+.cafes-city .cafe-list,
+.cafes-layout--all .cafes-city .cafe-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cafe-card h4 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+/* Instead of prices while "All cities" is chosen: one tap on a city. */
+.choose-city {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  background: var(--color-bg-surface);
+}
+
+.choose-city h2 {
+  margin: 0;
+  font-size: var(--font-size-heading-h3);
+  line-height: 1.2;
+}
+
+.choose-city > p {
+  max-width: 640px;
+  margin: var(--spacing-sm) 0 var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.choose-city__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: var(--spacing-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choose-city__option {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  align-items: center;
+  gap: var(--spacing-12);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-canvas);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+.choose-city__option svg {
+  flex: none;
+  color: var(--color-text-brand);
+}
+
+.choose-city__option:hover {
+  border-color: var(--color-action-default);
+  background: var(--color-bg-card-hover);
+}
+
+.choose-city__text {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.choose-city__text strong {
+  font-weight: 600;
+}
+
+.choose-city__text span {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.choose-city--compact {
+  padding: var(--spacing-20);
+}
+
+.choose-city--compact h2 {
+  font-size: var(--font-size-heading-h4);
+}
+
+.choose-city--compact .choose-city__list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 767px) {
+  .choose-city {
+    padding: var(--spacing-md);
+  }
+
+  .cafes-layout--all .cafe-map {
+    min-height: 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choose-city__option {
+    transition: none;
+  }
+}

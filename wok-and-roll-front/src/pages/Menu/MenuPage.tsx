@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader } from '../../components/common';
 import { DishImage } from '../../components/common/DishImage';
 import { Icon } from '../../components/common/Icon';
+import { ChooseCity } from '../../components/layout/ChooseCity';
 import { useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import {
@@ -24,7 +25,7 @@ import { ProductDetailModal } from './ProductDetailModal';
 import { DishPrice, SavingBadge, setComposition, setSaving } from './sets';
 
 export function MenuPage() {
-  const { country, city } = useCountry();
+  const { country, city, allCities } = useCountry();
   const { addItem } = useCart();
   const { t } = useI18n();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -46,6 +47,8 @@ export function MenuPage() {
     setError(undefined);
     setCategories([]);
     setProducts([]);
+    // "All cities": no dishes until a city is chosen, so nothing can be ordered across cities.
+    if (allCities) return undefined;
 
     Promise.all([loadCategories(country), loadProducts(country, categoryId)])
       .then(([loadedCategories, loadedProducts]) => {
@@ -64,15 +67,28 @@ export function MenuPage() {
     return () => {
       active = false;
     };
-  }, [country, categoryId, retryCount, t]);
+  }, [country, categoryId, retryCount, t, allCities]);
+
+  const header = (
+    <header className="menu-page__header">
+      <p className="eyebrow">{t('menu.eyebrow')}</p>
+      <h1 id="menu-title">{t('menu.title')}</h1>
+      <p>{t('menu.description')}</p>
+    </header>
+  );
+
+  if (allCities) {
+    return (
+      <section className="menu-page" aria-labelledby="menu-title">
+        {header}
+        <ChooseCity />
+      </section>
+    );
+  }
 
   return (
     <section className="menu-page" aria-labelledby="menu-title">
-      <header className="menu-page__header">
-        <p className="eyebrow">{t('menu.eyebrow')}</p>
-        <h1 id="menu-title">{t('menu.title')}</h1>
-        <p>{t('menu.description')}</p>
-      </header>
+      {header}
 
       <div className="menu-toolbar">
         <nav className="menu-categories" aria-label={t('menu.filter')}>

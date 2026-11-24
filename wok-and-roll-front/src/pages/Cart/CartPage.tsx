@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader, Receipt } from '../../components/common';
+import { ChooseCity } from '../../components/layout/ChooseCity';
 import { getCartItemKey, useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import { placeName, t as translate, useI18n } from '../../i18n';
@@ -46,7 +47,7 @@ function toQuoteError(requestError: unknown): QuoteError {
 }
 
 export function CartPage() {
-  const { country, city } = useCountry();
+  const { country, city, allCities } = useCountry();
   const { items, setItemQuantity, removeItem } = useCart();
   const { t } = useI18n();
   const [quote, setQuote] = useState<CartQuote>();
@@ -72,7 +73,8 @@ export function CartPage() {
     setQuote(undefined);
     setError(undefined);
 
-    if (items.length === 0) {
+    // No prices for "All cities": the quote needs the country of one city.
+    if (items.length === 0 || allCities) {
       setIsLoading(false);
       return () => {
         active = false;
@@ -102,7 +104,7 @@ export function CartPage() {
     return () => {
       active = false;
     };
-  }, [country, items, retryCount]);
+  }, [country, items, retryCount, allCities]);
 
   // After Remove, keyboard focus goes to the next line, or to the empty cart message.
   useEffect(() => {
@@ -140,9 +142,12 @@ export function CartPage() {
     <section className="cart-page" aria-labelledby="cart-title">
       <p className="eyebrow">{t('cart.eyebrow')}</p>
       <h1 id="cart-title">{t('cart.title')}</h1>
-      <p className="cart-page__description">
-        {t('cart.description', { country: placeName(country, city) })}
-      </p>
+      {/* "All cities" has no prices to review yet: the city list next to the dishes asks first. */}
+      {!allCities && (
+        <p className="cart-page__description">
+          {t('cart.description', { country: placeName(country, city) })}
+        </p>
+      )}
 
       {error && (
         <div className="cart-page__error">
@@ -199,12 +204,15 @@ export function CartPage() {
         </div>
 
         <div className="receipt-layout__side">
+          {allCities && <ChooseCity compact />}
           {isLoading && <Loader label={t('cart.loadingPrices')} />}
           {currentQuote && <Receipt quote={currentQuote} />}
           <div className="receipt-layout__actions">
-            <Link className="button button--primary button--large" to="/checkout">
-              {t('cart.checkout')}
-            </Link>
+            {!allCities && (
+              <Link className="button button--primary button--large" to="/checkout">
+                {t('cart.checkout')}
+              </Link>
+            )}
             <Link className="button button--outline" to="/menu">
               {t('cart.continueShopping')}
             </Link>

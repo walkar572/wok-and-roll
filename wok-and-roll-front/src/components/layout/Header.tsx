@@ -91,7 +91,7 @@ export function Header() {
           {/* One menu at a time: a list closes the mobile menu, and while a list is open a tap
               outside it (on the menu button too) only closes the list. The city and the
               language are chosen apart. */}
-          <CitySwitcher onOpenChange={closeMenuWhenOpen} />
+          <CitySwitcher onOpenChange={closeMenuWhenOpen} allowAll />
           <LanguageSwitcher onOpenChange={closeMenuWhenOpen} />
           <div className="header-account">
             <AccountMenu />
@@ -139,7 +139,7 @@ export function Header() {
           )}
         </div>
         {/* On a phone the header has no room for the city: it is chosen here. */}
-        <CitySwitcher variant="menu" />
+        <CitySwitcher variant="menu" allowAll />
       </div>
     </header>
   );

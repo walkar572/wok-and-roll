@@ -3,6 +3,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { Button, ErrorMessage, Input, Loader } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
+import { ChooseCity } from '../../components/layout/ChooseCity';
 import { useCountry } from '../../context/CountryContext';
 import { cafeAddress, cafeName, clock, phoneHint, t as translate, useI18n } from '../../i18n';
 import { DAY_PICKER_LOCALE } from '../../i18n/dayPicker';
@@ -68,7 +69,7 @@ const FIELDS: Field[] = [
 
 /** Book a table (#183, API contract §3.10). */
 export function BookingPage() {
-  const { country, currentCountry } = useCountry();
+  const { country, currentCountry, allCities } = useCountry();
   const { me } = useAuth();
   const { t, locale } = useI18n();
   const [cafes, setCafes] = useState<Cafe[]>([]);
@@ -309,6 +310,16 @@ export function BookingPage() {
   }
 
   const errorList = Object.values(errors).filter(Boolean);
+
+  if (allCities) {
+    return (
+      <section className="booking-page" aria-labelledby="booking-title">
+        <p className="eyebrow">{t('booking.eyebrow')}</p>
+        <h1 id="booking-title">{t('booking.title')}</h1>
+        <ChooseCity />
+      </section>
+    );
+  }
 
   return (
     <section className="booking-page" aria-labelledby="booking-title">

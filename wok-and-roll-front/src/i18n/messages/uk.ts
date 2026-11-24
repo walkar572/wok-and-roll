@@ -29,6 +29,8 @@ export const uk: Messages = {
     city: 'Місто',
     cityCurrent: 'Місто, зараз: {name}',
     cityList: 'Місто: ціни, кафе й доставка',
+    allCities: 'Усі міста',
+    allCitiesHint: 'Усі кафе на мапі; без замовлення',
     loadingCountries: 'Завантаження країн',
     sampleData: 'Демонстраційні дані',
     countryUnavailable: 'Дані країн недоступні',
@@ -84,6 +86,9 @@ export const uk: Messages = {
       eyebrow: 'Знайдіть нас',
       title: 'Наші кафе',
       description: 'Заберіть замовлення самостійно або забронюйте столик у найближчому кафе.',
+      allDescription:
+        'Усі кафе Wok & Roll в усіх містах. Оберіть місто, щоб побачити меню та ціни.',
+      chooseCity: 'Обрати: {city}',
       loading: 'Завантажуємо кафе',
       error: 'Не вдалося завантажити кафе. Спробуйте ще раз.',
       unavailable: 'Кафе недоступні',
@@ -651,6 +656,10 @@ export const uk: Messages = {
       showOrders: 'Замовлення',
       showBookings: 'Бронювання',
     },
+  },
+  chooseCity: {
+    title: 'Оберіть своє місто',
+    text: 'Меню, ціни та замовлення залежать від міста. Оберіть місто, щоб продовжити.',
   },
   noAccess: {
     eyebrow: '403',

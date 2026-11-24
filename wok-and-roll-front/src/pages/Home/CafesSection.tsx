@@ -11,7 +11,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader } from '../../components/common';
 import { Icon } from '../../components/common/Icon';
-import { useCountry } from '../../context/CountryContext';
+import { useCountry, type City } from '../../context/CountryContext';
 import { CitySwitcher } from '../../components/layout/CitySwitcher';
 import { cafeAddress, cafeName, cityName, clock, countryName, useI18n } from '../../i18n';
 import { guestErrorMessage, loadCafes, type Cafe } from '../../services/api';
@@ -66,9 +66,13 @@ function prefersReducedMotion(): boolean {
  * switcher above them changes the city of the whole site (its prices too), not the language. Every
  * card has the address, the opening hours with "open now" in the café's own time zone, the phone
  * and a link to book a table there. The list is complete without the map.
+ *
+ * "All cities" shows every café of every country on one map, and the list by city, each city with
+ * a button to choose it; booking a table there chooses its city first.
  */
 export function CafesSection() {
-  const { country, city } = useCountry();
+  const { country, city, countries, cities, allCities, setCity } = useCountry();
+  const countryCodes = countries.map(({ code }) => code).join(',');
   const { t, locale } = useI18n();
   const [countryCafes, setCafes] = useState<Cafe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +90,12 @@ export function CafesSection() {
     setError(undefined);
     setActiveId(undefined);
 
-    loadCafes(country)
+    const request = allCities
+      ? Promise.all(countryCodes.split(',').map((code) => loadCafes(code))).then((lists) =>
+          lists.flat(),
+        )
+      : loadCafes(country);
+    request
       .then((result) => {
         if (active) setCafes(result);
       })
@@ -102,7 +111,7 @@ export function CafesSection() {
     return () => {
       active = false;
     };
-  }, [country, retryCount, t]);
+  }, [country, retryCount, t, allCities, countryCodes]);
 
   // "Open now" changes with the clock.
   useEffect(() => {
@@ -112,8 +121,24 @@ export function CafesSection() {
 
   // An older server sends no city: then every café of the country is in its (only) city.
   const cafes = useMemo(
-    () => countryCafes.filter((cafe) => !city || !cafe.city || cafe.city === city),
-    [countryCafes, city],
+    () =>
+      allCities
+        ? countryCafes
+        : countryCafes.filter((cafe) => !city || !cafe.city || cafe.city === city),
+    [countryCafes, city, allCities],
+  );
+  // "All cities": the cafés by city, in the order of the city list.
+  const groups = useMemo(
+    () =>
+      cities
+        .map((item) => ({
+          city: item,
+          cafes: cafes.filter(
+            (cafe) => cafe.country === item.country.code && cafe.city === item.name,
+          ),
+        }))
+        .filter((group) => group.cafes.length > 0),
+    [cities, cafes],
   );
 
   const mapCafes = useMemo<MapCafe[]>(
@@ -170,6 +195,76 @@ export function CafesSection() {
     }
   }
 
+  /** One café card; in "All cities" booking a table there chooses its city first. */
+  function renderCafe(cafe: Cafe, Heading: 'h3' | 'h4', cafeCity?: City) {
+    const name = cafeName(cafe.name);
+    const isActive = cafe.id === activeId;
+    const current = minutesIn(cafe.timeZone, now);
+    const isOpen =
+      current !== undefined && current >= minutes(cafe.opensAt) && current < minutes(cafe.closesAt);
+    return (
+      <li key={cafe.id}>
+        <article
+          className={`cafe-card${isActive ? ' is-active' : ''}`}
+          aria-labelledby={`cafe-${cafe.id}-name`}
+        >
+          <div className="cafe-card__head">
+            <Heading id={`cafe-${cafe.id}-name`}>{name}</Heading>
+            {current !== undefined && (
+              <p className={`cafe-status${isOpen ? ' is-open' : ''}`}>
+                <span className="cafe-status__dot" aria-hidden="true" />
+                {isOpen
+                  ? t('home.cafes.openNow', { time: clock(cafe.closesAt) })
+                  : t('home.cafes.closedNow', { time: clock(cafe.opensAt) })}
+              </p>
+            )}
+          </div>
+          <ul className="cafe-card__facts">
+            <li>
+              <Icon name="pin" />
+              {cafeAddress(cafe.address)}
+            </li>
+            <li>
+              <Icon name="clock" />
+              {t('home.cafes.hours', {
+                opens: clock(cafe.opensAt),
+                closes: clock(cafe.closesAt),
+              })}
+            </li>
+            {cafe.phone && (
+              <li>
+                <Icon name="phone" />
+                <a href={`tel:${cafe.phone}`}>{cafe.phone}</a>
+              </li>
+            )}
+          </ul>
+          <div className="cafe-card__actions">
+            {cafe.location && showMap && !mapFailed && (
+              <button
+                className="cafe-card__locate"
+                type="button"
+                aria-label={t('home.cafes.showOnMap', { name })}
+                aria-pressed={isActive}
+                title={t('home.cafes.showOnMap', { name })}
+                onClick={() => showOnMap(cafe.id)}
+              >
+                <Icon name="pin" />
+              </button>
+            )}
+            <Link
+              className="button button--primary cafe-card__book"
+              to={`/booking?cafe=${cafe.id}`}
+              onClick={cafeCity ? () => setCity(cafeCity) : undefined}
+              aria-label={t('home.cafes.bookAt', { name })}
+            >
+              {t('home.cafes.book')}
+            </Link>
+          </div>
+        </article>
+      </li>
+    );
+  }
+
   const mapFallback = (
     <p className="cafe-map__fallback">
       <Icon name="pin" />
@@ -183,9 +278,11 @@ export function CafesSection() {
         <div>
           <p className="eyebrow">{t('home.cafes.eyebrow')}</p>
           <h2 id="cafes-title">{t('home.cafes.title')}</h2>
-          <p className="home-cafes__description">{t('home.cafes.description')}</p>
+          <p className="home-cafes__description">
+            {allCities ? t('home.cafes.allDescription') : t('home.cafes.description')}
+          </p>
         </div>
-        <CitySwitcher variant="section" />
+        <CitySwitcher variant="section" allowAll />
       </div>
 
       {isLoading && <Loader label={t('home.cafes.loading')} />}
@@ -197,18 +294,25 @@ export function CafesSection() {
           </Button>
         </div>
       )}
-      {!isLoading && !error && cafes.length === 0 && (
+      {!isLoading && !error && cafes.length === 0 && !allCities && (
         <p>{t('home.cafes.empty', { country: city ? cityName(city) : countryName(country) })}</p>
       )}
 
       {!isLoading && cafes.length > 0 && (
-        <div className={`cafes-layout${showMap ? '' : ' cafes-layout--list'}`}>
+        <div
+          className={`cafes-layout${showMap ? '' : ' cafes-layout--list'}${
+            allCities ? ' cafes-layout--all' : ''
+          }`}
+        >
           {showMap && (
             <div className="cafe-map" ref={mapBoxRef}>
               {mapFailed
                 ? mapFallback
                 : mapNear && (
-                    <MapBoundary key={`${country}-${city}`} fallback={mapFallback}>
+                    <MapBoundary
+                      key={allCities ? 'all' : `${country}-${city}`}
+                      fallback={mapFallback}
+                    >
                       <Suspense fallback={null}>
                         <CafeMap
                           cafes={mapCafes}
@@ -224,77 +328,34 @@ export function CafesSection() {
             </div>
           )}
 
-          <ul className="cafe-list">
-            {cafes.map((cafe) => {
-              const name = cafeName(cafe.name);
-              const isActive = cafe.id === activeId;
-              const current = minutesIn(cafe.timeZone, now);
-              const isOpen =
-                current !== undefined &&
-                current >= minutes(cafe.opensAt) &&
-                current < minutes(cafe.closesAt);
-              return (
-                <li key={cafe.id}>
-                  <article
-                    className={`cafe-card${isActive ? ' is-active' : ''}`}
-                    aria-labelledby={`cafe-${cafe.id}-name`}
-                  >
-                    <div className="cafe-card__head">
-                      <h3 id={`cafe-${cafe.id}-name`}>{name}</h3>
-                      {current !== undefined && (
-                        <p className={`cafe-status${isOpen ? ' is-open' : ''}`}>
-                          <span className="cafe-status__dot" aria-hidden="true" />
-                          {isOpen
-                            ? t('home.cafes.openNow', { time: clock(cafe.closesAt) })
-                            : t('home.cafes.closedNow', { time: clock(cafe.opensAt) })}
+          {allCities ? (
+            <div className="cafes-all">
+              {groups.map((group) => {
+                const titleId = `cafes-${group.city.country.code}-${group.city.name.replace(/\W/g, '')}`;
+                return (
+                  <section key={titleId} className="cafes-city" aria-labelledby={titleId}>
+                    <div className="cafes-city__head">
+                      <div>
+                        <h3 id={titleId}>{cityName(group.city.name)}</h3>
+                        <p>
+                          {countryName(group.city.country.code, group.city.country.name)} ·{' '}
+                          {group.city.country.currency}
                         </p>
-                      )}
+                      </div>
+                      <Button variant="outline" size="small" onClick={() => setCity(group.city)}>
+                        {t('home.cafes.chooseCity', { city: cityName(group.city.name) })}
+                      </Button>
                     </div>
-                    <ul className="cafe-card__facts">
-                      <li>
-                        <Icon name="pin" />
-                        {cafeAddress(cafe.address)}
-                      </li>
-                      <li>
-                        <Icon name="clock" />
-                        {t('home.cafes.hours', {
-                          opens: clock(cafe.opensAt),
-                          closes: clock(cafe.closesAt),
-                        })}
-                      </li>
-                      {cafe.phone && (
-                        <li>
-                          <Icon name="phone" />
-                          <a href={`tel:${cafe.phone}`}>{cafe.phone}</a>
-                        </li>
-                      )}
+                    <ul className="cafe-list">
+                      {group.cafes.map((cafe) => renderCafe(cafe, 'h4', group.city))}
                     </ul>
-                    <div className="cafe-card__actions">
-                      {cafe.location && showMap && !mapFailed && (
-                        <button
-                          className="cafe-card__locate"
-                          type="button"
-                          aria-label={t('home.cafes.showOnMap', { name })}
-                          aria-pressed={isActive}
-                          title={t('home.cafes.showOnMap', { name })}
-                          onClick={() => showOnMap(cafe.id)}
-                        >
-                          <Icon name="pin" />
-                        </button>
-                      )}
-                      <Link
-                        className="button button--primary cafe-card__book"
-                        to={`/booking?cafe=${cafe.id}`}
-                        aria-label={t('home.cafes.bookAt', { name })}
-                      >
-                        {t('home.cafes.book')}
-                      </Link>
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
-          </ul>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <ul className="cafe-list">{cafes.map((cafe) => renderCafe(cafe, 'h3'))}</ul>
+          )}
         </div>
       )}
     </section>
