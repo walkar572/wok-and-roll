@@ -665,6 +665,7 @@ export const en = {
     hello: 'Hi! I’m Panko',
     intro: 'I’m the chef of Wok & Roll. Soon you’ll be able to ask me about the menu right here.',
     hide: 'Hide Panko',
+    show: 'Show Panko',
   },
   noAccess: {
     eyebrow: '403',

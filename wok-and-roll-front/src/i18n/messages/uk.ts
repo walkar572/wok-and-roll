@@ -666,6 +666,7 @@ export const uk: Messages = {
     hello: 'Привіт! Я Панко',
     intro: 'Я кухар Wok & Roll. Незабаром тут можна буде запитати мене про меню.',
     hide: 'Сховати Панко',
+    show: 'Показати Панко',
   },
   noAccess: {
     eyebrow: '403',

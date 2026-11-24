@@ -667,6 +667,7 @@ export const uz: Messages = {
     intro:
       'Men Wok & Roll oshpaziman. Tez orada shu yerda menyu haqida soʻrashingiz mumkin boʻladi.',
     hide: 'Pankoni yashirish',
+    show: 'Pankoni koʻrsatish',
   },
   noAccess: {
     eyebrow: '403',

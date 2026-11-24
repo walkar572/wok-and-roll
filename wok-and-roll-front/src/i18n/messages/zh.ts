@@ -654,6 +654,7 @@ export const zh: Messages = {
     hello: '你好！我是 Panko',
     intro: '我是 Wok & Roll 的厨师。很快您就可以在这里向我询问菜单了。',
     hide: '隐藏 Panko',
+    show: '显示 Panko',
   },
   noAccess: {
     eyebrow: '403',
