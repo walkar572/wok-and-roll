@@ -10,7 +10,12 @@ import { countryEndonym, countryName, languageOfCountry, useI18n } from '../../i
  * not read the current language still finds their own. Radix Select gives the listbox keyboard
  * support (arrows, Home/End, typing, Escape) and the ARIA roles.
  */
-export function CountrySwitcher() {
+export function CountrySwitcher({
+  onOpenChange,
+}: {
+  /** The header closes its mobile menu while the list is open. */
+  onOpenChange?: (open: boolean) => void;
+} = {}) {
   const { country, countries, currentCountry, isLoadingCountries, countriesError, setCountry } =
     useCountry();
   const { t } = useI18n();
@@ -20,6 +25,7 @@ export function CountrySwitcher() {
     <div className="country-control">
       <Select.Root
         value={country}
+        onOpenChange={onOpenChange}
         onValueChange={(code) => {
           if (countries.some((item) => item.code === code)) setCountry(code);
         }}

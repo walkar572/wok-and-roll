@@ -11,6 +11,8 @@ import { accountLinks, mainLinks, Navigation, visibleLinks } from './Navigation'
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const header = useRef<HTMLElement>(null);
   const { country, currentCountry } = useCountry();
   const menuToggle = useRef<HTMLButtonElement>(null);
   const location = useLocation();
@@ -24,7 +26,32 @@ export function Header() {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  // Escape closes the mobile menu and gives the focus back to its button.
+  // The header stays at the top of the screen; once the page moves under it, a soft shadow
+  // separates the two.
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 4);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  // Keyboard focus never hides under the sticky header (WCAG 2.4.11): Shift+Tab to a link that is
+  // under it moves the page down. Only keyboard focus (:focus-visible), so a click never jumps.
+  useEffect(() => {
+    function keepFocusVisible(event: FocusEvent) {
+      const target = event.target;
+      const bar = header.current;
+      if (!(target instanceof HTMLElement) || !bar || bar.contains(target)) return;
+      if (!target.closest('.app-main, .site-footer') || !target.matches(':focus-visible')) return;
+      const covered = bar.getBoundingClientRect().bottom + 16 - target.getBoundingClientRect().top;
+      if (covered > 16) window.scrollBy({ top: -covered });
+    }
+    document.addEventListener('focusin', keepFocusVisible);
+    return () => document.removeEventListener('focusin', keepFocusVisible);
+  }, []);
+
+  // Escape closes the mobile menu and gives the focus back to its button; a tap outside the
+  // header closes it too.
   useEffect(() => {
     if (!menuOpen) return undefined;
     function closeOnEscape(event: KeyboardEvent) {
@@ -32,12 +59,19 @@ export function Header() {
       setMenuOpen(false);
       menuToggle.current?.focus();
     }
+    function closeOnOutsidePointer(event: PointerEvent) {
+      if (!header.current?.contains(event.target as Node)) setMenuOpen(false);
+    }
     document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+    };
   }, [menuOpen]);
 
   return (
-    <header className="site-header figma-header">
+    <header ref={header} className={`site-header figma-header${scrolled ? ' is-scrolled' : ''}`}>
       <div className="site-header__inner">
         <div className="desktop-nav">
           <Navigation />
@@ -46,7 +80,13 @@ export function Header() {
           Wok &amp; Roll
         </Link>
         <div className="header-tools">
-          <CountrySwitcher />
+          {/* One menu at a time: the country list closes the mobile menu, and while the list
+              is open a tap outside it (on the menu button too) only closes the list. */}
+          <CountrySwitcher
+            onOpenChange={(open) => {
+              if (open) setMenuOpen(false);
+            }}
+          />
           <div className="header-account">
             <AccountMenu />
           </div>

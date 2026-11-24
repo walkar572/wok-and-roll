@@ -49,7 +49,8 @@ export function HomePage() {
     };
   }, [country, retryCount, t]);
 
-  const favorites = products.filter(({ inStock }) => inStock).slice(0, 3);
+  // Four: one row of four on a wide screen, two rows of two on a tablet, no empty place.
+  const favorites = products.filter(({ inStock }) => inStock).slice(0, 4);
   // Before the menu is loaded (or when it cannot be) the photos show without a price; a dish that
   // is not sold in the country is left out.
   const slides: HeroSlide[] = HERO_DISHES.flatMap(([name, image]) => {
