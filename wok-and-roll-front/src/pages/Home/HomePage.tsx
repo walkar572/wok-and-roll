@@ -6,11 +6,22 @@ import { Icon } from '../../components/common/Icon';
 import { useCountry } from '../../context/CountryContext';
 import { countryName, productDescription, productName, useI18n, portionText } from '../../i18n';
 import { formatPrice, guestErrorMessage, loadProducts, type Product } from '../../services/api';
+import { HeroCarousel, type HeroSlide } from './HeroCarousel';
+
+// Dishes of the hero slideshow, in this order (English API names; the photos are in /images).
+const HERO_DISHES = [
+  ['Salmon avocado roll', '/images/salmon-roll.png'],
+  ['Firecracker udon', '/images/udon.png'],
+  ['Wok & Roll set for two', '/images/set-for-two.png'],
+  ['Gyoza', '/images/gyoza.png'],
+  ['Miso mushroom rice', '/images/mushroom-rice.png'],
+  ['Yuzu lemonade', '/images/yuzu-lemonade.png'],
+] as const;
 
 export function HomePage() {
   const { country } = useCountry();
   const { t } = useI18n();
-  const [favorites, setFavorites] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [retryCount, setRetryCount] = useState(0);
@@ -22,7 +33,7 @@ export function HomePage() {
 
     loadProducts(country)
       .then((products) => {
-        if (active) setFavorites(products.filter(({ inStock }) => inStock).slice(0, 3));
+        if (active) setProducts(products);
       })
       .catch((requestError: unknown) => {
         if (!active) return;
@@ -36,6 +47,22 @@ export function HomePage() {
       active = false;
     };
   }, [country, retryCount, t]);
+
+  const favorites = products.filter(({ inStock }) => inStock).slice(0, 3);
+  // Before the menu is loaded (or when it cannot be) the photos show without a price; a dish that
+  // is not sold in the country is left out.
+  const slides: HeroSlide[] = HERO_DISHES.flatMap(([name, image]) => {
+    const product = products.find((item) => item.name === name);
+    if (products.length > 0 && !product) return [];
+    return [
+      {
+        key: name,
+        image: product?.imageUrl ?? image,
+        name: productName(name),
+        price: product ? formatPrice(product.price, product.currency) : undefined,
+      },
+    ];
+  });
 
   return (
     <div className="home-page">
@@ -58,13 +85,7 @@ export function HomePage() {
             {t('home.cta')} <Icon name="arrow" />
           </Link>
         </div>
-        <img
-          className="home-hero__image"
-          src="/images/salmon-roll.png"
-          alt={t('home.heroAlt')}
-          width="512"
-          height="512"
-        />
+        <HeroCarousel slides={slides} />
       </section>
 
       <section className="home-shortcuts" aria-labelledby="favorites-title">

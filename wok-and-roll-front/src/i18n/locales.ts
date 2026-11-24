@@ -23,6 +23,16 @@ export const INTL_LOCALE: Record<Locale, string> = {
   en: 'en-GB',
 };
 
+/** The name of each language in itself, for the country switcher. */
+export const LANGUAGE_NAME: Record<Locale, string> = {
+  uz: 'Oʻzbekcha',
+  kk: 'Қазақша',
+  ka: 'ქართული',
+  uk: 'Українська',
+  zh: '中文',
+  en: 'English',
+};
+
 export function localeForCountry(country: string): Locale {
   return COUNTRY_LOCALE[country] ?? DEFAULT_LOCALE;
 }

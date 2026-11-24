@@ -6,12 +6,12 @@ import { useCountry } from '../../context/CountryContext';
 import { useCart } from '../../context/CartContext';
 import { countryName, useI18n } from '../../i18n';
 import { AccountMenu } from './AccountMenu';
+import { CountrySwitcher } from './CountrySwitcher';
 import { accountLinks, mainLinks, Navigation, visibleLinks } from './Navigation';
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { country, countries, currentCountry, isLoadingCountries, countriesError, setCountry } =
-    useCountry();
+  const { country, currentCountry } = useCountry();
   const menuToggle = useRef<HTMLButtonElement>(null);
   const location = useLocation();
   const { itemCount } = useCart();
@@ -46,35 +46,7 @@ export function Header() {
           Wok &amp; Roll
         </Link>
         <div className="header-tools">
-          <label className="country-control">
-            <span className="sr-only">{t('nav.country')}</span>
-            <select
-              aria-label={t('nav.countryCurrent', {
-                name: countryName(country, currentCountry.name),
-              })}
-              value={country}
-              onChange={(event) => {
-                const selectedCountry = countries.find(({ code }) => code === event.target.value);
-                if (selectedCountry) setCountry(selectedCountry.code);
-              }}
-            >
-              {countries.map((item) => (
-                <option key={item.code} value={item.code} title={countryName(item.code, item.name)}>
-                  {item.code}
-                </option>
-              ))}
-            </select>
-            <Icon name="chevron" />
-            {isLoadingCountries ? (
-              <span className="country-control__status" role="status">
-                {t('nav.loadingCountries')}
-              </span>
-            ) : countriesError ? (
-              <span className="country-control__status" role="status" title={countriesError}>
-                {import.meta.env.DEV ? t('nav.sampleData') : t('nav.countryUnavailable')}
-              </span>
-            ) : null}
-          </label>
+          <CountrySwitcher />
           <div className="header-account">
             <AccountMenu />
           </div>

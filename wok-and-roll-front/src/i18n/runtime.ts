@@ -2,7 +2,13 @@
 // for Intl. The provider in index.tsx sets the locale; services can import this file without a
 // circular import through the contexts.
 import { catalogTexts } from './catalog';
-import { DEFAULT_LOCALE, INTL_LOCALE, type Locale } from './locales';
+import {
+  DEFAULT_LOCALE,
+  INTL_LOCALE,
+  LANGUAGE_NAME,
+  localeForCountry,
+  type Locale,
+} from './locales';
 import { en, type Messages } from './messages/en';
 import { ka } from './messages/ka';
 import { kk } from './messages/kk';
@@ -111,4 +117,15 @@ export function cafeAddress(address: string): string {
 
 export function countryName(code: string, fallback?: string): string {
   return catalogTexts(currentLocale).countries[code] ?? fallback ?? code;
+}
+
+/** The name of a country in its own language: "Oʻzbekiston", "United Kingdom". */
+export function countryEndonym(code: string, fallback?: string): string {
+  return catalogTexts(localeForCountry(code)).countries[code] ?? fallback ?? code;
+}
+
+/** The language a country gets: its name in itself and its BCP 47 tag for `lang`. */
+export function languageOfCountry(code: string): { name: string; tag: string } {
+  const locale = localeForCountry(code);
+  return { name: LANGUAGE_NAME[locale], tag: INTL_LOCALE[locale] };
 }
