@@ -1,5 +1,5 @@
-/* The decoration of the home hero: paper lanterns on threads and a Chinese railing over the dish
-   photo. Decoration only: no clicks, hidden from screen readers, still for reduced motion. */
+/* The decoration of the home hero: paper lanterns on threads. Decoration only: no clicks, hidden
+   from screen readers, still for reduced motion. */
 
 /* The lanterns hang across the whole width of the screen, also in the page margins, so the shell
    clips the sideways overflow on the home page. clip is not a scroll container: the sticky
@@ -205,48 +205,6 @@
   .hero-lantern {
     transform: translateY(calc((var(--high) + var(--low)) / 2));
   }
-}
-
-/* ---- the railing over the photo ---------------------------------------------------------- */
-
-/* Openwork: thin gold lines on a shade that fades from the top edge of the photo to nothing, so
-   the dish shows through and the gold still reads on a light photo. */
-.hero-fence {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  z-index: 1;
-  height: 84px;
-  background: linear-gradient(rgb(32 31 27 / 40%), rgb(32 31 27 / 15%) 55%, rgb(32 31 27 / 0%));
-  pointer-events: none;
-}
-
-.hero-fence svg {
-  display: block;
-  filter: drop-shadow(0 1px 1px rgb(32 31 27 / 50%));
-}
-
-.hero-fence__rail {
-  fill: var(--saffron-500);
-  opacity: 0.95;
-}
-
-.hero-fence__rail--thin {
-  opacity: 0.6;
-}
-
-.hero-fence__fret {
-  fill: none;
-  stroke: var(--saffron-500);
-  stroke-width: 2;
-  stroke-linecap: square;
-  opacity: 0.9;
-}
-
-/* The price card stands in front of the railing, so it is not see-through any more. */
-.hero-carousel__caption {
-  background: var(--color-bg-surface);
 }
 
 /* The slide buttons sit in the bottom right corner of the photo. */

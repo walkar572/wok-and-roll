@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } fr
 import { Link } from 'react-router-dom';
 import { Icon } from '../../components/common/Icon';
 import { useI18n } from '../../i18n';
-import { HeroFence } from './HeroFence';
 
 export interface HeroSlide {
   key: string;
@@ -115,8 +114,6 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           </div>
         ))}
       </div>
-
-      <HeroFence />
 
       <Link className="hero-carousel__caption" to="/menu">
         <span className="hero-carousel__name">{current.name}</span>
