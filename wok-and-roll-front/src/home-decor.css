@@ -55,8 +55,8 @@
 .hero-lantern::before {
   position: absolute;
   bottom: calc(100% - 2px);
-  left: 50%;
-  width: 1px;
+  left: calc(50% - 0.75px);
+  width: 1.5px;
   height: 700px;
   background: rgb(72 71 65 / 45%);
   content: '';
@@ -209,13 +209,14 @@
 
 /* ---- the railing over the photo ---------------------------------------------------------- */
 
+/* From the top edge of the photo down past the price card, so the card stands wholly on it. */
 .hero-fence {
   position: absolute;
-  top: 40px;
+  top: 0;
   right: 0;
   left: 0;
   z-index: 1;
-  height: 52px;
+  height: 92px;
   pointer-events: none;
   filter: drop-shadow(0 3px 4px rgb(0 0 0 / 30%));
 }
@@ -256,10 +257,6 @@
 }
 
 @media (max-width: 767px) {
-  .hero-fence {
-    top: 30px;
-  }
-
   .hero-carousel__controls {
     right: 12px;
     left: auto;
