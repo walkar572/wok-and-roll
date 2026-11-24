@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom';
 import { useI18n, type MessageKey } from '../../i18n';
+import { Mascot } from '../mascot/Mascot';
 import { Footer } from './Footer';
 import { Header } from './Header';
 
@@ -36,6 +37,7 @@ export function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <Mascot />
       <ScrollRestoration />
     </div>
   );

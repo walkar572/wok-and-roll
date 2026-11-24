@@ -660,6 +660,12 @@ export const en = {
     title: 'Choose your city',
     text: 'The menu, prices and ordering depend on the city. Choose one to continue.',
   },
+  mascot: {
+    label: 'Panko, the Wok & Roll chef',
+    hello: 'Hi! I’m Panko',
+    intro: 'I’m the chef of Wok & Roll. Soon you’ll be able to ask me about the menu right here.',
+    hide: 'Hide Panko',
+  },
   noAccess: {
     eyebrow: '403',
     title: 'No access',

@@ -649,6 +649,12 @@ export const zh: Messages = {
     title: '请选择您的城市',
     text: '菜单、价格和下单都取决于城市。请选择一个城市以继续。',
   },
+  mascot: {
+    label: 'Panko，Wok & Roll 的厨师',
+    hello: '你好！我是 Panko',
+    intro: '我是 Wok & Roll 的厨师。很快您就可以在这里向我询问菜单了。',
+    hide: '隐藏 Panko',
+  },
   noAccess: {
     eyebrow: '403',
     title: '无权访问',

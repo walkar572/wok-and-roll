@@ -661,6 +661,13 @@ export const uz: Messages = {
     title: 'Shahringizni tanlang',
     text: 'Menyu, narxlar va buyurtma shaharga bogʻliq. Davom etish uchun shaharni tanlang.',
   },
+  mascot: {
+    label: 'Panko, Wok & Roll oshpazi',
+    hello: 'Salom! Men Pankoman',
+    intro:
+      'Men Wok & Roll oshpaziman. Tez orada shu yerda menyu haqida soʻrashingiz mumkin boʻladi.',
+    hide: 'Pankoni yashirish',
+  },
   noAccess: {
     eyebrow: '403',
     title: 'Ruxsat yoʻq',
