@@ -2,9 +2,8 @@ import { useId } from 'react';
 
 /**
  * A Chinese railing across the top of the dish photo: red rails and posts with gold knobs and two
- * rows of fret lattice (the square "回" spiral, the lower row mirrored). It covers the top of the
- * photo from its edge, so the price card stands wholly in front of it. Decoration only, hidden
- * from screen readers.
+ * rows of fret lattice (the square "回" spiral, the lower row mirrored) over the top of the photo,
+ * under the price card and the slide buttons. Decoration only, hidden from screen readers.
  */
 export function HeroFence() {
   const bay = `${useId().replace(/:/g, '')}-bay`;

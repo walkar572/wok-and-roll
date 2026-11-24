@@ -99,8 +99,8 @@
 .hero-lantern:nth-of-type(3) {
   --x: 50%;
   --size: 32px;
-  --high: 30px;
-  --low: 300px;
+  --high: 20px;
+  --low: 130px;
   --time: 12s;
   --delay: -1s;
 }
@@ -209,7 +209,7 @@
 
 /* ---- the railing over the photo ---------------------------------------------------------- */
 
-/* From the top edge of the photo down past the price card, so the card stands wholly on it. */
+/* The railing covers the top of the photo, from its very edge. */
 .hero-fence {
   position: absolute;
   top: 0;
@@ -245,8 +245,11 @@
   stroke-linecap: square;
 }
 
-/* The price card stands in front of the railing, so it is not see-through any more. */
+/* The price card sits in the bottom left corner, just above the row of slide buttons, so the
+   railing at the top shows whole. It is not see-through any more. */
 .hero-carousel__caption {
+  top: auto;
+  bottom: 84px;
   background: var(--color-bg-surface);
 }
 
@@ -257,6 +260,11 @@
 }
 
 @media (max-width: 767px) {
+  .hero-carousel__caption {
+    top: auto;
+    bottom: 76px;
+  }
+
   .hero-carousel__controls {
     right: 12px;
     left: auto;
