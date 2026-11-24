@@ -52,7 +52,10 @@ the API answers `409 PRICE_CHANGED` and saves nothing.
 | Delivery fee | the zone fee for delivery, `0.00` for pickup; added last, outside VAT and discount |
 | **Total** | `amountInclVat − discount + deliveryFee` |
 
-Example (UZB, delivery zone fee 20.00): subtotal 170.00 → VAT 15 % = 25.50 → 195.50 →
+Example (UZB, the Tashkent: Center zone, fee 20,000.00): 2 × Salmon avocado roll 79,000.00 =
+158,000.00 → VAT 15 % = 23,700.00 → 181,700.00 → discount 3 % = 5,451.00 → total 176,249.00 for
+pickup, **196,249.00 UZS** with delivery. The same formula with the demo scale of the project plan:
+subtotal 170.00 → VAT 15 % = 25.50 → 195.50 →
 discount 3 % = 5.865 → **5.87** → total 195.50 − 5.87 + 20.00 = **209.63 UZS**.
 
 ### VAT by country
@@ -65,13 +68,21 @@ discount 3 % = 5.865 → **5.87** → total 195.50 − 5.87 + 20.00 = **209.63 U
 | Ukraine (UKR) | UAH | 8 % |
 | China (CHN) | CNY | 18 % |
 
-### Discount thresholds (the same tiers in every country, in its local currency)
+### Discount thresholds and delivery fees (local currency)
 
-| Amount incl. VAT from | 100 | 500 | 700 | 1,000 | 5,000 |
-|---|---|---|---|---|---|
-| Discount | 3 % | 5 % | 7 % | 10 % | 15 % |
+Prices, thresholds and fees are at the level of Tashkent and converted at November 2026 rates
+(1 USD ≈ 12,700 UZS · 510 KZT · 2.70 GEL · 41.5 UAH · 7.15 CNY), so a discount means the same in
+every country: 3 % from about two dishes, 15 % only for very big orders.
 
-Below 100 there is no discount. Delivery zones: 3 per country with fees 15.00, 20.00 and 30.00.
+| Country | Currency | 3 % from | 5 % from | 7 % from | 10 % from | 15 % from | Delivery zones |
+|---|---|---|---|---|---|---|---|
+| UZB | UZS | 100,000 | 500,000 | 700,000 | 1,000,000 | 5,000,000 | 15,000 / 20,000 / 30,000 |
+| KAZ | KZT | 4,000 | 20,000 | 28,000 | 40,000 | 200,000 | 600 / 800 / 1,200 |
+| GEO | GEL | 20 | 100 | 150 | 200 | 1,000 | 3.50 / 4.50 / 6.50 |
+| UKR | UAH | 300 | 1,600 | 2,300 | 3,300 | 16,000 | 50 / 65 / 100 |
+| CHN | CNY | 55 | 280 | 400 | 550 | 2,800 | 8 / 11 / 17 |
+
+Below the first threshold there is no discount. Each country has three zones: near, center, far.
 
 ## 4. Reports, PDF and CSV
 
@@ -106,7 +117,16 @@ Deny by default, one test per cell. Passwords: BCrypt. Tokens: HS256 with `exp`,
 `409 VERSION_CONFLICT` instead of overwriting each other. The frontend mirrors the rules in its
 menu and route guards; the server checks every request again.
 
-## 6. Quality
+## 6. Languages
+
+The interface speaks the language of the chosen country: Uzbek (Latin), Kazakh, Georgian,
+Ukrainian, Chinese; only the brand "Wok & Roll" stays. Dish names, categories, cafés and zones
+are translated in the frontend by their English name from the API (a new dish shows as entered).
+API errors are translated by `code` and field. Money and dates use the conventions of the
+language (176 249,00 soʻm, 2 190,00 ₸, ¥31.00); `<html lang>` follows, so screen readers switch
+voice.
+
+## 7. Quality
 
 Backend: about 500 unit and integration tests (integration tests against PostgreSQL), Spotless
 with Google Java Style. Frontend: TypeScript strict, ESLint with jsx-a11y, Prettier. CI runs both on every pull

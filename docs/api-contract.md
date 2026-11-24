@@ -22,6 +22,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.0 | 10 Nov | Stage 2: countries, categories, products, product details, cart quote (#123) |
 | 1.1 | 14 Nov | Stages 3–5 and bonus: totals in the quote, orders, cafés, delivery zones, time slots, bookings, auth and account, staff, admin, reports with PDF and CSV. New rules for time zones, idempotency, paging, request id and roles. Every change to v1.0 is additive (#142). |
 | 1.2 | 20 Nov | 406 NOT_ACCEPTABLE error row (#155) |
+| 1.4 | 24 Nov | Real price levels (§5): prices, discount thresholds and delivery fees in each currency at the level of Tashkent, converted at November 2026 rates. The interface language follows the country; the API stays English. |
 | 1.3 | 23 Nov | Every endpoint of §2 is built. Additive details found while building: `GET /staff/bookings` returns `{ "items": [...] }` like the other new lists; `POST` and `PATCH /admin/products` take an optional `?country=` (default `UZB`) for the price fields of the response; new `GET /admin/categories` (all categories with `version`). Sales history seed Jun–Nov 2026 (#171). |
 
 ---
@@ -38,7 +39,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | IDs | Positive integers from the database. |
 | Lists | Stage 2 lists stay plain JSON arrays without paging (small, fixed data). New lists that can grow (`me/orders`, `staff/*`, `admin/products`) use paging (§1.1). Other new endpoints return an object, so fields can be added later without breaking clients. |
 | Auth | Public: the guest flow (menu, cart quote, cafés, zones, slots, orders, bookings) and `auth/register`, `auth/login`. Everything else needs `Authorization: Bearer <token>` (§3.11, §8). |
-| Language | English only (Decision Log, 5 Nov). |
+| Language | The API is English (codes, names, messages). The web interface is shown in the language of the chosen country (UZB Uzbek, KAZ Kazakh, GEO Georgian, UKR Ukrainian, CHN Chinese) and translates error messages by `code` and field; only the brand name stays as it is (v1.4). |
 | Health check | `GET /api/health` → `{"status":"UP"}` (outside `/api/v1`, already on `dev`). |
 | Dates and times | A date is `YYYY-MM-DD` (`orderDate`). A clock time is `HH:mm`, 24 h (`slotStart: "12:30"`). Both are **local to the café's country** (next row). A moment is ISO 8601 in UTC with `Z` (`createdAt: "2026-11-18T09:15:00Z"`) and is stored as `timestamptz`. |
 | Time zones | Each country has an IANA time zone: UZB `Asia/Tashkent`, KAZ `Asia/Almaty`, GEO `Asia/Tbilisi`, UKR `Europe/Kyiv`, CHN `Asia/Shanghai`. "Today" and "now" for orders, slots and bookings are taken in that zone with one helper, `CountryClock`; never `LocalDate.now()` without a zone. Needs tz data 2024a or newer (JDK 21.0.3+), where all of Kazakhstan is UTC+5. |
@@ -341,7 +342,7 @@ Active cafés of the country, ordered by name. Seed: 2 cafés per country. Respo
 
 - `fee` is fixed per zone, in local currency, `0.00` or more. It is added last, outside VAT and discount, and never changes the threshold (Decision Log, 5 Nov).
 - `cafeId` is the café that cooks and delivers for this zone. Delivery orders use the time slots of that café.
-- Every country has at least one zone with fee `20.00`, so the golden delivery examples (`pricing-examples.json`) can be checked through the API.
+- Every country has three zones: near, center and far (v1.4: real fees in each currency, see §5). The JSON examples in this file keep the small demo numbers of v1.0 to show the shape; the real numbers are in §5.
 - Active zones, ordered by name. Responses: `200` · `400`.
 
 ### 3.8 `GET /api/v1/time-slots?cafeId=1&date=2026-11-20`
@@ -807,7 +808,7 @@ Calculated only in the backend `pricing` package (architecture.md §1), with `Bi
 | Subtotal | `Σ lineTotal` | 2 |
 | VAT | `round(subtotal × vatRate / 100)` | 2 |
 | Amount incl. VAT | `subtotal + vat` | 2 |
-| Discount rate | Rate of the highest threshold `≤ amountInclVat` for this country (100 / 500 / 700 / 1000 / 5000 → 3 / 5 / 7 / 10 / 15 %, local currency); below 100 → 0 | 3 |
+| Discount rate | Rate of the highest threshold `≤ amountInclVat` for this country (table below, local currency; the rates are 3 / 5 / 7 / 10 / 15 % everywhere); below the first threshold → 0 | 3 |
 | Discount | `round(amountInclVat × discountRate / 100)` | 3 |
 | Delivery fee | Zone fee for `DELIVERY`, `0.00` for `PICKUP`; added last, does not change the threshold | 3 |
 | Total | `amountInclVat − discount + deliveryFee` | 3 |
@@ -815,6 +816,20 @@ Calculated only in the backend `pricing` package (architecture.md §1), with `Bi
 Worked example (the quote from §3.5, Stage 3 pickup): 170.00 → VAT 25.50 → 195.50 → 3 % discount 5.865 → **5.87** (half-up) → total **189.63**.
 
 Worked example with delivery (the quote above, zone fee 20.00): 170.00 → VAT 25.50 → 195.50 → discount 5.87 → plus delivery fee 20.00 → total **209.63**. The fee is outside VAT and discount.
+
+The two worked examples and `pricing-examples.json` use the demo scale of the project plan (thresholds 100 / 500 / 700 / 1000 / 5000); the backend unit tests check the formula with them.
+
+**v1.4: real prices.** The seed now has prices at the level of a Tashkent sushi bar (a roll 69,000–79,000 UZS), converted to the other currencies (1 USD ≈ 12,700 UZS · 510 KZT · 2.70 GEL · 41.5 UAH · 7.15 CNY) and rounded to café prices. Thresholds and zone fees are converted the same way:
+
+| Country | Currency | 3 % from | 5 % from | 7 % from | 10 % from | 15 % from | Delivery zones |
+|---|---|---|---|---|---|---|---|
+| UZB | UZS | 100,000 | 500,000 | 700,000 | 1,000,000 | 5,000,000 | 15,000 / 20,000 / 30,000 |
+| KAZ | KZT | 4,000 | 20,000 | 28,000 | 40,000 | 200,000 | 600 / 800 / 1,200 |
+| GEO | GEL | 20 | 100 | 150 | 200 | 1,000 | 3.50 / 4.50 / 6.50 |
+| UKR | UAH | 300 | 1,600 | 2,300 | 3,300 | 16,000 | 50 / 65 / 100 |
+| CHN | CNY | 55 | 280 | 400 | 550 | 2,800 | 8 / 11 / 17 |
+
+Example on the seed (UZB, pickup): 2 × Salmon avocado roll 79,000 = 158,000.00 → VAT 15 % = 23,700.00 → 181,700.00 → 3 % = 5,451.00 → total **176,249.00 UZS**; with the Tashkent: Center zone (20,000.00) **196,249.00 UZS**.
 
 Reports (§3.16–3.19) add up the saved, already rounded order values; only `averageCheck` is rounded again (HALF_UP, 2 decimals). PDF and CSV print the same `BigDecimal` values with exactly 2 decimals, never through `double`.
 

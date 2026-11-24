@@ -31,8 +31,12 @@ npm run dev                         # http://localhost:5173, /api is proxied to 
 ```
 
 Port 5432 busy? `DB_PORT=5433 docker compose up --build`.
-The database starts with the menu, cafés, delivery zones and about 3,400 orders from
-June to November 2026, so the reports have data at once.
+The database starts with the menu (real prices at the level of Tashkent, converted to every
+currency), cafés, delivery zones and about 3,400 orders from June to November 2026, so the
+reports have data at once.
+
+Dish photos live in `wok-and-roll-front/public/images` (512 × 512 PNG). Until a file is there,
+the dish shows a neutral placeholder.
 
 ### Demo accounts
 
@@ -51,6 +55,7 @@ Guests can order and book a table without an account.
 
 | Area | What works |
 |---|---|
+| Languages | The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese (dishes, messages, money and dates too) |
 | Menu and cart | Country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields, totals from the server, idempotent order placement |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |
