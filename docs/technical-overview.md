@@ -136,5 +136,9 @@ Backend: about 500 unit and integration tests (integration tests against Postgre
 with Google Java Style. Frontend: TypeScript strict, ESLint with jsx-a11y, Prettier. CI runs both on every pull
 request. Accessibility: keyboard navigation, visible focus, labels and error messages tied to
 fields, WCAG AA colour contrast, charts with keyboard tooltips and a table with every value, a home slideshow
-with a pause button that stops on hover and focus and does not move with reduced motion.
+with a pause button that stops on hover and focus and does not move with reduced motion. The café
+map is an extra: every café is also in the list next to it, the markers are buttons with the café
+name, the map does not take the page scroll (Ctrl + wheel or two fingers), and without WebGL the
+list stays with a short note. MapLibre (about 290 KB gzip) is a separate chunk, loaded only when
+the map is about to scroll into view.
 Responsive layouts at 320 / 768 / 1200 px with 44 px touch targets.

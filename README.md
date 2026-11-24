@@ -7,7 +7,7 @@ history, role-based tools for staff and admins, and sales reports with PDF and C
 
 | Part | Stack | Folder |
 |---|---|---|
-| Frontend | React 18, TypeScript, Vite, React Router, Radix, react-day-picker | [`wok-and-roll-front`](wok-and-roll-front) |
+| Frontend | React 18, TypeScript, Vite, React Router, Radix, react-day-picker, MapLibre GL | [`wok-and-roll-front`](wok-and-roll-front) |
 | Backend | Java 21, Spring Boot 3.5, Spring Security (JWT), JdbcClient, Flyway, OpenPDF | [`wok-and-roll-back`](wok-and-roll-back) |
 | Database | PostgreSQL 16 | migrations in `wok-and-roll-back/src/main/resources/db/migration` |
 | QA | Playwright API and E2E tests, test cases | [`wok-and-roll-qa`](wok-and-roll-qa) |
@@ -44,6 +44,10 @@ cream background:
 [teriyaki noodles](https://www.pexels.com/photo/close-up-of-chicken-noodles-dish-24738507/),
 [edamame](https://www.pexels.com/photo/close-up-of-fresh-edamame-beans-in-bowl-28460867/).
 
+The café map on the home page uses [MapLibre GL](https://maplibre.org/) with free vector tiles
+from [OpenFreeMap](https://openfreemap.org/) (no API key). Map data © OpenStreetMap
+contributors; the attribution is shown on the map.
+
 ### Demo accounts
 
 Only for local runs and the demo (they are created by a migration).
@@ -62,7 +66,7 @@ Guests can order and book a table without an account.
 | Area | What works |
 |---|---|
 | Languages | The country switcher shows every country with its language and currency in that language (United Kingdom · English · GBP). The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English (dishes, messages, money and dates too); the brand "Wok & Roll" and the "Wok. Roll." of the home title stay |
-| Home | A slideshow of dishes from the menu with their price in the chosen country (arrows, swipe, pause; it stops on hover and with reduced motion), favourite dishes |
+| Home | A slideshow of dishes from the menu with their price in the chosen country (arrows, swipe, pause; it stops on hover and with reduced motion); the cafés of the country on a map and in a list with address, hours, "open now" in the café's time zone, phone and "Book a table" (the booking form opens with that café); favourite dishes |
 | Menu and cart | Dish cards with the ingredients and the portion (pieces, grams, ml) that grow a little and light up on hover, country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields, totals from the server, idempotent order placement |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |

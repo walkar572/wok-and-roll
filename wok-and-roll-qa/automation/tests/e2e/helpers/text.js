@@ -17,6 +17,14 @@ const uz = {
   tryAgain: 'Qayta urinib koʻring',
   pricesError: 'Joriy narxlarni olib boʻlmadi. Qayta urinib koʻring.',
   priceSummary: 'Narxlar xulosasi',
+  viewMenu: 'Menyuni koʻrish',
+  cafesTitle: 'Kafelarimiz',
+  chilonzor: 'Wok & Roll Chilonzor',
+  yunusobod: 'Wok & Roll Yunusobod',
+  bookAt: (name) => 'Stol band qilish: ' + name,
+  cafeHours: 'Har kuni, 10:00–22:00',
+  // "Open now · until 22:00" or "Closed · opens at 10:00": it depends on the time in Tashkent.
+  cafeStatus: /Hozir ochiq · 22:00 gacha|Yopiq · 10:00 da ochiladi/,
 };
 
 const kk = {
