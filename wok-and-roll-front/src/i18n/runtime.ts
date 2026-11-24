@@ -12,7 +12,7 @@ import { zh } from './messages/zh';
 
 export type { Locale } from './locales';
 
-const MESSAGES: Record<Locale, Messages> = { uz, kk, ka, uk, zh };
+const MESSAGES: Record<Locale, Messages> = { uz, kk, ka, uk, zh, en };
 
 type Path<T> = {
   [K in keyof T & string]: T[K] extends string ? K : `${K}.${Path<T[K]>}`;

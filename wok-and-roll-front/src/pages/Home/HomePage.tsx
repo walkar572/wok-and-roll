@@ -43,9 +43,15 @@ export function HomePage() {
         <div className="home-hero__copy">
           <p className="eyebrow">{t('home.eyebrow')}</p>
           <h1 id="home-title">
-            {t('home.titleLine1')}
+            {/* "Wok. Roll." is the brand: the same in every language, only the rest is translated. */}
+            <span className="home-hero__brand" lang="en" translate="no">
+              Wok.
+            </span>
             <br />
-            {t('home.titleLine2')}
+            <span className="home-hero__brand" lang="en" translate="no">
+              Roll.
+            </span>{' '}
+            {t('home.titleRest')}
           </h1>
           <p className="home-hero__description">{t('home.description')}</p>
           <Link className="button button--primary" to="/menu">

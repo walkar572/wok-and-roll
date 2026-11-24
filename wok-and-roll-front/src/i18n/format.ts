@@ -2,8 +2,8 @@
 //
 // Browsers do not ship Intl data for every language: Chromium formats Uzbek like English
 // ("UZS 55,000.00", month "M06") and falls back to the browser language for Kazakh and Georgian
-// (Russian month names). So these three languages are formatted here with fixed rules; Ukrainian
-// and Chinese use Intl, which every browser supports.
+// (Russian month names). So these three languages are formatted here with fixed rules; Ukrainian,
+// Chinese and British English use Intl, which every browser supports.
 import { INTL_LOCALE, type Locale } from './locales';
 
 interface OwnFormat {
@@ -130,7 +130,7 @@ const OWN: Partial<Record<Locale, OwnFormat>> = {
   },
 };
 
-const SYMBOLS: Record<string, string> = { KZT: '₸', GEL: '₾', UAH: '₴', CNY: '¥' };
+const SYMBOLS: Record<string, string> = { KZT: '₸', GEL: '₾', UAH: '₴', CNY: '¥', GBP: '£' };
 const NBSP = ' ';
 
 /** 55000 -> "55 000,00" (no-break space between thousands, decimal comma). */

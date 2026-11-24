@@ -62,8 +62,7 @@ export const uz: Messages = {
   },
   home: {
     eyebrow: 'Yapon ruhi. Wok olovining kuchi.',
-    titleLine1: 'Wok.',
-    titleLine2: 'Roll. Yana bir bor.',
+    titleRest: 'Yana bir bor.',
     description: 'Sushi, qaynoq ugra taomlari va shoshilmay tatib koʻrishga arziydigan lazzatlar.',
     cta: 'Sevimli taomingizni toping',
     heroAlt: 'Keramik likopchadagi losos va avokadoli sushi rollari',

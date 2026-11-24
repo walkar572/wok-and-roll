@@ -1,6 +1,6 @@
 // The interface language follows the chosen country (only the brand name stays as it is).
 
-export type Locale = 'uz' | 'kk' | 'ka' | 'uk' | 'zh';
+export type Locale = 'uz' | 'kk' | 'ka' | 'uk' | 'zh' | 'en';
 
 export const COUNTRY_LOCALE: Record<string, Locale> = {
   UZB: 'uz',
@@ -8,6 +8,7 @@ export const COUNTRY_LOCALE: Record<string, Locale> = {
   GEO: 'ka',
   UKR: 'uk',
   CHN: 'zh',
+  GBR: 'en',
 };
 
 export const DEFAULT_LOCALE: Locale = 'uz';
@@ -19,6 +20,7 @@ export const INTL_LOCALE: Record<Locale, string> = {
   ka: 'ka-GE',
   uk: 'uk-UA',
   zh: 'zh-CN',
+  en: 'en-GB',
 };
 
 export function localeForCountry(country: string): Locale {

@@ -62,8 +62,7 @@ export const zh: Messages = {
   },
   home: {
     eyebrow: '日式灵魂，镬气十足。',
-    titleLine1: '炒锅。',
-    titleLine2: '寿司卷。再来一次。',
+    titleRest: '再来一次。',
     description: '寿司、热气腾腾的面条，还有值得慢慢品尝的美味。',
     cta: '找到您的最爱',
     heroAlt: '陶瓷盘上的三文鱼牛油果寿司卷',

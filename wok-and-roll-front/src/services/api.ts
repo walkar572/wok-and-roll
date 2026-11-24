@@ -205,6 +205,7 @@ export const fallbackCountries: Country[] = [
   { code: 'GEO', name: 'Georgia', currency: 'GEL', vatRate: 12, timeZone: 'Asia/Tbilisi' },
   { code: 'UKR', name: 'Ukraine', currency: 'UAH', vatRate: 8, timeZone: 'Europe/Kyiv' },
   { code: 'CHN', name: 'China', currency: 'CNY', vatRate: 18, timeZone: 'Asia/Shanghai' },
+  { code: 'GBR', name: 'United Kingdom', currency: 'GBP', vatRate: 20, timeZone: 'Europe/London' },
 ];
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

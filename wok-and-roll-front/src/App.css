@@ -492,6 +492,10 @@ a {
 .home-hero h1 span {
   color: var(--color-text-brand);
 }
+/* "Wok." and "Roll." keep the colour of the title; they are spans only to stay untranslated. */
+.home-hero h1 .home-hero__brand {
+  color: inherit;
+}
 .home-hero__description {
   max-width: 390px;
   margin: 19px 0 24px;

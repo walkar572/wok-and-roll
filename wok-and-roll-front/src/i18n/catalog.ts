@@ -59,6 +59,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Shanghai: Center': 'Shanxay: Markaz',
       'Shanghai: Pudong': 'Shanxay: Pudun',
       'Shanghai: Minhang': 'Shanxay: Minxang',
+      'London: Westminster': 'London: Vestminster',
+      'London: Shoreditch': 'London: Shordich',
+      'London: Greenwich': 'London: Grinvich',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll Chilonzor',
@@ -76,6 +79,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '25 Lesi Ukrainky Blvd, Kyiv': 'Lesya Ukrainka bulvari, 25, Kiyev',
       '88 West Nanjing Rd, Shanghai': 'Gʻarbiy Nankin yoʻli, 88, Shanxay',
       '200 Century Ave, Shanghai': 'Asr shoh koʻchasi, 200, Shanxay',
+      '12 Greek St, London': 'Greek koʻchasi, 12, London',
+      '45 Curtain Rd, London': 'Curtain yoʻli, 45, London',
     },
     countries: {
       UZB: 'Oʻzbekiston',
@@ -83,6 +88,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       GEO: 'Gruziya',
       UKR: 'Ukraina',
       CHN: 'Xitoy',
+      GBR: 'Buyuk Britaniya',
     },
   },
   kk: {
@@ -134,6 +140,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Shanghai: Center': 'Шанхай: Орталық',
       'Shanghai: Pudong': 'Шанхай: Пудун',
       'Shanghai: Minhang': 'Шанхай: Миньхан',
+      'London: Westminster': 'Лондон: Вестминстер',
+      'London: Shoreditch': 'Лондон: Шордич',
+      'London: Greenwich': 'Лондон: Гринвич',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll Шиланзар',
@@ -146,6 +155,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pechersk': 'Wok & Roll Печерск',
       'Wok & Roll Jingan': 'Wok & Roll Цзинъань',
       'Wok & Roll Pudong': 'Wok & Roll Пудун',
+      'Wok & Roll Soho': 'Wok & Roll Сохо',
+      'Wok & Roll Shoreditch': 'Wok & Roll Шордич',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': 'Бунёдкор даңғылы, 12, Ташкент',
@@ -158,6 +169,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '25 Lesi Ukrainky Blvd, Kyiv': 'Леся Украинка бульвары, 25, Киев',
       '88 West Nanjing Rd, Shanghai': 'Батыс Нанкин жолы, 88, Шанхай',
       '200 Century Ave, Shanghai': 'Ғасыр даңғылы, 200, Шанхай',
+      '12 Greek St, London': 'Грик көшесі, 12, Лондон',
+      '45 Curtain Rd, London': 'Кертен жолы, 45, Лондон',
     },
     countries: {
       UZB: 'Өзбекстан',
@@ -165,6 +178,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       GEO: 'Грузия',
       UKR: 'Украина',
       CHN: 'Қытай',
+      GBR: 'Ұлыбритания',
     },
   },
   ka: {
@@ -216,6 +230,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Shanghai: Center': 'შანხაი: ცენტრი',
       'Shanghai: Pudong': 'შანხაი: პუდუნი',
       'Shanghai: Minhang': 'შანხაი: მინხანი',
+      'London: Westminster': 'ლონდონი: ვესტმინსტერი',
+      'London: Shoreditch': 'ლონდონი: შორდიჩი',
+      'London: Greenwich': 'ლონდონი: გრინვიჩი',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll ჩილანზარი',
@@ -228,6 +245,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pechersk': 'Wok & Roll პეჩერსკი',
       'Wok & Roll Jingan': 'Wok & Roll ძინგანი',
       'Wok & Roll Pudong': 'Wok & Roll პუდუნი',
+      'Wok & Roll Soho': 'Wok & Roll სოჰო',
+      'Wok & Roll Shoreditch': 'Wok & Roll შორდიჩი',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': 'ბუნიოდკორის გამზ. 12, ტაშკენტი',
@@ -240,6 +259,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '25 Lesi Ukrainky Blvd, Kyiv': 'ლესია უკრაინკას ბულ. 25, კიევი',
       '88 West Nanjing Rd, Shanghai': 'დასავლეთ ნანკინის გზა 88, შანხაი',
       '200 Century Ave, Shanghai': 'საუკუნის გამზ. 200, შანხაი',
+      '12 Greek St, London': 'გრიკ-სტრიტი 12, ლონდონი',
+      '45 Curtain Rd, London': 'კერტენ-როუდი 45, ლონდონი',
     },
     countries: {
       UZB: 'უზბეკეთი',
@@ -247,6 +268,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       GEO: 'საქართველო',
       UKR: 'უკრაინა',
       CHN: 'ჩინეთი',
+      GBR: 'დიდი ბრიტანეთი',
     },
   },
   uk: {
@@ -294,6 +316,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Shanghai: Center': 'Шанхай: Центр',
       'Shanghai: Pudong': 'Шанхай: Пудун',
       'Shanghai: Minhang': 'Шанхай: Міньхан',
+      'London: Westminster': 'Лондон: Вестмінстер',
+      'London: Shoreditch': 'Лондон: Шордіч',
+      'London: Greenwich': 'Лондон: Ґрінвіч',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll Чиланзар',
@@ -306,6 +331,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pechersk': 'Wok & Roll Печерськ',
       'Wok & Roll Jingan': 'Wok & Roll Цзінань',
       'Wok & Roll Pudong': 'Wok & Roll Пудун',
+      'Wok & Roll Soho': 'Wok & Roll Сохо',
+      'Wok & Roll Shoreditch': 'Wok & Roll Шордіч',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': 'просп. Бунедкор, 12, Ташкент',
@@ -318,6 +345,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '25 Lesi Ukrainky Blvd, Kyiv': 'бульв. Лесі Українки, 25, Київ',
       '88 West Nanjing Rd, Shanghai': 'вул. Західна Нанкінська, 88, Шанхай',
       '200 Century Ave, Shanghai': 'просп. Століття, 200, Шанхай',
+      '12 Greek St, London': 'вул. Грік-стріт, 12, Лондон',
+      '45 Curtain Rd, London': 'вул. Кертен-роуд, 45, Лондон',
     },
     countries: {
       UZB: 'Узбекистан',
@@ -325,6 +354,7 @@ const catalog: Record<Locale, CatalogTexts> = {
       GEO: 'Грузія',
       UKR: 'Україна',
       CHN: 'Китай',
+      GBR: 'Велика Британія',
     },
   },
   zh: {
@@ -366,6 +396,9 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Shanghai: Center': '上海：市中心',
       'Shanghai: Pudong': '上海：浦东',
       'Shanghai: Minhang': '上海：闵行',
+      'London: Westminster': '伦敦：威斯敏斯特',
+      'London: Shoreditch': '伦敦：肖尔迪奇',
+      'London: Greenwich': '伦敦：格林尼治',
     },
     cafes: {
       'Wok & Roll Chilanzar': 'Wok & Roll 奇兰扎尔店',
@@ -378,6 +411,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       'Wok & Roll Pechersk': 'Wok & Roll 佩乔尔斯克店',
       'Wok & Roll Jingan': 'Wok & Roll 静安店',
       'Wok & Roll Pudong': 'Wok & Roll 浦东店',
+      'Wok & Roll Soho': 'Wok & Roll 苏豪店',
+      'Wok & Roll Shoreditch': 'Wok & Roll 肖尔迪奇店',
     },
     addresses: {
       '12 Bunyodkor Ave, Tashkent': '塔什干 布尼奥德科尔大街 12 号',
@@ -390,6 +425,8 @@ const catalog: Record<Locale, CatalogTexts> = {
       '25 Lesi Ukrainky Blvd, Kyiv': '基辅 列霞·乌克兰卡大道 25 号',
       '88 West Nanjing Rd, Shanghai': '上海 南京西路 88 号',
       '200 Century Ave, Shanghai': '上海 世纪大道 200 号',
+      '12 Greek St, London': '伦敦 希腊街 12 号',
+      '45 Curtain Rd, London': '伦敦 科廷路 45 号',
     },
     countries: {
       UZB: '乌兹别克斯坦',
@@ -397,6 +434,34 @@ const catalog: Record<Locale, CatalogTexts> = {
       GEO: '格鲁吉亚',
       UKR: '乌克兰',
       CHN: '中国',
+      GBR: '英国',
+    },
+  },
+  // British English: the API names are English already. Only the British spelling of a few
+  // descriptions and zone names, and the country names.
+  en: {
+    products: {
+      'Firecracker udon': ['Firecracker udon', 'Udon noodles, chicken, chilli, sesame.'],
+      Edamame: ['Edamame', 'Steamed soya beans with sea salt.'],
+    },
+    categories: {},
+    modifiers: {},
+    zones: {
+      'Tashkent: Center': 'Tashkent: Centre',
+      'Almaty: Center': 'Almaty: Centre',
+      'Tbilisi: Center': 'Tbilisi: Centre',
+      'Kyiv: Center': 'Kyiv: Centre',
+      'Shanghai: Center': 'Shanghai: Centre',
+    },
+    cafes: {},
+    addresses: {},
+    countries: {
+      UZB: 'Uzbekistan',
+      KAZ: 'Kazakhstan',
+      GEO: 'Georgia',
+      UKR: 'Ukraine',
+      CHN: 'China',
+      GBR: 'United Kingdom',
     },
   },
 };
