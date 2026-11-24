@@ -121,6 +121,13 @@ Below the first threshold there is no discount. Each country has three zones: ne
 | `/reports/**` (JSON, PDF, CSV) | — | — | — | ✓ | ✓ |
 | `/admin/**` | — | — | — | — | ✓ |
 
+The admin panel (`/admin`, v1.11) reads `/admin/overview`, `/admin/orders`, `/admin/bookings`,
+`/admin/users` and `/admin/cafes`: read only, with paging and optional filters bound as named
+parameters (one fixed SQL statement per list, no SQL built from strings, the search is plain text
+for `position()`, so `%` is not a wildcard). The overview money is the sales-by-region report, so
+the panel and the reports always agree. The panel has its own login; each role sees its sections
+(ADMIN all, STAFF café orders, VIEWER reports), a customer gets "no access".
+
 Deny by default, one test per cell. Passwords: BCrypt. Tokens: HS256 with `exp`, `iss`, `aud`;
 5 failed logins in 15 minutes → `429`. Admin changes use optimistic locking (`version`) and get
 `409 VERSION_CONFLICT` instead of overwriting each other. The frontend mirrors the rules in its

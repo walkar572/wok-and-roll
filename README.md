@@ -77,11 +77,12 @@ Only for local runs and the demo (they are created by a migration).
 
 | Role | Email | Password | Can use |
 |---|---|---|---|
-| Admin | `admin@wokandroll.test` | `AdminDemo2026` | everything: reports, menu admin, café orders |
-| Staff | `staff@wokandroll.test` | `StaffDemo2026` | café orders and bookings, status changes |
-| Viewer | `viewer@wokandroll.test` | `ViewerDemo2026` | reports, PDF and CSV |
+| Admin | `admin@wokandroll.test` | `AdminDemo2026` | the whole admin panel: overview, orders, bookings, users, cafés, menu, café orders, reports |
+| Staff | `staff@wokandroll.test` | `StaffDemo2026` | the admin panel with café orders and bookings, status changes |
+| Viewer | `viewer@wokandroll.test` | `ViewerDemo2026` | the admin panel with reports, PDF and CSV |
 | Customer | `customer@wokandroll.test` | `CustomerDemo2026` | My orders (has a history) |
 
+Staff accounts log in to the admin panel at `/admin/login` (the account menu of the site links to it too).
 Guests can order and book a table without an account.
 
 ## Features
@@ -95,7 +96,8 @@ Guests can order and book a table without an account.
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields (the phone hint shows a number of the chosen country), totals from the server on the same receipt, idempotent order placement; the success page and the order details show the receipt of the order (café address, number, time) |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |
 | Accounts | Register, log in, log out, session expiry; My orders with paging and order details |
-| Roles | Menu items and routes by role (ADMIN, STAFF, VIEWER, CUSTOMER), the same rules on the server |
+| Admin panel | Its own login (`/admin/login`) and screen with a dark side menu, without the shop's header; sections by role. Overview of the last 7, 30 or 90 days (orders, delivery share, bookings and guests, accounts, orders per day, orders by status, revenue per country, top dishes, latest orders); every order with filters (search, country, café, status, dates) and one order in full with its receipt and status buttons; every booking; every account with its role and orders; every café with its tables and today; the menu admin, café orders and reports. Filters are kept in the address; lists load page by page |
+| Roles | Panel sections and routes by role (ADMIN everything, STAFF café orders, VIEWER reports, CUSTOMER no panel), the same rules on the server |
 | Reports | Orders by country (period filter) and total by month (country and year filters), money tables, KPIs, Generate PDF with preview, Download PDF, Export CSV — the same numbers everywhere |
 | Admin | Price, stock and visibility of every dish per country, with conflict detection |
 | Staff | Orders and bookings of a café for a day, status changes (cancel frees the slot) |

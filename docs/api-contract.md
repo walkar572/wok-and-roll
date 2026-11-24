@@ -29,6 +29,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.7 | 24 Nov | Place of a café on the map (additive): `latitude` and `longitude` in §3.6. The home page shows the cafés of the country on a map next to their list. |
 | 1.8 | 24 Nov | Bigger menu (data only, no new fields): 24 dishes in 5 categories. New categories `Desserts` and `Drinks` (the lemonade moves there); 15 new dishes, priced and in stock in all six countries; extras "Soft egg" (ramen) and "Oat milk" (matcha latte). Edamame is hidden (`visible = false`) and replaced by chili garlic peanuts; past orders keep the name they were ordered with. |
 | 1.9 | 24 Nov | Seventh country and the city (additive): `USA`, United States, `USD`, tax 7 % (Massachusetts meals tax 6.25 % + Boston 0.75 %), `America/New_York`, 2 cafés in Boston, prices and fees converted like the others (§5). `city` of a café (§3.6) and `cities` of a country (§3.1). The interface lets the guest choose the city (it gives the country) and the language apart; American English is the 7th language. |
+| 1.11 | 24 Nov | Admin panel (additive): §3.20, six read-only `GET /api/v1/admin/…` endpoints for ADMIN (overview of a period, every order with one order in full, every booking, every account, every café with its day), and a booking history seed for the demo. The web app has an admin panel at `/admin` with its own login (`/admin/login`); café orders and reports moved into it. |
 | 1.10 | 24 Nov | Roll sets (additive): category `Sets` with 7 sets, each 15–19 % under its dishes bought one by one. `regularPrice` and `setItems` in §3.3 and §3.4; a set is ordered and priced like any dish (§5 does not change). |
 
 ---
@@ -43,7 +44,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | Money | JSON number with exactly 2 decimals (`62.00`), always together with `currency` (ISO 4217: `UZS`, `KZT`, `GEL`, `UAH`, `CNY`). Prices are in local currency, **before VAT**. |
 | Rates | Percent number: `"vatRate": 15.00` means 15 %. |
 | IDs | Positive integers from the database. |
-| Lists | Stage 2 lists stay plain JSON arrays without paging (small, fixed data). New lists that can grow (`me/orders`, `staff/*`, `admin/products`) use paging (§1.1). Other new endpoints return an object, so fields can be added later without breaking clients. |
+| Lists | Stage 2 lists stay plain JSON arrays without paging (small, fixed data). New lists that can grow (`me/orders`, `staff/*`, `admin/products`, the admin panel lists of §3.20) use paging (§1.1). Other new endpoints return an object, so fields can be added later without breaking clients. |
 | Auth | Public: the guest flow (menu, cart quote, cafés, zones, slots, orders, bookings) and `auth/register`, `auth/login`. Everything else needs `Authorization: Bearer <token>` (§3.11, §8). |
 | Language | The API is English (codes, names, messages). The web interface has 7 languages: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English, American English. Since v1.9 the guest chooses the language and the city apart: the city gives the country (prices, currency, cafés), the language only the texts; the first visit is in the language of the country of the city. Error messages are translated by `code` and field; only the brand name stays as it is (v1.4). |
 | Health check | `GET /api/health` → `{"status":"UP"}` (outside `/api/v1`, already on `dev`). |
@@ -85,6 +86,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 3.17 | `GET /api/v1/reports/sales-by-month?country=&year=` | VIEWER, ADMIN | Sales by month | Nodir | #67 | S3 |
 | 3.18 | `GET /api/v1/reports/sales.pdf?from=&to=&country=&year=` | VIEWER, ADMIN | PDF of the reports page | Nodir | #68 | S3–S4 |
 | 3.19 | `GET /api/v1/reports/sales-by-region.csv?from=&to=` · `GET /api/v1/reports/sales-by-month.csv?country=&year=` | VIEWER, ADMIN | CSV of each report | Timur | #69 | S4 |
+| 3.20 | `GET /api/v1/admin/overview` · `/admin/orders` · `/admin/orders/{orderNumber}` · `/admin/bookings` · `/admin/users` · `/admin/cafes` | ADMIN | Admin panel, read only (v1.11) | — | — | S4 |
 
 The examples use the real seed data on `dev` (#33). Café, zone, order and report values are examples until their migrations are merged.
 
@@ -740,6 +742,26 @@ month,orders,subtotal,vat,discount,deliveryFee,total,averageCheck
 
 **Downloads in the frontend** (§3.18, §3.19): call with `fetch` and the `Authorization` header, read the Blob, then open it (`URL.createObjectURL`) for Generate PDF, or save it with `<a download>` and the file name from `Content-Disposition`. Never put the token in a URL.
 
+### 3.20 Admin panel API (ADMIN, read only)
+
+Everything the shop knows, for the admin panel of the web app (`/admin`, v1.11). Read only: the order status changes through the staff API (§3.14), the menu through the admin catalog API (§3.15). The lists use paging (§1.1); every filter is optional, and an empty search is no search.
+
+| Endpoint | Filters | Items (or body) |
+|---|---|---|
+| `GET /api/v1/admin/overview?from=&to=` | both required, the period rule of §3.16 (at most 366 days, `from` not after `to`) | `orders` { `total` (cancelled too), `byStatus` (`NEW`, `CONFIRMED`, `DONE`, `CANCELLED`, in this order, zeros too), `pickup`, `delivery` } · `bookings` { `total`, `cancelled`, `guests` of the confirmed ones } · `accounts` { `total`, `newInPeriod` (UTC dates), `byRole` } · `regions` (every country: `country`, `currency`, `orders`, `revenue`, `averageCheck`: the numbers of §3.16) · `days` (every day of the period: `date`, `orders` without cancelled) · `topDishes` (5: `productId`, `name`, `quantity`, without cancelled) |
+| `GET /api/v1/admin/orders` | `country`, `cafeId`, `status`, `from`, `to` (order date), `q` | Newest day first (`orderDate` desc, then `slotStart` desc, then id): `orderNumber`, `createdAt`, `orderDate`, `slotStart`, `slotEnd`, `country`, `currency`, `cafe` { `id`, `name` }, `scenario`, `status`, `contactName`, `contactPhone`, `account` (`null` for a guest, else { `email`, `fullName` }), `itemCount`, `total` |
+| `GET /api/v1/admin/orders/{orderNumber}` | — | { `order`: the body of §3.9, `contactEmail`, `comment`, `account`, `updatedAt` }. Unknown number → `404 NOT_FOUND` |
+| `GET /api/v1/admin/bookings` | `country`, `cafeId`, `status` (`CONFIRMED`, `CANCELLED`), `from`, `to` (booking date), `q` | Newest day first: `bookingNumber`, `createdAt`, `date`, `time`, `endTime`, `country`, `cafe`, `guests`, `tableSeats`, `status`, `contactName`, `contactPhone`, `contactEmail`, `comment`, `account` |
+| `GET /api/v1/admin/users` | `role`, `q` | Newest account first: `id`, `email`, `fullName`, `phone`, `role`, `createdAt`, `orders`, `lastOrderAt`. Never the password hash |
+| `GET /api/v1/admin/cafes` | — | `{ "items": [...] }`, every café, closed ones too, in the order of the countries: `id`, `country`, `city`, `name`, `address`, `phone`, `opensAt`, `closesAt`, `timeZone`, `active`, `tables`, `seats`, `slotCapacity`, `today` (in the café's time zone), `todayOrders` (without cancelled), `todayBookings` (confirmed) |
+
+- `q` is at most 100 characters and is looked for, without case, in the number, the contact name, phone and email, and the account email (users: email, name, phone). It is plain text: `%` and `_` are not wildcards.
+- A wrong `country`, `status` or `role`, `from` after `to`, or a too long `q` → `400 VALIDATION_ERROR` with the field; a date that is not a date → `400 BAD_REQUEST`.
+- The overview money comes from the sales-by-region report (§3.16), so the panel and the reports page always show the same revenue.
+- Demo data: the booking history of 26 Oct – 23 Nov 2026 (`V2026_11_24_1600`), 1–4 bookings a café a day, deterministic like the sales history; all dates are in the past, so the booking tests are not affected.
+
+Responses: `200` · `400` · `401` · `403` · `404`.
+
 ---
 
 ## 4. Errors
@@ -1039,7 +1061,7 @@ Backend notes:
 
 **Token in the frontend.** `localStorage` key `wr.auth`, dropped when `exp` has passed. This is readable by scripts if we ever have an XSS bug, so: React escapes output, we never use `dangerouslySetInnerHTML`, and the token is never put in a URL (downloads use `fetch` and a Blob). A `httpOnly` cookie is the v2 option.
 
-**Personal data.** Orders and bookings keep name, phone, optional email and address, because the café needs them. They are shown only to the owner (`/me`), staff and admins, and are never written to logs (log the order number, not the phone). Seed and demo data use invented names and `.test` emails.
+**Personal data.** Orders and bookings keep name, phone, optional email and address, because the café needs them. They are shown only to the owner (`/me`), staff and admins (the admin panel, §3.20, is ADMIN only; a viewer sees only report sums), and are never written to logs (log the order number, not the phone). Seed and demo data use invented names and `.test` emails.
 
 ## 9. Changing this contract
 
@@ -1085,6 +1107,7 @@ This file now covers the whole MVP. Changes after the agreement on Mon 16 Nov ar
 | 1.0 | Sprint 2 · Stage 2 | §3.1–3.5 | built |
 | 1.1 | Sprint 3 (16–22 Nov) | §3.1 `timeZone`, §3.5 totals, §3.6–3.9, §3.11 changes, §3.16, §3.17, first part of §3.18 | agreed Mon 16 Nov |
 | 1.1 | Sprint 4 (23–29 Nov) | §3.10, §3.13–3.15, the rest of §3.18, §3.19 | feature freeze Thu 26 Nov 20:00 |
+| 1.11 | Sprint 4 (23–29 Nov) | §3.20 admin panel | built |
 
 ## 12. References
 
