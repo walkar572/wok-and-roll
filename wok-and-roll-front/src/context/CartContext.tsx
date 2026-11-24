@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import { t } from '../i18n/runtime';
 import type { ProductDetail, ProductModifier } from '../services/api';
 
 export interface CartItem {
@@ -150,7 +151,7 @@ export function CartProvider({ children }: PropsWithChildren) {
 
   function addItem(product: ProductDetail, modifierIds: number[], quantity: number) {
     if (!isValidQuantity(quantity)) {
-      throw new Error('Quantity must be a whole number between 1 and 99.');
+      throw new Error(t('cart.quantityRule'));
     }
 
     const selectedModifiers = product.modifiers.filter(({ id }) => modifierIds.includes(id));
@@ -169,7 +170,7 @@ export function CartProvider({ children }: PropsWithChildren) {
     if (existing) {
       const nextQuantity = existing.quantity + quantity;
       if (nextQuantity > MAX_QUANTITY) {
-        throw new Error('A cart line cannot have more than 99 items.');
+        throw new Error(t('cart.lineMax'));
       }
       setItems(
         items.map((item) =>
@@ -182,7 +183,7 @@ export function CartProvider({ children }: PropsWithChildren) {
     }
 
     if (items.length >= MAX_LINES) {
-      throw new Error('A cart cannot have more than 50 lines.');
+      throw new Error(t('cart.linesMax'));
     }
 
     setItems([...items, nextItem]);

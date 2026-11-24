@@ -1,7 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { TotalsBlock } from '../../components/common';
-import type { OrderResponse } from '../../services/api';
 import { PagePlaceholder } from '../../components/layout/PagePlaceholder';
+import { useAuth } from '../../context/AuthContext';
+import { cafeAddress, cafeName, useI18n, zoneName } from '../../i18n';
+import type { OrderResponse } from '../../services/api';
+import { formatDate } from '../../utils/dates';
 
 interface SuccessLocationState {
   order?: OrderResponse;
@@ -9,19 +12,21 @@ interface SuccessLocationState {
 
 export function OrderSuccessPage() {
   const location = useLocation();
+  const { t } = useI18n();
+  const { auth } = useAuth();
   const state = location.state as SuccessLocationState | null;
   const order = state?.order;
 
   if (!order) {
     return (
       <PagePlaceholder
-        eyebrow="Order complete"
-        title="Thanks for your order"
-        description="Your order details are no longer available on this page."
+        eyebrow={t('success.goneEyebrow')}
+        title={t('success.title')}
+        description={t('success.goneDescription')}
         symbol="✓"
-        panelTitle="Ready for another favorite?"
-        panelDescription="Browse the menu to start a new order."
-        actionLabel="Explore the menu"
+        panelTitle={t('success.gonePanelTitle')}
+        panelDescription={t('success.gonePanelText')}
+        actionLabel={t('checkout.explore')}
         actionTo="/menu"
       />
     );
@@ -29,39 +34,50 @@ export function OrderSuccessPage() {
 
   return (
     <section className="checkout-success" aria-labelledby="order-success-title">
-      <p className="eyebrow">Order confirmed</p>
-      <h1 id="order-success-title">Thanks for your order</h1>
+      <p className="eyebrow">{t('success.eyebrow')}</p>
+      <h1 id="order-success-title">{t('success.title')}</h1>
       <p className="checkout-success__number">
-        Order number: <strong>{order.orderNumber}</strong>
+        {t('success.number')} <strong>{order.orderNumber}</strong>
       </p>
       <dl className="checkout-success__details">
         <div>
-          <dt>Status</dt>
-          <dd>{order.status}</dd>
+          <dt>{t('success.status')}</dt>
+          <dd>{t(`status.${order.status}`)}</dd>
         </div>
         <div>
-          <dt>Order date</dt>
-          <dd>{order.orderDate}</dd>
+          <dt>{t('success.orderDate')}</dt>
+          <dd>{formatDate(order.orderDate)}</dd>
         </div>
         <div>
-          <dt>Time slot</dt>
+          <dt>{t('success.timeSlot')}</dt>
           <dd>
             {order.slotStart}–{order.slotEnd}
           </dd>
         </div>
         <div>
-          <dt>{order.scenario === 'PICKUP' ? 'Pickup café' : 'Delivery address'}</dt>
+          <dt>
+            {order.scenario === 'PICKUP' ? t('success.pickupCafe') : t('success.deliveryAddress')}
+          </dt>
           <dd>
             {order.scenario === 'PICKUP'
-              ? `${order.cafe.name}, ${order.cafe.address}`
-              : order.deliveryAddress}
+              ? `${cafeName(order.cafe.name)}, ${cafeAddress(order.cafe.address)}`
+              : `${order.deliveryAddress ?? ''}${
+                  order.deliveryZone ? ` (${zoneName(order.deliveryZone.name)})` : ''
+                }`}
           </dd>
         </div>
       </dl>
       <TotalsBlock quote={order} />
-      <Link className="button button--primary" to="/menu">
-        Back to menu
-      </Link>
+      <div className="cart-page__actions">
+        <Link className="button button--primary" to="/menu">
+          {t('success.backToMenu')}
+        </Link>
+        {auth && (
+          <Link className="button button--outline" to="/account">
+            {t('success.myOrders')}
+          </Link>
+        )}
+      </div>
     </section>
   );
 }

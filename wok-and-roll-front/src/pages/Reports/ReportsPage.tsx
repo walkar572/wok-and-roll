@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BarChart, type BarDatum } from '../../components/common/BarChart';
 import { Button, ErrorMessage, Loader, Toast } from '../../components/common';
 import { useCountry } from '../../context/CountryContext';
+import { countryName, useI18n, type MessageKey } from '../../i18n';
 import { formatPrice, guestErrorMessage } from '../../services/api';
 import {
   downloadMonthCsv,
@@ -20,20 +21,20 @@ import { addMonths, firstOfMonth, localDateKey, monthName } from '../../utils/da
 type Grouping = 'region' | 'month';
 const FIRST_YEAR = 2024;
 
-const MONEY_COLUMNS: Array<{ key: keyof SalesNumbers; label: string }> = [
-  { key: 'subtotal', label: 'Subtotal' },
-  { key: 'vat', label: 'VAT' },
-  { key: 'discount', label: 'Discount' },
-  { key: 'deliveryFee', label: 'Delivery fee' },
-  { key: 'total', label: 'Total' },
-  { key: 'averageCheck', label: 'Average check' },
+const MONEY_COLUMNS: Array<{ key: keyof SalesNumbers; label: MessageKey }> = [
+  { key: 'subtotal', label: 'reports.colSubtotal' },
+  { key: 'vat', label: 'reports.colVat' },
+  { key: 'discount', label: 'reports.colDiscount' },
+  { key: 'deliveryFee', label: 'reports.colDeliveryFee' },
+  { key: 'total', label: 'reports.colTotal' },
+  { key: 'averageCheck', label: 'reports.colAverageCheck' },
 ];
 
-function periodError(from: string, to: string): string | undefined {
-  if (!from || !to) return 'Choose both dates.';
-  if (from > to) return 'The start date must be on or before the end date.';
+function periodError(from: string, to: string): MessageKey | undefined {
+  if (!from || !to) return 'reports.periodBoth';
+  if (from > to) return 'reports.periodOrder';
   const days = (Date.parse(to) - Date.parse(from)) / 86_400_000 + 1;
-  if (days > 366) return 'The period can be at most 366 days.';
+  if (days > 366) return 'reports.periodLong';
   return undefined;
 }
 
@@ -44,6 +45,7 @@ function formatGenerated(value: string): string {
 /** The sales reports for ADMIN and VIEWER (#180, #181, #182, API contract §3.16–3.19). */
 export function ReportsPage() {
   const { country: currentCountry, countries } = useCountry();
+  const { t } = useI18n();
   const today = localDateKey(new Date());
   const thisYear = new Date().getFullYear();
   const [grouping, setGrouping] = useState<Grouping>('region');
@@ -77,9 +79,7 @@ export function ReportsPage() {
     request
       .catch((requestError: unknown) => {
         if (active) {
-          setError(
-            guestErrorMessage(requestError, 'We could not load the report. Please try again.'),
-          );
+          setError(guestErrorMessage(requestError, t('reports.loadError')));
         }
       })
       .finally(() => {
@@ -88,7 +88,7 @@ export function ReportsPage() {
     return () => {
       active = false;
     };
-  }, [grouping, period, country, year, retry]);
+  }, [grouping, period, country, year, retry, t]);
 
   // A new filter makes the old PDF preview out of date.
   useEffect(() => setPdf(undefined), [period, country, year]);
@@ -109,12 +109,12 @@ export function ReportsPage() {
       const file = await downloadSalesPdf(filters);
       const url = URL.createObjectURL(file.blob);
       setPdf({ file, url });
-      setToast({ variant: 'success', text: `PDF ready: ${file.fileName}` });
+      setToast({ variant: 'success', text: t('reports.pdfReady', { file: file.fileName }) });
       return file;
     } catch (requestError) {
       setToast({
         variant: 'error',
-        text: guestErrorMessage(requestError, 'We could not create the PDF.'),
+        text: guestErrorMessage(requestError, t('reports.pdfError')),
       });
       return undefined;
     } finally {
@@ -133,7 +133,7 @@ export function ReportsPage() {
     } catch (requestError) {
       setToast({
         variant: 'error',
-        text: guestErrorMessage(requestError, 'We could not download the PDF.'),
+        text: guestErrorMessage(requestError, t('reports.downloadError')),
       });
     } finally {
       setBusy(null);
@@ -148,11 +148,11 @@ export function ReportsPage() {
           ? await downloadRegionCsv(period.from, period.to)
           : await downloadMonthCsv(country, year);
       saveFile(file);
-      setToast({ variant: 'success', text: `CSV saved: ${file.fileName}` });
+      setToast({ variant: 'success', text: t('reports.csvSaved', { file: file.fileName }) });
     } catch (requestError) {
       setToast({
         variant: 'error',
-        text: guestErrorMessage(requestError, 'We could not export the CSV.'),
+        text: guestErrorMessage(requestError, t('reports.csvError')),
       });
     } finally {
       setBusy(null);
@@ -164,43 +164,37 @@ export function ReportsPage() {
       (regions?.regions ?? []).map((r) => ({
         key: r.country,
         label: r.country,
-        name: r.countryName,
+        name: countryName(r.country, r.countryName),
         value: r.orders,
-        valueText: `${r.orders} ${r.orders === 1 ? 'order' : 'orders'}`,
+        valueText: t('reports.ordersValue', { count: r.orders }),
       })),
-    [regions],
+    [regions, t],
   );
 
-  const monthBars: BarDatum[] = useMemo(
-    () =>
-      (months?.months ?? []).map((m) => ({
-        key: String(m.month),
-        label: monthName(m.month, 'short'),
-        name: `${monthName(m.month, 'long')} ${months?.year}`,
-        value: m.total,
-        valueText: formatPrice(m.total, months?.currency ?? 'USD'),
-      })),
-    [months],
-  );
+  // Twelve bars, so no memo: month names and money follow the current language on every render.
+  const monthBars: BarDatum[] = (months?.months ?? []).map((m) => ({
+    key: String(m.month),
+    label: monthName(m.month, 'short'),
+    name: `${monthName(m.month, 'long')} ${months?.year}`,
+    value: m.total,
+    valueText: formatPrice(m.total, months?.currency ?? 'USD'),
+  }));
 
   const years = Array.from({ length: thisYear + 1 - FIRST_YEAR + 1 }, (_, i) => FIRST_YEAR + i);
 
   return (
     <section className="reports-page" aria-labelledby="reports-title">
-      <p className="eyebrow">The bigger picture</p>
-      <h1 id="reports-title">Sales reports</h1>
-      <p className="page-description">
-        Every country is shown in its own currency. The PDF and the CSV have the same numbers as
-        this page.
-      </p>
+      <p className="eyebrow">{t('reports.eyebrow')}</p>
+      <h1 id="reports-title">{t('reports.title')}</h1>
+      <p className="page-description">{t('reports.description')}</p>
 
       <div className="report-toolbar">
         <fieldset className="segmented">
-          <legend>Group by</legend>
+          <legend>{t('reports.groupBy')}</legend>
           {(
             [
-              ['region', 'Region'],
-              ['month', 'Month'],
+              ['region', t('reports.region')],
+              ['month', t('reports.month')],
             ] as const
           ).map(([value, label]) => (
             <label key={value} className="segmented__option">
@@ -219,7 +213,7 @@ export function ReportsPage() {
         {grouping === 'region' ? (
           <form
             className="report-filters"
-            aria-label="Period"
+            aria-label={t('reports.period')}
             noValidate
             onSubmit={(event) => {
               event.preventDefault();
@@ -228,7 +222,7 @@ export function ReportsPage() {
           >
             <div className="input">
               <label className="input__label" htmlFor="report-from">
-                From
+                {t('reports.from')}
               </label>
               <input
                 id="report-from"
@@ -243,7 +237,7 @@ export function ReportsPage() {
             </div>
             <div className="input">
               <label className="input__label" htmlFor="report-to">
-                To
+                {t('reports.to')}
               </label>
               <input
                 id="report-to"
@@ -257,7 +251,7 @@ export function ReportsPage() {
               />
             </div>
             <Button type="submit" variant="outline" disabled={Boolean(filterError)}>
-              Apply
+              {t('reports.apply')}
             </Button>
             {filterError && (
               <span
@@ -265,15 +259,15 @@ export function ReportsPage() {
                 className="input__message input__message--error report-filters__error"
                 role="alert"
               >
-                {filterError}
+                {filterError && t(filterError)}
               </span>
             )}
           </form>
         ) : (
-          <div className="report-filters" role="group" aria-label="Country and year">
+          <div className="report-filters" role="group" aria-label={t('reports.countryYear')}>
             <div className="input">
               <label className="input__label" htmlFor="report-country">
-                Country
+                {t('reports.country')}
               </label>
               <select
                 id="report-country"
@@ -283,14 +277,14 @@ export function ReportsPage() {
               >
                 {countries.map((item) => (
                   <option key={item.code} value={item.code}>
-                    {item.name} ({item.currency})
+                    {countryName(item.code, item.name)} ({item.currency})
                   </option>
                 ))}
               </select>
             </div>
             <div className="input">
               <label className="input__label" htmlFor="report-year">
-                Year
+                {t('reports.year')}
               </label>
               <select
                 id="report-year"
@@ -309,14 +303,14 @@ export function ReportsPage() {
         )}
       </div>
 
-      <div className="report-actions" role="group" aria-label="Export">
+      <div className="report-actions" role="group" aria-label={t('reports.export')}>
         <Button
           variant="primary"
           loading={busy === 'generate'}
           disabled={busy !== null}
           onClick={() => void generatePdf()}
         >
-          Generate PDF
+          {t('reports.generatePdf')}
         </Button>
         <Button
           variant="outline"
@@ -324,7 +318,7 @@ export function ReportsPage() {
           disabled={busy !== null}
           onClick={() => void downloadPdf()}
         >
-          Download PDF
+          {t('reports.downloadPdf')}
         </Button>
         <Button
           variant="outline"
@@ -332,11 +326,15 @@ export function ReportsPage() {
           disabled={busy !== null}
           onClick={() => void exportCsv()}
         >
-          Export CSV
+          {t('reports.exportCsv')}
         </Button>
         <p className="report-actions__note">
-          PDF: both reports — {period.from} to {period.to}, and {country} {year}. CSV: the{' '}
-          {grouping === 'region' ? 'region' : 'month'} report shown below.
+          {t(grouping === 'region' ? 'reports.noteRegion' : 'reports.noteMonth', {
+            from: period.from,
+            to: period.to,
+            country: countryName(country),
+            year,
+          })}
         </p>
       </div>
 
@@ -353,9 +351,9 @@ export function ReportsPage() {
       {pdf && (
         <section className="pdf-preview" aria-labelledby="pdf-preview-title">
           <div className="pdf-preview__header">
-            <h2 id="pdf-preview-title">PDF preview</h2>
+            <h2 id="pdf-preview-title">{t('reports.previewTitle')}</h2>
             <a className="text-link" href={pdf.url} target="_blank" rel="noopener noreferrer">
-              Open in a new tab
+              {t('reports.openNewTab')}
             </a>
           </div>
           <object
@@ -365,9 +363,9 @@ export function ReportsPage() {
             aria-label={pdf.file.fileName}
           >
             <p>
-              Your browser cannot show the PDF here.{' '}
+              {t('reports.noPdfPreview')}{' '}
               <a href={pdf.url} target="_blank" rel="noopener noreferrer">
-                Open it in a new tab
+                {t('reports.openNewTab')}
               </a>
               .
             </p>
@@ -375,12 +373,12 @@ export function ReportsPage() {
         </section>
       )}
 
-      {loading && <Loader label="Loading the report" />}
+      {loading && <Loader label={t('reports.loading')} />}
       {error && (
         <div className="page-error">
-          <ErrorMessage title="Report not loaded">{error}</ErrorMessage>
+          <ErrorMessage title={t('reports.notLoaded')}>{error}</ErrorMessage>
           <Button variant="outline" onClick={() => setRetry((count) => count + 1)}>
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       )}
@@ -388,15 +386,19 @@ export function ReportsPage() {
       {!loading && !error && grouping === 'region' && regions && (
         <section className="report-section" aria-labelledby="region-title">
           <div className="report-section__heading">
-            <h2 id="region-title">Orders by country</h2>
+            <h2 id="region-title">{t('reports.regionTitle')}</h2>
             <p>
-              {regions.from} to {regions.to} · {regions.totalOrders} orders in all countries ·
-              generated {formatGenerated(regions.generatedAt)}
+              {t('reports.regionMeta', {
+                from: regions.from,
+                to: regions.to,
+                count: regions.totalOrders,
+                time: formatGenerated(regions.generatedAt),
+              })}
             </p>
           </div>
           <BarChart
             data={regionBars}
-            description={`Orders per country from ${regions.from} to ${regions.to}`}
+            description={t('reports.regionChart', { from: regions.from, to: regions.to })}
           />
           <div
             className="table-scroll"
@@ -405,16 +407,14 @@ export function ReportsPage() {
             tabIndex={0}
           >
             <table className="data-table">
-              <caption id="region-table-caption">
-                Sales by country, each in its own currency
-              </caption>
+              <caption id="region-table-caption">{t('reports.regionTable')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Country</th>
-                  <th scope="col">Orders</th>
+                  <th scope="col">{t('reports.colCountry')}</th>
+                  <th scope="col">{t('reports.colOrders')}</th>
                   {MONEY_COLUMNS.map((column) => (
                     <th key={column.key} scope="col">
-                      {column.label}
+                      {t(column.label)}
                     </th>
                   ))}
                 </tr>
@@ -422,7 +422,7 @@ export function ReportsPage() {
               <tbody>
                 {regions.regions.map((r) => (
                   <tr key={r.country}>
-                    <th scope="row">{r.countryName}</th>
+                    <th scope="row">{countryName(r.country, r.countryName)}</th>
                     <td>{r.orders}</td>
                     {MONEY_COLUMNS.map((column) => (
                       <td key={column.key}>{formatPrice(r[column.key], r.currency)}</td>
@@ -439,27 +439,40 @@ export function ReportsPage() {
         <section className="report-section" aria-labelledby="month-title">
           <div className="report-section__heading">
             <h2 id="month-title">
-              Total by month, {months.countryName} {months.year}
+              {t('reports.monthTitle', {
+                country: countryName(months.country, months.countryName),
+                year: months.year,
+              })}
             </h2>
             <p>
-              In {months.currency} · generated {formatGenerated(months.generatedAt)}
+              {t('reports.monthMeta', {
+                currency: months.currency,
+                time: formatGenerated(months.generatedAt),
+              })}
             </p>
           </div>
-          <dl className="kpi-grid" aria-label={`Year ${months.year} in ${months.currency}`}>
+          <dl
+            className="kpi-grid"
+            aria-label={t('reports.yearKpis', { year: months.year, currency: months.currency })}
+          >
             <div className="kpi">
-              <dt>Orders</dt>
+              <dt>{t('reports.colOrders')}</dt>
               <dd>{months.totals.orders}</dd>
             </div>
             {MONEY_COLUMNS.map((column) => (
               <div className="kpi" key={column.key}>
-                <dt>{column.label}</dt>
+                <dt>{t(column.label)}</dt>
                 <dd>{formatPrice(months.totals[column.key], months.currency)}</dd>
               </div>
             ))}
           </dl>
           <BarChart
             data={monthBars}
-            description={`Sales total per month in ${months.countryName}, ${months.year}, in ${months.currency}`}
+            description={t('reports.monthChart', {
+              country: countryName(months.country, months.countryName),
+              year: months.year,
+              currency: months.currency,
+            })}
           />
           <div
             className="table-scroll"
@@ -469,15 +482,18 @@ export function ReportsPage() {
           >
             <table className="data-table">
               <caption id="month-table-caption">
-                Sales by month in {months.countryName}, {months.currency}
+                {t('reports.monthTable', {
+                  country: countryName(months.country, months.countryName),
+                  currency: months.currency,
+                })}
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Month</th>
-                  <th scope="col">Orders</th>
+                  <th scope="col">{t('reports.colMonth')}</th>
+                  <th scope="col">{t('reports.colOrders')}</th>
                   {MONEY_COLUMNS.map((column) => (
                     <th key={column.key} scope="col">
-                      {column.label}
+                      {t(column.label)}
                     </th>
                   ))}
                 </tr>
@@ -495,7 +511,7 @@ export function ReportsPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <th scope="row">Year</th>
+                  <th scope="row">{t('reports.colYear')}</th>
                   <td>{months.totals.orders}</td>
                   {MONEY_COLUMNS.map((column) => (
                     <td key={column.key}>

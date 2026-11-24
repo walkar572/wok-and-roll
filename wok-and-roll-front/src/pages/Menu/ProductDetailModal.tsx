@@ -8,6 +8,8 @@ import {
   type CountryCode,
   type ProductDetail,
 } from '../../services/api';
+import { countryName, modifierName, productDescription, productName, useI18n } from '../../i18n';
+import { DishImage } from '../../components/common/DishImage';
 
 interface ProductDetailModalProps {
   productId: number | null;
@@ -34,6 +36,7 @@ export function ProductDetailModal({
   const [selectedExtraIds, setSelectedExtraIds] = useState<number[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [addError, setAddError] = useState<string>();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (productId === null) {
@@ -60,8 +63,8 @@ export function ProductDetailModal({
         if (!active) return;
         setError(
           requestError instanceof ApiRequestError && requestError.status === 404
-            ? `This dish is not available in ${country}.`
-            : guestErrorMessage(requestError, 'We could not load this dish. Please try again.'),
+            ? t('product.notAvailable', { country: countryName(country) })
+            : guestErrorMessage(requestError, t('product.loadError')),
         );
       })
       .finally(() => {
@@ -71,7 +74,7 @@ export function ProductDetailModal({
     return () => {
       active = false;
     };
-  }, [productId, country, retryCount]);
+  }, [productId, country, retryCount, t]);
 
   const sizes = product?.modifiers.filter(({ type }) => type === 'SIZE') ?? [];
   const extras = product?.modifiers.filter(({ type }) => type === 'EXTRA') ?? [];
@@ -92,7 +95,7 @@ export function ProductDetailModal({
       onClose();
     } catch (addRequestError: unknown) {
       setAddError(
-        addRequestError instanceof Error ? addRequestError.message : 'Could not add this dish.',
+        addRequestError instanceof Error ? addRequestError.message : t('product.couldNotAdd'),
       );
     }
   }
@@ -100,15 +103,15 @@ export function ProductDetailModal({
   return (
     <Modal
       open={productId !== null}
-      title={product?.name ?? 'Dish details'}
+      title={product ? productName(product.name) : t('product.dishDetails')}
       onClose={onClose}
       footer={
         product ? (
           <div className="product-modal__footer">
             <label className="product-modal__quantity">
-              <span>Quantity</span>
+              <span>{t('product.quantity')}</span>
               <input
-                aria-label="Quantity"
+                aria-label={t('product.quantity')}
                 type="number"
                 min="1"
                 max="99"
@@ -126,41 +129,49 @@ export function ProductDetailModal({
               onClick={addProduct}
               disabled={!product.inStock || (sizes.length > 0 && selectedSizeId === undefined)}
             >
-              Add · {formatPrice(addTotal / 100, product.currency)}
+              {t('product.add', { price: formatPrice(addTotal / 100, product.currency) })}
             </Button>
           </div>
         ) : undefined
       }
     >
-      {isLoading && <Loader label="Loading dish details" />}
+      {isLoading && <Loader label={t('product.loading')} />}
       {error && (
         <div className="product-modal__error">
-          <ErrorMessage title="Could not load this dish">{error}</ErrorMessage>
+          <ErrorMessage title={t('product.couldNotLoad')}>{error}</ErrorMessage>
           <button
             className="button button--outline"
             type="button"
             onClick={() => setRetryCount((count) => count + 1)}
           >
-            Try again
+            {t('common.tryAgain')}
           </button>
         </div>
       )}
       {product && (
         <div className="product-modal">
           {product.imageUrl && (
-            <img className="product-modal__image" src={product.imageUrl} alt={product.name} />
+            <DishImage
+              src={product.imageUrl}
+              alt={productName(product.name)}
+              className="product-modal__image"
+              placeholderClassName="product-modal__image--placeholder"
+              loading="eager"
+            />
           )}
-          {product.description && <p>{product.description}</p>}
+          {productDescription(product.name, product.description) && (
+            <p>{productDescription(product.name, product.description)}</p>
+          )}
           <p className="product-modal__price">{formatPrice(product.price, product.currency)}</p>
           {!product.inStock && (
             <ErrorMessage variant="warning">
-              This dish is currently out of stock in {country}.
+              {t('product.outOfStockIn', { country: countryName(country) })}
             </ErrorMessage>
           )}
-          {addError && <ErrorMessage title="Could not add this dish">{addError}</ErrorMessage>}
+          {addError && <ErrorMessage title={t('product.couldNotAdd')}>{addError}</ErrorMessage>}
           {sizes.length > 0 && (
             <fieldset className="product-modal__options">
-              <legend>Choose a size</legend>
+              <legend>{t('product.chooseSize')}</legend>
               {sizes.map((modifier) => (
                 <label key={modifier.id}>
                   <input
@@ -170,7 +181,7 @@ export function ProductDetailModal({
                     checked={selectedSizeId === modifier.id}
                     onChange={() => setSelectedSizeId(modifier.id)}
                   />
-                  <span>{modifier.name}</span>
+                  <span>{modifierName(modifier.name)}</span>
                   <span>+{formatPrice(modifier.priceDelta, product.currency)}</span>
                 </label>
               ))}
@@ -178,7 +189,7 @@ export function ProductDetailModal({
           )}
           {extras.length > 0 && (
             <fieldset className="product-modal__options">
-              <legend>Extras</legend>
+              <legend>{t('product.extras')}</legend>
               {extras.map((modifier) => {
                 const checked = selectedExtraIds.includes(modifier.id);
                 return (
@@ -194,7 +205,7 @@ export function ProductDetailModal({
                         );
                       }}
                     />
-                    <span>{modifier.name}</span>
+                    <span>{modifierName(modifier.name)}</span>
                     <span>+{formatPrice(modifier.priceDelta, product.currency)}</span>
                   </label>
                 );

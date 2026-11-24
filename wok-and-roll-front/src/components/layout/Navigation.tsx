@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
+import { useI18n, type MessageKey } from '../../i18n';
 import type { Role } from '../../services/authToken';
 
 export interface NavItem {
   to: string;
-  label: string;
+  label: MessageKey;
   end?: boolean;
   /** Shown only to these roles; undefined = everybody, including guests. */
   roles?: Role[];
@@ -14,16 +15,16 @@ export interface NavItem {
 // Guests see Home, Menu and Book a table (approved design). The role links (#186) live in the
 // account menu on wide screens and in the same list on small screens.
 export const mainLinks: NavItem[] = [
-  { to: '/', label: 'Home', end: true },
-  { to: '/menu', label: 'Menu' },
-  { to: '/booking', label: 'Book a table' },
+  { to: '/', label: 'nav.home', end: true },
+  { to: '/menu', label: 'nav.menu' },
+  { to: '/booking', label: 'nav.booking' },
 ];
 
 export const accountLinks: NavItem[] = [
-  { to: '/account', label: 'My orders', loggedIn: true },
-  { to: '/staff', label: 'Café orders', roles: ['STAFF', 'ADMIN'] },
-  { to: '/reports', label: 'Reports', roles: ['ADMIN', 'VIEWER'] },
-  { to: '/admin', label: 'Menu admin', roles: ['ADMIN'] },
+  { to: '/account', label: 'nav.myOrders', loggedIn: true },
+  { to: '/staff', label: 'nav.staff', roles: ['STAFF', 'ADMIN'] },
+  { to: '/reports', label: 'nav.reports', roles: ['ADMIN', 'VIEWER'] },
+  { to: '/admin', label: 'nav.admin', roles: ['ADMIN'] },
 ];
 
 export function visibleLinks(links: NavItem[], role: Role | undefined): NavItem[] {
@@ -36,16 +37,15 @@ export function visibleLinks(links: NavItem[], role: Role | undefined): NavItem[
 
 export function Navigation({
   links = mainLinks,
-  label = 'Main navigation',
   onNavigate,
 }: {
   links?: NavItem[];
-  label?: string;
   onNavigate?: () => void;
 }) {
+  const { t } = useI18n();
   return (
-    <nav className="main-nav" aria-label={label}>
-      {links.map(({ to, label: text, end }) => (
+    <nav className="main-nav" aria-label={t('nav.main')}>
+      {links.map(({ to, label, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -53,7 +53,7 @@ export function Navigation({
           className={({ isActive }) => `main-nav__link${isActive ? ' is-active' : ''}`}
           onClick={onNavigate}
         >
-          {text}
+          {t(label)}
         </NavLink>
       ))}
     </nav>

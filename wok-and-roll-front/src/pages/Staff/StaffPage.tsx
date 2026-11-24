@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader, Toast } from '../../components/common';
 import { useCountry } from '../../context/CountryContext';
+import { cafeName, t as translate, useI18n, type MessageKey } from '../../i18n';
 import {
   changeOrderStatus,
   loadStaffBookings,
@@ -20,15 +21,15 @@ import { StatusBadge } from '../Account/StatusBadge';
 
 const NEXT_ACTIONS: Record<
   OrderStatus,
-  Array<{ status: OrderStatus; label: string; variant: 'primary' | 'outline' | 'danger' }>
+  Array<{ status: OrderStatus; label: MessageKey; variant: 'primary' | 'outline' | 'danger' }>
 > = {
   NEW: [
-    { status: 'CONFIRMED', label: 'Confirm', variant: 'primary' },
-    { status: 'CANCELLED', label: 'Cancel', variant: 'outline' },
+    { status: 'CONFIRMED', label: 'staff.confirm', variant: 'primary' },
+    { status: 'CANCELLED', label: 'staff.cancel', variant: 'outline' },
   ],
   CONFIRMED: [
-    { status: 'DONE', label: 'Mark done', variant: 'primary' },
-    { status: 'CANCELLED', label: 'Cancel', variant: 'outline' },
+    { status: 'DONE', label: 'staff.markDone', variant: 'primary' },
+    { status: 'CANCELLED', label: 'staff.cancel', variant: 'outline' },
   ],
   DONE: [],
   CANCELLED: [],
@@ -37,6 +38,7 @@ const NEXT_ACTIONS: Record<
 /** Café orders and bookings for STAFF and ADMIN (API contract §3.14, #65). */
 export function StaffPage() {
   const { country, currentCountry } = useCountry();
+  const { t } = useI18n();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [cafeId, setCafeId] = useState<number>();
   const cafe = cafes.find(({ id }) => id === cafeId);
@@ -57,7 +59,7 @@ export function StaffPage() {
         setCafeId(result[0]?.id);
       })
       .catch((requestError: unknown) => {
-        if (active) setError(guestErrorMessage(requestError, 'We could not load the cafés.'));
+        if (active) setError(guestErrorMessage(requestError, translate('staff.cafesError')));
       });
     return () => {
       active = false;
@@ -76,7 +78,7 @@ export function StaffPage() {
       setOrders(orderList);
       setBookings(bookingList);
     } catch (requestError) {
-      setError(guestErrorMessage(requestError, 'We could not load the work list.'));
+      setError(guestErrorMessage(requestError, translate('staff.loadError')));
     } finally {
       setLoading(false);
     }
@@ -97,12 +99,15 @@ export function StaffPage() {
       );
       setToast({
         variant: 'success',
-        text: `Order ${order.orderNumber} is now ${updated.status.toLowerCase()}.`,
+        text: t('staff.changed', {
+          number: order.orderNumber,
+          status: t(`status.${updated.status}`),
+        }),
       });
     } catch (requestError) {
       setToast({
         variant: 'error',
-        text: guestErrorMessage(requestError, 'We could not change the status.'),
+        text: guestErrorMessage(requestError, t('staff.changeError')),
       });
       void load();
     } finally {
@@ -112,16 +117,14 @@ export function StaffPage() {
 
   return (
     <section className="staff-page" aria-labelledby="staff-title">
-      <p className="eyebrow">Staff</p>
-      <h1 id="staff-title">Café orders</h1>
-      <p className="page-description">
-        Orders and table bookings of one café for one day, in its local time.
-      </p>
+      <p className="eyebrow">{t('staff.eyebrow')}</p>
+      <h1 id="staff-title">{t('staff.title')}</h1>
+      <p className="page-description">{t('staff.description')}</p>
 
       <div className="report-filters">
         <div className="input">
           <label className="input__label" htmlFor="staff-cafe">
-            Café
+            {t('staff.cafe')}
           </label>
           <select
             id="staff-cafe"
@@ -131,14 +134,14 @@ export function StaffPage() {
           >
             {cafes.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.name}
+                {cafeName(item.name)}
               </option>
             ))}
           </select>
         </div>
         <div className="input">
           <label className="input__label" htmlFor="staff-date">
-            Date
+            {t('staff.date')}
           </label>
           <input
             id="staff-date"
@@ -149,7 +152,7 @@ export function StaffPage() {
           />
         </div>
         <Button variant="outline" onClick={() => void load()} disabled={loading}>
-          Refresh
+          {t('staff.refresh')}
         </Button>
       </div>
 
@@ -162,12 +165,12 @@ export function StaffPage() {
           {toast.text}
         </Toast>
       )}
-      {loading && <Loader label="Loading the work list" />}
+      {loading && <Loader label={t('staff.loading')} />}
       {error && (
         <div className="page-error">
-          <ErrorMessage title="Work list not loaded">{error}</ErrorMessage>
+          <ErrorMessage title={t('staff.notLoaded')}>{error}</ErrorMessage>
           <Button variant="outline" onClick={() => void load()}>
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       )}
@@ -176,10 +179,12 @@ export function StaffPage() {
         <div className="staff-columns">
           <section aria-labelledby="staff-orders-title">
             <h2 id="staff-orders-title">
-              Orders <span className="count">{orders.length}</span>
+              {t('staff.orders')} <span className="count">{orders.length}</span>
             </h2>
             {orders.length === 0 ? (
-              <p className="muted">No orders for {cafe?.name ?? 'this café'} on this day.</p>
+              <p className="muted">
+                {t('staff.noOrders', { cafe: cafe ? cafeName(cafe.name) : '' })}
+              </p>
             ) : (
               <ul className="order-list">
                 {orders.map((order) => (
@@ -190,9 +195,9 @@ export function StaffPage() {
                       </h3>
                       <p>
                         {order.scenario === 'PICKUP'
-                          ? 'Pickup'
-                          : `Delivery: ${order.deliveryAddress ?? ''}`}{' '}
-                        · {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
+                          ? t('staff.pickup')
+                          : t('staff.delivery', { address: order.deliveryAddress ?? '' })}{' '}
+                        · {t('staff.items', { count: order.itemCount })}
                       </p>
                       <p className="order-card__meta">
                         {order.contactName},{' '}
@@ -212,8 +217,8 @@ export function StaffPage() {
                             loading={busy === order.orderNumber && action.variant === 'primary'}
                             onClick={() => void change(order, action.status)}
                           >
-                            {action.label}
-                            <span className="sr-only"> order {order.orderNumber}</span>
+                            {t(action.label)}
+                            <span className="sr-only"> {order.orderNumber}</span>
                           </Button>
                         ))}
                       </div>
@@ -225,10 +230,10 @@ export function StaffPage() {
           </section>
           <section aria-labelledby="staff-bookings-title">
             <h2 id="staff-bookings-title">
-              Table bookings <span className="count">{bookings.length}</span>
+              {t('staff.bookings')} <span className="count">{bookings.length}</span>
             </h2>
             {bookings.length === 0 ? (
-              <p className="muted">No bookings on this day.</p>
+              <p className="muted">{t('staff.noBookings')}</p>
             ) : (
               <ul className="order-list">
                 {bookings.map((booking) => (
@@ -238,8 +243,8 @@ export function StaffPage() {
                         {booking.time}–{booking.endTime} · {booking.bookingNumber}
                       </h3>
                       <p>
-                        {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'} · table for{' '}
-                        {booking.tableSeats}
+                        {t('staff.guests', { count: booking.guests })} ·{' '}
+                        {t('staff.tableFor', { seats: booking.tableSeats })}
                       </p>
                       <p className="order-card__meta">
                         {booking.contactName},{' '}
@@ -248,7 +253,7 @@ export function StaffPage() {
                     </div>
                     <div className="order-card__side">
                       <span className="status-badge">
-                        {booking.status === 'CONFIRMED' ? 'Confirmed' : booking.status}
+                        {booking.status === 'CONFIRMED' ? t('staff.confirmed') : booking.status}
                       </span>
                     </div>
                   </li>

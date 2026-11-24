@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader, Toast } from '../../components/common';
 import { useCountry } from '../../context/CountryContext';
+import { categoryName, countryName, productName, useI18n } from '../../i18n';
 import {
   loadAdminProducts,
   savePrice,
   updateProductVisibility,
   type AdminProduct,
 } from '../../services/adminApi';
-import { ApiRequestError, guestErrorMessage } from '../../services/api';
+import { ApiRequestError, formatPrice, guestErrorMessage } from '../../services/api';
 
 interface Draft {
   price: string;
@@ -26,6 +27,7 @@ function draftOf(product: AdminProduct): Draft {
 /** Menu admin (#185, API contract §3.15): price, stock and visibility per country. */
 export function AdminCatalogPage() {
   const { country: currentCountry, countries } = useCountry();
+  const { t } = useI18n();
   const [country, setCountry] = useState(currentCountry);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
@@ -45,11 +47,11 @@ export function AdminCatalogPage() {
       setDrafts(Object.fromEntries(result.map((product) => [product.id, draftOf(product)])));
       setRowErrors({});
     } catch (requestError) {
-      setError(guestErrorMessage(requestError, 'We could not load the catalog.'));
+      setError(guestErrorMessage(requestError, t('admin.loadError')));
     } finally {
       setLoading(false);
     }
-  }, [country]);
+  }, [country, t]);
 
   useEffect(() => {
     void load();
@@ -64,7 +66,7 @@ export function AdminCatalogPage() {
     if (requestError instanceof ApiRequestError && requestError.code === 'VERSION_CONFLICT') {
       setToast({
         variant: 'warning',
-        text: 'Someone else changed this dish. We reloaded the list; check it and try again.',
+        text: t('admin.conflict'),
       });
       void load();
       return true;
@@ -78,7 +80,7 @@ export function AdminCatalogPage() {
     if (!PRICE.test(priceText)) {
       setRowErrors((current) => ({
         ...current,
-        [product.id]: 'Enter a price like 48 or 48.50 (at most 2 decimals).',
+        [product.id]: t('admin.priceFormat'),
       }));
       return;
     }
@@ -94,14 +96,18 @@ export function AdminCatalogPage() {
       });
       setToast({
         variant: 'success',
-        text: `${product.name}: ${saved.currency} ${saved.price.toFixed(2)}, ${saved.inStock ? 'in stock' : 'out of stock'}.`,
+        text: t('admin.saved', {
+          name: productName(product.name),
+          price: formatPrice(saved.price, saved.currency),
+          stock: saved.inStock ? t('admin.inStockLower') : t('admin.outOfStockLower'),
+        }),
       });
     } catch (requestError) {
       if (!conflict(requestError)) {
         const message =
           requestError instanceof ApiRequestError && requestError.fields.price
             ? requestError.fields.price
-            : guestErrorMessage(requestError, 'We could not save the price.');
+            : guestErrorMessage(requestError, t('admin.saveError'));
         setRowErrors((current) => ({ ...current, [product.id]: message }));
       }
     } finally {
@@ -121,13 +127,15 @@ export function AdminCatalogPage() {
       });
       setToast({
         variant: 'success',
-        text: `${product.name} is now ${saved.visible ? 'shown on' : 'hidden from'} the menu.`,
+        text: t(saved.visible ? 'admin.shownNow' : 'admin.hiddenNow', {
+          name: productName(product.name),
+        }),
       });
     } catch (requestError) {
       if (!conflict(requestError)) {
         setToast({
           variant: 'error',
-          text: guestErrorMessage(requestError, 'We could not change the visibility.'),
+          text: guestErrorMessage(requestError, t('admin.visibilityError')),
         });
       }
     } finally {
@@ -137,17 +145,14 @@ export function AdminCatalogPage() {
 
   return (
     <section className="admin-page" aria-labelledby="admin-title">
-      <p className="eyebrow">Admin</p>
-      <h1 id="admin-title">Menu admin</h1>
-      <p className="page-description">
-        Prices are per country, in the local currency, before VAT. Hidden dishes stay in old orders
-        and reports.
-      </p>
+      <p className="eyebrow">{t('admin.eyebrow')}</p>
+      <h1 id="admin-title">{t('admin.title')}</h1>
+      <p className="page-description">{t('admin.description')}</p>
 
       <div className="report-filters admin-filters">
         <div className="input">
           <label className="input__label" htmlFor="admin-country">
-            Country
+            {t('admin.country')}
           </label>
           <select
             id="admin-country"
@@ -157,7 +162,7 @@ export function AdminCatalogPage() {
           >
             {countries.map((item) => (
               <option key={item.code} value={item.code}>
-                {item.name} ({item.currency})
+                {countryName(item.code, item.name)} ({item.currency})
               </option>
             ))}
           </select>
@@ -173,12 +178,12 @@ export function AdminCatalogPage() {
           {toast.text}
         </Toast>
       )}
-      {loading && <Loader label="Loading the catalog" />}
+      {loading && <Loader label={t('admin.loading')} />}
       {error && (
         <div className="page-error">
-          <ErrorMessage title="Catalog not loaded">{error}</ErrorMessage>
+          <ErrorMessage title={t('admin.notLoaded')}>{error}</ErrorMessage>
           <Button variant="outline" onClick={() => void load()}>
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       )}
@@ -192,16 +197,16 @@ export function AdminCatalogPage() {
         >
           <table className="data-table admin-table">
             <caption id="admin-table-caption">
-              Dishes in {countries.find(({ code }) => code === country)?.name ?? country}
+              {t('admin.caption', { country: countryName(country) })}
             </caption>
             <thead>
               <tr>
-                <th scope="col">Dish</th>
-                <th scope="col">On the menu</th>
-                <th scope="col">Price, {currency}</th>
-                <th scope="col">In stock</th>
+                <th scope="col">{t('admin.dish')}</th>
+                <th scope="col">{t('admin.onMenu')}</th>
+                <th scope="col">{t('admin.price', { currency })}</th>
+                <th scope="col">{t('admin.inStock')}</th>
                 <th scope="col">
-                  <span className="sr-only">Save</span>
+                  <span className="sr-only">{t('common.save')}</span>
                 </th>
               </tr>
             </thead>
@@ -214,10 +219,10 @@ export function AdminCatalogPage() {
                 return (
                   <tr key={product.id} className={product.visible ? undefined : 'is-hidden'}>
                     <th scope="row">
-                      <span className="admin-table__name">{product.name}</span>
+                      <span className="admin-table__name">{productName(product.name)}</span>
                       <span className="admin-table__meta">
-                        {product.categoryName}
-                        {product.price === null ? ' · not sold here yet' : ''}
+                        {categoryName(product.categoryName)}
+                        {product.price === null ? ` · ${t('admin.notSold')}` : ''}
                       </span>
                     </th>
                     <td>
@@ -229,13 +234,16 @@ export function AdminCatalogPage() {
                           disabled={busy}
                           onChange={() => void toggleVisible(product)}
                         />
-                        <span>{product.visible ? 'Shown' : 'Hidden'}</span>
-                        <span className="sr-only"> — {product.name}</span>
+                        <span>{product.visible ? t('admin.shown') : t('admin.hidden')}</span>
+                        <span className="sr-only">
+                          {' '}
+                          — {t('admin.visibleFor', { name: productName(product.name) })}
+                        </span>
                       </label>
                     </td>
                     <td>
                       <label className="sr-only" htmlFor={priceId}>
-                        Price of {product.name} in {currency}
+                        {t('admin.priceFor', { name: productName(product.name), currency })}
                       </label>
                       <input
                         id={priceId}
@@ -273,8 +281,11 @@ export function AdminCatalogPage() {
                             }))
                           }
                         />
-                        <span>{draft.inStock ? 'Yes' : 'No'}</span>
-                        <span className="sr-only"> — {product.name} in stock</span>
+                        <span>{draft.inStock ? t('common.yes') : t('common.no')}</span>
+                        <span className="sr-only">
+                          {' '}
+                          — {t('admin.inStockFor', { name: productName(product.name) })}
+                        </span>
                       </label>
                     </td>
                     <td>
@@ -285,7 +296,8 @@ export function AdminCatalogPage() {
                         disabled={busy}
                         onClick={() => void saveRow(product)}
                       >
-                        Save<span className="sr-only"> {product.name}</span>
+                        {t('common.save')}
+                        <span className="sr-only"> {productName(product.name)}</span>
                       </Button>
                     </td>
                   </tr>

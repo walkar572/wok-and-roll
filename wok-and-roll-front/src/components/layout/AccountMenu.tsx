@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ROLE_LABELS, useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import { useI18n } from '../../i18n';
 import { Icon } from '../common/Icon';
 import { accountLinks, visibleLinks } from './Navigation';
 
@@ -10,6 +11,7 @@ import { accountLinks, visibleLinks } from './Navigation';
  */
 export function AccountMenu() {
   const { auth, me, logout } = useAuth();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
@@ -49,12 +51,12 @@ export function AccountMenu() {
         className="account-login"
         to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`}
       >
-        Log in
+        {t('nav.logIn')}
       </Link>
     );
   }
 
-  const name = me?.fullName || auth.email || 'Account';
+  const name = me?.fullName || auth.email || t('nav.account');
   const links = visibleLinks(accountLinks, auth.role);
 
   return (
@@ -71,7 +73,7 @@ export function AccountMenu() {
           {name.trim().charAt(0).toUpperCase()}
         </span>
         <span className="account-menu__name">
-          <span className="sr-only">Account: </span>
+          <span className="sr-only">{t('nav.accountOf', { name: '' })}</span>
           {name}
         </span>
         <Icon name="chevron" />
@@ -79,9 +81,9 @@ export function AccountMenu() {
       <div className="account-menu__panel" id={panelId} hidden={!open}>
         <p className="account-menu__who">
           <strong>{name}</strong>
-          <span>{ROLE_LABELS[auth.role]}</span>
+          <span>{t(`roles.${auth.role}`)}</span>
         </p>
-        <nav aria-label="Account">
+        <nav aria-label={t('nav.account')}>
           <ul>
             {links.map((link) => (
               <li key={link.to}>
@@ -89,7 +91,7 @@ export function AccountMenu() {
                   to={link.to}
                   className={({ isActive }) => `account-menu__link${isActive ? ' is-active' : ''}`}
                 >
-                  {link.label}
+                  {t(link.label)}
                 </NavLink>
               </li>
             ))}
@@ -103,7 +105,7 @@ export function AccountMenu() {
             navigate('/');
           }}
         >
-          Log out
+          {t('nav.logOut')}
         </button>
       </div>
     </div>

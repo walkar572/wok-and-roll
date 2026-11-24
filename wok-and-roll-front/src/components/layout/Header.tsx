@@ -4,6 +4,7 @@ import { Icon } from '../common/Icon';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import { useCart } from '../../context/CartContext';
+import { countryName, useI18n } from '../../i18n';
 import { AccountMenu } from './AccountMenu';
 import { accountLinks, mainLinks, Navigation, visibleLinks } from './Navigation';
 
@@ -15,6 +16,7 @@ export function Header() {
   const location = useLocation();
   const { itemCount } = useCart();
   const { auth, logout } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const mobileLinks = [...mainLinks, ...visibleLinks(accountLinks, auth?.role)];
 
@@ -40,14 +42,16 @@ export function Header() {
         <div className="desktop-nav">
           <Navigation />
         </div>
-        <Link className="brand" to="/" aria-label="Wok & Roll home">
+        <Link className="brand" to="/" aria-label={t('nav.brandHome')}>
           Wok &amp; Roll
         </Link>
         <div className="header-tools">
           <label className="country-control">
-            <span className="sr-only">Country</span>
+            <span className="sr-only">{t('nav.country')}</span>
             <select
-              aria-label={`Country, current selection: ${currentCountry.name}`}
+              aria-label={t('nav.countryCurrent', {
+                name: countryName(country, currentCountry.name),
+              })}
               value={country}
               onChange={(event) => {
                 const selectedCountry = countries.find(({ code }) => code === event.target.value);
@@ -55,7 +59,7 @@ export function Header() {
               }}
             >
               {countries.map((item) => (
-                <option key={item.code} value={item.code}>
+                <option key={item.code} value={item.code} title={countryName(item.code, item.name)}>
                   {item.code}
                 </option>
               ))}
@@ -63,22 +67,18 @@ export function Header() {
             <Icon name="chevron" />
             {isLoadingCountries ? (
               <span className="country-control__status" role="status">
-                Loading countries
+                {t('nav.loadingCountries')}
               </span>
             ) : countriesError ? (
               <span className="country-control__status" role="status" title={countriesError}>
-                {import.meta.env.DEV ? 'Sample data' : 'Country data unavailable'}
+                {import.meta.env.DEV ? t('nav.sampleData') : t('nav.countryUnavailable')}
               </span>
             ) : null}
           </label>
           <div className="header-account">
             <AccountMenu />
           </div>
-          <Link
-            className="header-cart"
-            to="/cart"
-            aria-label={`Cart, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
-          >
+          <Link className="header-cart" to="/cart" aria-label={t('nav.cart', { count: itemCount })}>
             <Icon name="cart" />
             <span>{itemCount}</span>
           </Link>
@@ -86,7 +86,7 @@ export function Header() {
             ref={menuToggle}
             className="menu-toggle"
             type="button"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={menuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMenuOpen((open) => !open)}
@@ -108,7 +108,7 @@ export function Header() {
                 navigate('/');
               }}
             >
-              Log out ({auth.email})
+              {t('nav.logOutAs', { email: auth.email })}
             </button>
           ) : (
             <Link
@@ -116,11 +116,11 @@ export function Header() {
               to={`/login?next=${encodeURIComponent(location.pathname)}`}
               onClick={() => setMenuOpen(false)}
             >
-              Log in
+              {t('nav.logIn')}
             </Link>
           )}
         </div>
-        <p>{currentCountry.name}</p>
+        <p>{countryName(country, currentCountry.name)}</p>
       </div>
     </header>
   );

@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { getLocale, useI18n } from '../../i18n';
+import { formatCompact } from '../../i18n/format';
 
 export interface BarDatum {
   key: string;
@@ -36,9 +38,7 @@ export function niceMax(max: number): number {
 }
 
 export function compactNumber(value: number): string {
-  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(
-    value,
-  );
+  return formatCompact(value, getLocale());
 }
 
 /** A column with 4px rounded top corners, anchored flat on the baseline. */
@@ -69,6 +69,7 @@ export function BarChart({
   height = 260,
   formatAxis = compactNumber,
 }: BarChartProps) {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(640);
   const [active, setActive] = useState<number | null>(null);
@@ -103,8 +104,7 @@ export function BarChart({
   return (
     <div className="bar-chart" ref={containerRef}>
       <p id={descriptionId} className="sr-only">
-        {description}. {data.length} bars. Use Tab to move between bars; the table below has every
-        value.
+        {t('reports.chartHelp', { description, count: data.length })}
       </p>
       <svg
         width={width}

@@ -7,6 +7,25 @@ import { Button, ErrorMessage, Input, Loader, TotalsBlock } from '../../componen
 import { useCart, type CartItem } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import {
+  cafeAddress,
+  cafeName,
+  modifierName,
+  productName,
+  t as translate,
+  useI18n,
+  zoneName,
+} from '../../i18n';
+import { DAY_PICKER_LOCALE } from '../../i18n/dayPicker';
+import { apiFieldMessage } from '../../services/apiMessages';
+import { createIdempotencyKey } from '../../services/parse';
+import {
+  addDays,
+  dateKeyInTimeZone,
+  dateKeyToDate as dateKeyToLocalDate,
+  formatDate as formatOrderDate,
+  localDateKey as localDateToKey,
+} from '../../utils/dates';
+import {
   ApiRequestError,
   formatPrice,
   guestErrorMessage,
@@ -34,55 +53,6 @@ interface ContactDetails {
   deliveryAddress: string;
 }
 
-function dateKeyInTimeZone(timeZone: string): string {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date());
-  const part = (type: string) => parts.find((value) => value.type === type)?.value ?? '';
-  return `${part('year')}-${part('month')}-${part('day')}`;
-}
-
-function dateKeyToLocalDate(value: string): Date {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day, 12);
-}
-
-function localDateToKey(value: Date): string {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function addDays(value: Date, count: number): Date {
-  const result = new Date(value);
-  result.setDate(result.getDate() + count);
-  return result;
-}
-
-function formatOrderDate(value: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(dateKeyToLocalDate(value));
-}
-
-function createIdempotencyKey(): string {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
 function validateContact(
   details: ContactDetails,
   scenario: Scenario,
@@ -96,35 +66,35 @@ function validateContact(
   const address = details.deliveryAddress.trim();
 
   if (name.length < 2 || name.length > 100) {
-    errors.contactName = 'Enter a name from 2 to 100 characters.';
+    errors.contactName = translate('validation.name');
   }
   if (!/^\+\d{8,15}$/.test(phone)) {
-    errors.contactPhone = 'Enter a phone number with + and 8 to 15 digits.';
+    errors.contactPhone = translate('validation.phone');
   }
   if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) {
-    errors.contactEmail = 'Enter a valid email address.';
+    errors.contactEmail = translate('validation.email');
   }
   if (scenario === 'DELIVERY' && (address.length < 5 || address.length > 200)) {
-    errors.deliveryAddress = 'Enter an address from 5 to 200 characters.';
+    errors.deliveryAddress = translate('validation.address');
   }
-  if (details.comment.length > 300) errors.comment = 'Comment must be 300 characters or fewer.';
+  if (details.comment.length > 300) errors.comment = translate('validation.comment');
   if (orderDate < today || orderDate > localDateToKey(addDays(dateKeyToLocalDate(today), 7))) {
-    errors.orderDate = 'Choose a date from today through the next 7 days.';
+    errors.orderDate = translate('validation.orderDate');
   }
   return errors;
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  expectedTotal: 'Order total',
-  country: 'Country',
-  scenario: 'Order type',
-  items: 'Items',
-  'Idempotency-Key': 'Order request',
+const FIELD_LABELS: Record<string, () => string> = {
+  expectedTotal: () => translate('checkout.orderTotal'),
+  country: () => translate('cart.fieldCountry'),
+  scenario: () => translate('checkout.orderType'),
+  items: () => translate('checkout.items'),
+  'Idempotency-Key': () => translate('checkout.orderRequest'),
 };
 
 function fieldLabel(fieldName: string): string {
   const known = FIELD_LABELS[fieldName];
-  if (known) return known;
+  if (known) return known();
 
   const words = fieldName
     .replace(/^items\[(\d+)\]/, (_, index: string) => `item ${Number(index) + 1}`)
@@ -135,7 +105,7 @@ function fieldLabel(fieldName: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-function mapApiFieldErrors(fields: Record<string, string>, cartItems: CartItem[]) {
+function mapApiFieldErrors(fields: Record<string, string>, cartItems: CartItem[], code?: string) {
   const fieldErrors: Partial<Record<CheckoutErrorField, string>> = {};
   const itemErrors: Record<number, string[]> = {};
   const unhandled: string[] = [];
@@ -151,7 +121,8 @@ function mapApiFieldErrors(fields: Record<string, string>, cartItems: CartItem[]
     'deliveryZoneId',
   ];
 
-  for (const [fieldName, message] of Object.entries(fields)) {
+  for (const [fieldName, serverMessage] of Object.entries(fields)) {
+    const message = apiFieldMessage(fieldName, serverMessage, code);
     const itemMatch = /^items\[(\d+)\](?:\.|$)/.exec(fieldName);
     if (itemMatch) {
       const itemIndex = Number(itemMatch[1]);
@@ -178,6 +149,7 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const { country, currentCountry } = useCountry();
   const { items, clearCart } = useCart();
+  const { t, locale } = useI18n();
   const today = dateKeyInTimeZone(currentCountry.timeZone);
   const maxDate = localDateToKey(addDays(dateKeyToLocalDate(today), 7));
   const [orderDate, setOrderDate] = useState(today);
@@ -279,7 +251,7 @@ export function CheckoutPage() {
       .then((result) => {
         if (!active) return;
         if (result.length === 0) {
-          setDeliveryZoneError('No delivery zones are available in this country.');
+          setDeliveryZoneError(t('checkout.noZones'));
           return;
         }
         setDeliveryZones(result);
@@ -287,9 +259,7 @@ export function CheckoutPage() {
       })
       .catch((requestError: unknown) => {
         if (active) {
-          setDeliveryZoneError(
-            guestErrorMessage(requestError, 'We could not load delivery zones. Please try again.'),
-          );
+          setDeliveryZoneError(guestErrorMessage(requestError, t('checkout.zonesFallback')));
         }
       })
       .finally(() => {
@@ -299,7 +269,7 @@ export function CheckoutPage() {
     return () => {
       active = false;
     };
-  }, [country, zoneRetryCount]);
+  }, [country, zoneRetryCount, t]);
 
   useEffect(() => {
     let active = true;
@@ -312,7 +282,7 @@ export function CheckoutPage() {
       .then((result) => {
         if (!active) return;
         if (result.length === 0) {
-          setCafeError('No pickup cafés are available in this country.');
+          setCafeError(t('checkout.noCafes'));
           return;
         }
         setCafes(result);
@@ -320,9 +290,7 @@ export function CheckoutPage() {
       })
       .catch((requestError: unknown) => {
         if (active) {
-          setCafeError(
-            guestErrorMessage(requestError, 'We could not load pickup cafés. Please try again.'),
-          );
+          setCafeError(guestErrorMessage(requestError, t('checkout.cafesFallback')));
         }
       })
       .finally(() => {
@@ -332,7 +300,7 @@ export function CheckoutPage() {
     return () => {
       active = false;
     };
-  }, [country, cafeRetryCount]);
+  }, [country, cafeRetryCount, t]);
 
   useEffect(() => {
     let active = true;
@@ -356,9 +324,7 @@ export function CheckoutPage() {
       })
       .catch((requestError: unknown) => {
         if (active) {
-          setSlotsError(
-            guestErrorMessage(requestError, 'We could not load time slots. Please try again.'),
-          );
+          setSlotsError(guestErrorMessage(requestError, t('checkout.slotsFallback')));
         }
       })
       .finally(() => {
@@ -373,7 +339,7 @@ export function CheckoutPage() {
     return () => {
       active = false;
     };
-  }, [orderDate, slotSelectionKey, slotsCafeId, slotsRetryCount]);
+  }, [orderDate, slotSelectionKey, slotsCafeId, slotsRetryCount, t]);
 
   useEffect(() => {
     let active = true;
@@ -415,16 +381,11 @@ export function CheckoutPage() {
             requestError instanceof ApiRequestError &&
             Object.keys(requestError.fields).length > 0
           ) {
-            const mappedErrors = mapApiFieldErrors(requestError.fields, items);
+            const mappedErrors = mapApiFieldErrors(requestError.fields, items, requestError.code);
             setItemErrors(mappedErrors.itemErrors);
             if (Object.keys(mappedErrors.itemErrors).length > 0) setFocusFirstError(true);
           }
-          setQuoteError(
-            guestErrorMessage(
-              requestError,
-              'We could not get the current prices. Please try again.',
-            ),
-          );
+          setQuoteError(guestErrorMessage(requestError, t('cart.pricesFallback')));
         }
       })
       .finally(() => {
@@ -434,7 +395,7 @@ export function CheckoutPage() {
     return () => {
       active = false;
     };
-  }, [country, items, retryCount, scenario, selectedDeliveryZoneId]);
+  }, [country, items, retryCount, scenario, selectedDeliveryZoneId, t]);
 
   function updateField(field: ContactField, value: string) {
     setDetails((current) => ({ ...current, [field]: value }));
@@ -446,12 +407,12 @@ export function CheckoutPage() {
   async function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const errors = validateContact(details, scenario, orderDate, today);
-    if (!slotStart) errors.slotStart = 'Choose an available time slot.';
+    if (!slotStart) errors.slotStart = t('validation.slot');
     if (scenario === 'PICKUP' && !selectedCafeId) {
-      errors.cafeId = 'Choose a pickup café.';
+      errors.cafeId = t('validation.cafe');
     }
     if (scenario === 'DELIVERY' && !selectedDeliveryZoneId) {
-      errors.deliveryZoneId = 'Choose a delivery zone.';
+      errors.deliveryZoneId = t('validation.zone');
     }
     setFieldErrors(errors);
     setItemErrors({});
@@ -461,7 +422,7 @@ export function CheckoutPage() {
       return;
     }
     if (!currentQuote || isLoadingQuote) {
-      setOrderError('Wait for the latest order total before placing your order.');
+      setOrderError(t('checkout.waitTotal'));
       return;
     }
 
@@ -496,12 +457,10 @@ export function CheckoutPage() {
       if (requestError instanceof ApiRequestError && requestError.code === 'PRICE_CHANGED') {
         idempotencyKey.current = undefined;
         setQuote(undefined);
-        setOrderError(
-          'The price changed. We refreshed your quote; review the new total and try again.',
-        );
+        setOrderError(t('checkout.priceChanged'));
         setRetryCount((count) => count + 1);
       } else if (requestError instanceof ApiRequestError && requestError.code === 'SLOT_FULL') {
-        const message = 'That time slot just filled up. Choose another available time.';
+        const message = t('checkout.slotJustFull');
         setSlotStart('');
         setIsSlotFull(true);
         setFieldErrors((current) => ({ ...current, slotStart: message }));
@@ -512,12 +471,12 @@ export function CheckoutPage() {
         requestError instanceof ApiRequestError &&
         Object.keys(requestError.fields).length > 0
       ) {
-        const mappedErrors = mapApiFieldErrors(requestError.fields, items);
+        const mappedErrors = mapApiFieldErrors(requestError.fields, items, requestError.code);
         setFieldErrors(mappedErrors.fieldErrors);
         setItemErrors(mappedErrors.itemErrors);
         setOrderError(
           mappedErrors.unhandled.length > 0
-            ? `Please review these order details: ${mappedErrors.unhandled.join('; ')}`
+            ? t('checkout.reviewDetails', { list: mappedErrors.unhandled.join('; ') })
             : undefined,
         );
         if (
@@ -527,9 +486,7 @@ export function CheckoutPage() {
           setFocusFirstError(true);
         }
       } else {
-        setOrderError(
-          guestErrorMessage(requestError, 'We could not place your order. Please try again.'),
-        );
+        setOrderError(guestErrorMessage(requestError, t('checkout.placeFallback')));
       }
     } finally {
       setIsSending(false);
@@ -539,13 +496,13 @@ export function CheckoutPage() {
   if (items.length === 0) {
     return (
       <PagePlaceholder
-        eyebrow="Almost there"
-        title="Checkout"
-        description="A few more details and your order will be on its way."
+        eyebrow={t('checkout.eyebrow')}
+        title={t('checkout.title')}
+        description={t('checkout.emptyDescription')}
         symbol="♡"
-        panelTitle="Start with something tasty"
-        panelDescription="Add an item to your cart before heading to checkout."
-        actionLabel="Explore the menu"
+        panelTitle={t('checkout.emptyPanelTitle')}
+        panelDescription={t('checkout.emptyPanelText')}
+        actionLabel={t('checkout.explore')}
         actionTo="/menu"
       />
     );
@@ -557,28 +514,28 @@ export function CheckoutPage() {
 
   return (
     <section className="checkout-page" aria-labelledby="checkout-title">
-      <p className="eyebrow">Almost there</p>
-      <h1 id="checkout-title">Checkout</h1>
-      <p className="checkout-page__description">Choose a time and tell us how to reach you.</p>
+      <p className="eyebrow">{t('checkout.eyebrow')}</p>
+      <h1 id="checkout-title">{t('checkout.title')}</h1>
+      <p className="checkout-page__description">{t('checkout.description')}</p>
 
-      {orderError && <ErrorMessage title="Order not placed">{orderError}</ErrorMessage>}
+      {orderError && <ErrorMessage title={t('checkout.orderNotPlaced')}>{orderError}</ErrorMessage>}
       {quoteError && (
         <div className="checkout-page__error">
-          <ErrorMessage title="Could not update order prices">{quoteError}</ErrorMessage>
+          <ErrorMessage title={t('checkout.pricesError')}>{quoteError}</ErrorMessage>
           <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       )}
-      {isLoadingQuote && <Loader label="Getting current cart prices" />}
+      {isLoadingQuote && <Loader label={t('checkout.loadingQuote')} />}
 
       <form ref={formRef} className="checkout-form" onSubmit={submitOrder} noValidate>
         <div className="checkout-form__fields">
           <section className="checkout-section" aria-labelledby="fulfillment-title">
-            <h2 id="fulfillment-title">How would you like your order?</h2>
+            <h2 id="fulfillment-title">{t('checkout.howTitle')}</h2>
             <RadioGroup.Root
               className="checkout-scenarios"
-              aria-label="Order type"
+              aria-label={t('checkout.orderType')}
               value={scenario}
               onValueChange={(value: Scenario) => {
                 setScenario(value);
@@ -594,7 +551,7 @@ export function CheckoutPage() {
                 <RadioGroup.Item className="checkout-scenario__control" value="PICKUP" id="pickup">
                   <RadioGroup.Indicator className="checkout-scenario__indicator" />
                 </RadioGroup.Item>
-                <span>Pickup</span>
+                <span>{t('checkout.pickup')}</span>
               </label>
               <label className="checkout-scenario">
                 <RadioGroup.Item
@@ -604,20 +561,20 @@ export function CheckoutPage() {
                 >
                   <RadioGroup.Indicator className="checkout-scenario__indicator" />
                 </RadioGroup.Item>
-                <span>Delivery</span>
+                <span>{t('checkout.delivery')}</span>
               </label>
             </RadioGroup.Root>
 
             {scenario === 'DELIVERY' && (
               <div className="input">
                 <label className="input__label" htmlFor="checkout-zone">
-                  Delivery zone
+                  {t('checkout.zone')}
                 </label>
                 {isLoadingZones ? (
-                  <Loader label="Loading delivery zones" />
+                  <Loader label={t('checkout.loadingZones')} />
                 ) : deliveryZoneError ? (
                   <div className="checkout-page__error">
-                    <ErrorMessage title="Could not load delivery zones">
+                    <ErrorMessage title={t('checkout.zonesError')}>
                       {deliveryZoneError}
                     </ErrorMessage>
                     <Button
@@ -625,7 +582,7 @@ export function CheckoutPage() {
                       variant="outline"
                       onClick={() => setZoneRetryCount((count) => count + 1)}
                     >
-                      Retry
+                      {t('common.retry')}
                     </Button>
                   </div>
                 ) : (
@@ -655,7 +612,7 @@ export function CheckoutPage() {
                     >
                       {deliveryZones.map((zone) => (
                         <option key={zone.id} value={zone.id}>
-                          {zone.name}
+                          {zoneName(zone.name)}
                         </option>
                       ))}
                     </select>
@@ -664,8 +621,10 @@ export function CheckoutPage() {
                         id="checkout-zone-details"
                         className="input__message checkout-zone__details"
                       >
-                        Delivery fee{' '}
-                        {formatPrice(selectedDeliveryZone.fee, selectedDeliveryZone.currency)}.
+                        {t('checkout.zoneFee', {
+                          fee: formatPrice(selectedDeliveryZone.fee, selectedDeliveryZone.currency),
+                          minutes: selectedDeliveryZone.deliveryMinutes,
+                        })}
                       </p>
                     )}
                     {fieldErrors.deliveryZoneId && (
@@ -685,19 +644,19 @@ export function CheckoutPage() {
             {scenario === 'PICKUP' && (
               <div className="input">
                 <label className="input__label" htmlFor="checkout-cafe">
-                  Pickup café
+                  {t('checkout.cafe')}
                 </label>
                 {isLoadingCafes ? (
-                  <Loader label="Loading pickup cafés" />
+                  <Loader label={t('checkout.loadingCafes')} />
                 ) : cafeError ? (
                   <div className="checkout-page__error">
-                    <ErrorMessage title="Could not load pickup cafés">{cafeError}</ErrorMessage>
+                    <ErrorMessage title={t('checkout.cafesError')}>{cafeError}</ErrorMessage>
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setCafeRetryCount((count) => count + 1)}
                     >
-                      Retry
+                      {t('common.retry')}
                     </Button>
                   </div>
                 ) : (
@@ -726,7 +685,7 @@ export function CheckoutPage() {
                     >
                       {cafes.map((cafe) => (
                         <option key={cafe.id} value={cafe.id}>
-                          {cafe.name}
+                          {cafeName(cafe.name)}
                         </option>
                       ))}
                     </select>
@@ -735,7 +694,11 @@ export function CheckoutPage() {
                         id="checkout-cafe-details"
                         className="input__message checkout-cafe__details"
                       >
-                        {selectedCafe.address}. Open {selectedCafe.opensAt}–{selectedCafe.closesAt}.
+                        {t('checkout.cafeDetails', {
+                          address: cafeAddress(selectedCafe.address),
+                          opens: selectedCafe.opensAt,
+                          closes: selectedCafe.closesAt,
+                        })}
                       </p>
                     )}
                     {fieldErrors.cafeId && (
@@ -754,7 +717,7 @@ export function CheckoutPage() {
 
             {scenario === 'DELIVERY' && (
               <Input
-                label="Delivery address"
+                label={t('checkout.address')}
                 value={details.deliveryAddress}
                 maxLength={200}
                 error={fieldErrors.deliveryAddress}
@@ -764,7 +727,7 @@ export function CheckoutPage() {
 
             <div className="checkout-date">
               <span id="checkout-date-label" className="input__label">
-                Order date
+                {t('checkout.orderDate')}
               </span>
               <button
                 type="button"
@@ -791,6 +754,7 @@ export function CheckoutPage() {
                 <div id="checkout-date-picker" className="checkout-date__panel">
                   <DayPicker
                     mode="single"
+                    locale={DAY_PICKER_LOCALE[locale]}
                     selected={dateKeyToLocalDate(orderDate)}
                     defaultMonth={dateKeyToLocalDate(orderDate)}
                     startMonth={dateKeyToLocalDate(today)}
@@ -816,19 +780,19 @@ export function CheckoutPage() {
 
             <div className="input">
               <label className="input__label" htmlFor="checkout-slot">
-                Time slot
+                {t('checkout.slot')}
               </label>
               {isLoadingSlots ? (
-                <Loader label="Loading time slots" />
+                <Loader label={t('checkout.loadingSlots')} />
               ) : slotsError ? (
                 <div className="checkout-page__error">
-                  <ErrorMessage title="Could not load time slots">{slotsError}</ErrorMessage>
+                  <ErrorMessage title={t('checkout.slotsError')}>{slotsError}</ErrorMessage>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setSlotsRetryCount((count) => count + 1)}
                   >
-                    Retry
+                    {t('common.retry')}
                   </Button>
                 </div>
               ) : (
@@ -855,10 +819,14 @@ export function CheckoutPage() {
                     idempotencyKey.current = undefined;
                   }}
                 >
-                  <option value="">Choose a time</option>
+                  <option value="">{t('checkout.chooseTime')}</option>
                   {timeSlots?.slots.map((slot) => {
                     const unavailableLabel =
-                      slot.reason === 'FULL' ? ' — Full' : slot.reason === 'PAST' ? ' — Past' : '';
+                      slot.reason === 'FULL'
+                        ? ` — ${t('checkout.slotFull')}`
+                        : slot.reason === 'PAST'
+                          ? ` — ${t('checkout.slotPast')}`
+                          : '';
                     return (
                       <option key={slot.start} value={slot.start} disabled={!slot.available}>
                         {slot.start}–{slot.end}
@@ -870,7 +838,7 @@ export function CheckoutPage() {
               )}
               {timeSlots && !slotsError && (
                 <p id="checkout-slot-details" className="input__message checkout-slot__details">
-                  Times are in the café&apos;s local time.
+                  {t('checkout.localTime')}
                 </p>
               )}
               {fieldErrors.slotStart && (
@@ -882,16 +850,17 @@ export function CheckoutPage() {
           </section>
 
           <section className="checkout-section" aria-labelledby="contact-title">
-            <h2 id="contact-title">Contact details</h2>
+            <h2 id="contact-title">{t('fields.contactTitle')}</h2>
             <Input
-              label="Name"
+              label={t('fields.name')}
               value={details.contactName}
               maxLength={100}
               error={fieldErrors.contactName}
               onChange={(event) => updateField('contactName', event.target.value)}
             />
             <Input
-              label="Phone"
+              label={t('fields.phone')}
+              hint={t('fields.phoneHint')}
               type="tel"
               autoComplete="tel"
               value={details.contactPhone}
@@ -899,7 +868,7 @@ export function CheckoutPage() {
               onChange={(event) => updateField('contactPhone', event.target.value)}
             />
             <Input
-              label="Email (optional)"
+              label={t('fields.emailOptional')}
               type="email"
               autoComplete="email"
               value={details.contactEmail}
@@ -909,7 +878,7 @@ export function CheckoutPage() {
             />
             <div className="input">
               <label className="input__label" htmlFor="checkout-comment">
-                Comment (optional)
+                {t('fields.commentOptional')}
               </label>
               <textarea
                 className="input__control checkout-comment"
@@ -933,7 +902,7 @@ export function CheckoutPage() {
           </section>
         </div>
 
-        <aside className="checkout-form__summary" aria-label="Order summary">
+        <aside className="checkout-form__summary" aria-label={t('checkout.summary')}>
           {Object.entries(itemErrors).map(([index, messages]) => {
             const item = items[Number(index)];
             if (!item) return null;
@@ -943,16 +912,19 @@ export function CheckoutPage() {
                 key={index}
                 className="checkout-line-errors"
                 role="group"
-                aria-label={`Errors for ${item.name}, quantity ${item.quantity}`}
+                aria-label={t('checkout.lineErrors', {
+                  name: productName(item.name),
+                  quantity: item.quantity,
+                })}
                 data-invalid="true"
                 aria-describedby={errorId}
                 tabIndex={-1}
               >
                 <strong>
-                  {item.name} × {item.quantity}
+                  {productName(item.name)} × {item.quantity}
                 </strong>
                 {item.modifiers.length > 0 && (
-                  <p>{item.modifiers.map(({ name }) => name).join(', ')}</p>
+                  <p>{item.modifiers.map(({ name }) => modifierName(name)).join(', ')}</p>
                 )}
                 <ul id={errorId}>
                   {messages.map((message, messageIndex) => (
@@ -965,7 +937,7 @@ export function CheckoutPage() {
           {currentQuote && <TotalsBlock quote={currentQuote} />}
           {fieldErrorMessages.length > 0 && (
             <div className="checkout-error-summary" role="alert">
-              <strong>Check these details before you place your order</strong>
+              <strong>{t('checkout.checkDetails')}</strong>
               <ul>
                 {fieldErrorMessages.map(([field, message]) => (
                   <li key={field}>{message}</li>
@@ -991,10 +963,10 @@ export function CheckoutPage() {
               !timeSlots
             }
           >
-            Place order
+            {t('checkout.placeOrder')}
           </Button>
           <Link className="checkout-form__back" to="/cart">
-            Back to cart
+            {t('checkout.backToCart')}
           </Link>
         </aside>
       </form>

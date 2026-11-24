@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader } from '../../components/common';
-import { ROLE_LABELS, useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import { t as translate, useI18n } from '../../i18n';
 import { loadMyOrders, type OrderSummary } from '../../services/accountApi';
 import { formatPrice, guestErrorMessage } from '../../services/api';
 import { formatDate, formatDateTime } from '../../utils/dates';
@@ -10,6 +11,7 @@ import { StatusBadge } from './StatusBadge';
 /** My orders (#184, API contract §3.13): newest first, 10 per page with "Show more". */
 export function AccountPage() {
   const { me, auth } = useAuth();
+  const { t } = useI18n();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [nextToken, setNextToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export function AccountPage() {
         setNextToken(page.nextPageToken);
       })
       .catch((requestError: unknown) => {
-        if (active) setError(guestErrorMessage(requestError, 'We could not load your orders.'));
+        if (active) setError(guestErrorMessage(requestError, translate('account.loadError')));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -47,7 +49,7 @@ export function AccountPage() {
       setOrders((current) => [...current, ...page.items]);
       setNextToken(page.nextPageToken);
     } catch (requestError) {
-      setError(guestErrorMessage(requestError, 'We could not load more orders.'));
+      setError(guestErrorMessage(requestError, t('account.moreError')));
     } finally {
       setLoadingMore(false);
     }
@@ -55,19 +57,19 @@ export function AccountPage() {
 
   return (
     <section className="account-page" aria-labelledby="account-title">
-      <p className="eyebrow">Your account</p>
-      <h1 id="account-title">My orders</h1>
+      <p className="eyebrow">{t('account.eyebrow')}</p>
+      <h1 id="account-title">{t('account.title')}</h1>
       <p className="page-description">
         {me ? `${me.fullName} · ${me.email}` : auth?.email}
-        {auth && <span className="role-pill">{ROLE_LABELS[auth.role]}</span>}
+        {auth && <span className="role-pill">{t(`roles.${auth.role}`)}</span>}
       </p>
 
-      {loading && <Loader label="Loading your orders" />}
+      {loading && <Loader label={t('account.loading')} />}
       {error && (
         <div className="page-error">
-          <ErrorMessage title="Orders not loaded">{error}</ErrorMessage>
+          <ErrorMessage title={t('account.notLoaded')}>{error}</ErrorMessage>
           <Button variant="outline" onClick={loadFirstPage}>
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       )}
@@ -77,32 +79,37 @@ export function AccountPage() {
           <span className="empty-state__symbol" aria-hidden="true">
             ♡
           </span>
-          <h2>No orders yet</h2>
-          <p>Orders you place while logged in appear here.</p>
+          <h2>{t('account.emptyTitle')}</h2>
+          <p>{t('account.emptyText')}</p>
           <Link className="button button--primary" to="/menu">
-            Explore the menu
+            {t('account.explore')}
           </Link>
         </div>
       )}
 
       {orders.length > 0 && (
         <>
-          <ul className="order-list" aria-label="Orders, newest first">
+          <ul className="order-list" aria-label={t('account.list')}>
             {orders.map((order) => (
               <li key={order.orderNumber} className="order-card">
                 <div className="order-card__main">
                   <h2>
                     <Link to={`/account/orders/${encodeURIComponent(order.orderNumber)}`}>
-                      <span className="sr-only">Order </span>
+                      <span className="sr-only">{t('account.order')} </span>
                       {order.orderNumber}
                     </Link>
                   </h2>
                   <p>
-                    {order.scenario === 'PICKUP' ? 'Pickup' : 'Delivery'} ·{' '}
-                    {formatDate(order.orderDate)} at {order.slotStart} · {order.itemCount}{' '}
-                    {order.itemCount === 1 ? 'item' : 'items'}
+                    {order.scenario === 'PICKUP' ? t('checkout.pickup') : t('checkout.delivery')} ·{' '}
+                    {t('account.when', {
+                      date: formatDate(order.orderDate),
+                      time: order.slotStart,
+                    })}{' '}
+                    · {t('account.items', { count: order.itemCount })}
                   </p>
-                  <p className="order-card__meta">Placed {formatDateTime(order.createdAt)}</p>
+                  <p className="order-card__meta">
+                    {t('account.placed', { date: formatDateTime(order.createdAt) })}
+                  </p>
                 </div>
                 <div className="order-card__side">
                   <StatusBadge status={order.status} />
@@ -113,7 +120,7 @@ export function AccountPage() {
           </ul>
           {nextToken && (
             <Button variant="outline" loading={loadingMore} onClick={() => void loadMore()}>
-              Show more orders
+              {t('account.showMore')}
             </Button>
           )}
         </>

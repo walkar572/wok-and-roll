@@ -1,15 +1,17 @@
 import { PagePlaceholder } from '../../components/layout/PagePlaceholder';
+import { useI18n } from '../../i18n';
 
 export function NotFoundPage() {
+  const { t } = useI18n();
   return (
     <PagePlaceholder
-      eyebrow="404 · Wrong turn"
-      title="We lost that page."
-      description="Looks like this page took a detour."
+      eyebrow={t('notFound.eyebrow')}
+      title={t('notFound.title')}
+      description={t('notFound.description')}
       symbol="?"
-      panelTitle="Nothing to see here"
-      panelDescription="The page may have moved, or it may never have existed."
-      actionLabel="Go home"
+      panelTitle={t('notFound.panelTitle')}
+      panelDescription={t('notFound.panelText')}
+      actionLabel={t('notFound.action')}
       actionTo="/"
     />
   );

@@ -1,4 +1,7 @@
-// Dates as YYYY-MM-DD keys in local time, the format of the API (contract §1).
+// Dates as YYYY-MM-DD keys in local time, the format of the API (contract §1). Texts for people
+// use the language of the interface.
+import { formatCalendarDate, formatMoment, formatMonth } from '../i18n/format';
+import { getLocale } from '../i18n/runtime';
 
 export function localDateKey(value: Date): string {
   const year = value.getFullYear();
@@ -62,27 +65,17 @@ export function minutesToTime(value: number): string {
   return `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
 }
 
+/** The month name on its own, as in a table row: "Noyabr", "Листопад". */
 export function monthName(month: number, style: 'long' | 'short'): string {
-  return new Intl.DateTimeFormat('en-GB', { month: style }).format(
-    new Date(2026, month - 1, 1, 12),
-  );
+  return formatMonth(month, style, getLocale());
 }
 
+/** A YYYY-MM-DD key as text with the weekday, in the language of the interface. */
 export function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(dateKeyToDate(value));
+  return formatCalendarDate(dateKeyToDate(value), getLocale());
 }
 
+/** An ISO moment (createdAt) in the local time of the browser. */
 export function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return formatMoment(new Date(value), getLocale());
 }

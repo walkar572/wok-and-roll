@@ -27,8 +27,8 @@ import {
 interface AuthContextValue {
   auth: StoredAuth | null;
   me: Me | null;
-  /** A message after the session ended by itself (expired or refused token). */
-  notice: string | null;
+  /** True after the session ended by itself (expired or refused token); the page shows why. */
+  notice: boolean;
   dismissNotice: () => void;
   login: (email: string, password: string) => Promise<StoredAuth>;
   register: (request: RegisterRequest) => Promise<StoredAuth>;
@@ -38,17 +38,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export const ROLE_LABELS: Record<Role, string> = {
-  ADMIN: 'Admin',
-  STAFF: 'Staff',
-  VIEWER: 'Viewer',
-  CUSTOMER: 'Customer',
-};
-
 export function AuthProvider({ children }: PropsWithChildren) {
   const [auth, setAuth] = useState<StoredAuth | null>(() => readAuth());
   const [me, setMe] = useState<Me | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState(false);
 
   useEffect(
     () =>
@@ -56,7 +49,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setAuth(next);
         if (!next) setMe(null);
         if (reason === 'expired' || reason === 'rejected') {
-          setNotice('Your session has ended. Please log in again.');
+          setNotice(true);
         }
       }),
     [],
@@ -99,19 +92,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await loginRequest(email.trim().toLowerCase(), password);
-    setNotice(null);
+    setNotice(false);
     return saveToken(response.token);
   }, []);
 
   const register = useCallback(async (request: RegisterRequest) => {
     const response = await registerRequest(request);
-    setNotice(null);
+    setNotice(false);
     return saveToken(response.token);
   }, []);
 
   const logout = useCallback(() => {
     clearAuth();
-    setNotice(null);
+    setNotice(false);
   }, []);
 
   const hasRole = useCallback(
@@ -124,7 +117,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       auth,
       me,
       notice,
-      dismissNotice: () => setNotice(null),
+      dismissNotice: () => setNotice(false),
       login,
       register,
       logout,

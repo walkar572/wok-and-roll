@@ -1,3 +1,5 @@
+import { formatMoney } from '../i18n/format';
+import { getLocale, tOptional } from '../i18n/runtime';
 import { clearAuth, currentToken } from './authToken';
 
 export type CountryCode = string;
@@ -186,7 +188,8 @@ export function guestErrorMessage(error: unknown, fallback: string): string {
     error.status < 500 &&
     !TECHNICAL_CODES.has(error.code)
   ) {
-    return error.message;
+    // Business errors get the text of their code in the language of the interface.
+    return tOptional(`apiErrors.${error.code}`) ?? error.message;
   }
   return fallback;
 }
@@ -782,12 +785,7 @@ export async function placeOrder(
   );
 }
 
+/** Money in the format of the interface language (176 249,50 soʻm, ¥31.00), always 2 decimals. */
 export function formatPrice(amount: number, currency: string): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    currencyDisplay: 'code',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return formatMoney(amount, currency, getLocale());
 }

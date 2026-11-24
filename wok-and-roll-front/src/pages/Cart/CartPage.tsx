@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader, TotalsBlock } from '../../components/common';
 import { getCartItemKey, useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
+import { countryName, t as translate, useI18n } from '../../i18n';
+import { apiCodeMessage, apiFieldMessage } from '../../services/apiMessages';
 import { ApiRequestError, guestErrorMessage, quoteCart, type CartQuote } from '../../services/api';
 import { CartLine } from './CartLine';
 
 // Field keys for one cart line, for example "items[0].quantity" (API contract, §4).
 const LINE_FIELD = /^items\[(\d+)\]\.([A-Za-z]+)/;
-const FIELD_LABELS: Record<string, string> = { country: 'Country', items: 'Cart' };
 
 interface QuoteError {
   message: string;
@@ -21,8 +22,8 @@ function toQuoteError(requestError: unknown): QuoteError {
   const quoteError: QuoteError = {
     message:
       requestError instanceof ApiRequestError && requestError.code === 'VALIDATION_ERROR'
-        ? 'Please check the highlighted fields.'
-        : guestErrorMessage(requestError, 'We could not get the current prices. Please try again.'),
+        ? translate('cart.checkHighlighted')
+        : guestErrorMessage(requestError, translate('cart.pricesFallback')),
     fields: {},
     quantityErrors: {},
     lineErrors: {},
@@ -31,12 +32,14 @@ function toQuoteError(requestError: unknown): QuoteError {
 
   for (const [field, message] of Object.entries(requestError.fields)) {
     const match = LINE_FIELD.exec(field);
+    const text = apiFieldMessage(field, message, requestError.code);
     if (!match) {
-      quoteError.fields[field] = message;
+      quoteError.fields[field] = text;
     } else if (match[2] === 'quantity') {
-      quoteError.quantityErrors[Number(match[1])] = message;
+      quoteError.quantityErrors[Number(match[1])] = text;
     } else {
-      quoteError.lineErrors[Number(match[1])] = message;
+      // The line gets the reason of the error code when there is one (out of stock, not sold).
+      quoteError.lineErrors[Number(match[1])] = apiCodeMessage(requestError.code) ?? text;
     }
   }
   return quoteError;
@@ -45,6 +48,7 @@ function toQuoteError(requestError: unknown): QuoteError {
 export function CartPage() {
   const { country } = useCountry();
   const { items, setItemQuantity, removeItem } = useCart();
+  const { t } = useI18n();
   const [quote, setQuote] = useState<CartQuote>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<QuoteError>();
@@ -117,15 +121,15 @@ export function CartPage() {
   if (items.length === 0) {
     return (
       <section className="cart-page" aria-labelledby="cart-title">
-        <p className="eyebrow">Your picks</p>
-        <h1 id="cart-title">Your cart</h1>
+        <p className="eyebrow">{t('cart.eyebrow')}</p>
+        <h1 id="cart-title">{t('cart.title')}</h1>
         <div className="cart-empty">
           <h2 ref={emptyHeading} tabIndex={-1}>
-            Your cart is waiting
+            {t('cart.emptyTitle')}
           </h2>
-          <p>There’s nothing in your cart yet. Find a favorite to get started.</p>
+          <p>{t('cart.emptyText')}</p>
           <Link className="button button--primary" to="/menu">
-            Browse the menu
+            {t('cart.browse')}
           </Link>
         </div>
       </section>
@@ -134,27 +138,34 @@ export function CartPage() {
 
   return (
     <section className="cart-page" aria-labelledby="cart-title">
-      <p className="eyebrow">Your picks</p>
-      <h1 id="cart-title">Your cart</h1>
-      <p className="cart-page__description">Review your dishes and current prices for {country}.</p>
+      <p className="eyebrow">{t('cart.eyebrow')}</p>
+      <h1 id="cart-title">{t('cart.title')}</h1>
+      <p className="cart-page__description">
+        {t('cart.description', { country: countryName(country) })}
+      </p>
 
-      {isLoading && <Loader label="Getting current cart prices" />}
+      {isLoading && <Loader label={t('cart.loadingPrices')} />}
       {error && (
         <div className="cart-page__error">
-          <ErrorMessage title="Could not update cart prices">
+          <ErrorMessage title={t('cart.pricesError')}>
             <p>{error.message}</p>
             {Object.entries(error.fields).length > 0 && (
               <ul>
                 {Object.entries(error.fields).map(([field, message]) => (
                   <li key={field}>
-                    {FIELD_LABELS[field] ?? field}: {message}
+                    {field === 'country'
+                      ? t('cart.fieldCountry')
+                      : field === 'items'
+                        ? t('cart.fieldItems')
+                        : field}
+                    : {message}
                   </li>
                 ))}
               </ul>
             )}
           </ErrorMessage>
           <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
-            Try again
+            {t('common.tryAgain')}
           </Button>
         </div>
       )}
@@ -190,10 +201,10 @@ export function CartPage() {
       {currentQuote && <TotalsBlock quote={currentQuote} />}
       <div className="cart-page__actions">
         <Link className="button button--primary" to="/checkout">
-          Checkout
+          {t('cart.checkout')}
         </Link>
         <Link className="button button--outline" to="/menu">
-          Continue shopping
+          {t('cart.continueShopping')}
         </Link>
       </div>
     </section>

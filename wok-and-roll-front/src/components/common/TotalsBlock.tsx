@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n';
 import { formatPrice, type CartQuote } from '../../services/api';
 
 export interface TotalsBlockProps {
@@ -5,34 +6,35 @@ export interface TotalsBlockProps {
 }
 
 export function TotalsBlock({ quote }: TotalsBlockProps) {
+  const { t } = useI18n();
   return (
-    <section className="cart-summary" aria-label="Price summary">
+    <section className="cart-summary" aria-label={t('totals.label')}>
       <dl>
         <div>
-          <dt>Subtotal</dt>
+          <dt>{t('totals.subtotal')}</dt>
           <dd>{formatPrice(quote.subtotal, quote.currency)}</dd>
         </div>
         <div>
-          <dt>VAT ({quote.vatRate}%)</dt>
+          <dt>{t('totals.vat', { rate: quote.vatRate })}</dt>
           <dd>{formatPrice(quote.vat, quote.currency)}</dd>
         </div>
         <div>
-          <dt>Amount incl. VAT</dt>
+          <dt>{t('totals.amountInclVat')}</dt>
           <dd>{formatPrice(quote.amountInclVat, quote.currency)}</dd>
         </div>
         <div>
-          <dt>Discount ({quote.discountRate}%)</dt>
+          <dt>{t('totals.discount', { rate: quote.discountRate })}</dt>
           <dd>
-            {quote.discount > 0 ? '-' : ''}
+            {quote.discount > 0 ? '−' : ''}
             {formatPrice(quote.discount, quote.currency)}
           </dd>
         </div>
         <div>
-          <dt>Delivery fee</dt>
+          <dt>{t('totals.deliveryFee')}</dt>
           <dd>{formatPrice(quote.deliveryFee, quote.currency)}</dd>
         </div>
         <div className="cart-summary__total">
-          <dt>Total</dt>
+          <dt>{t('totals.total')}</dt>
           <dd>{formatPrice(quote.total, quote.currency)}</dd>
         </div>
       </dl>

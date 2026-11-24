@@ -4,6 +4,9 @@ import 'react-day-picker/style.css';
 import { Button, ErrorMessage, Input, Loader } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
+import { cafeAddress, cafeName, t as translate, useI18n } from '../../i18n';
+import { DAY_PICKER_LOCALE } from '../../i18n/dayPicker';
+import { apiCodeMessage, apiFieldMessage } from '../../services/apiMessages';
 import { ApiRequestError, guestErrorMessage, loadCafes, type Cafe } from '../../services/api';
 import { BOOKING_RULES, bookTable, type BookingResponse } from '../../services/bookingApi';
 import { createIdempotencyKey } from '../../services/parse';
@@ -67,6 +70,7 @@ const FIELDS: Field[] = [
 export function BookingPage() {
   const { country, currentCountry } = useCountry();
   const { me } = useAuth();
+  const { t, locale } = useI18n();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [cafeId, setCafeId] = useState<number>();
   const [cafesLoading, setCafesLoading] = useState(true);
@@ -108,10 +112,11 @@ export function BookingPage() {
         if (!active) return;
         setCafes(result);
         setCafeId(result[0]?.id);
-        if (result.length === 0) setCafesError('There are no cafés in this country yet.');
+        if (result.length === 0) setCafesError(translate('booking.noCafes'));
       })
       .catch((requestError: unknown) => {
-        if (active) setCafesError(guestErrorMessage(requestError, 'We could not load the cafés.'));
+        if (active)
+          setCafesError(guestErrorMessage(requestError, translate('booking.cafesFallback')));
       })
       .finally(() => {
         if (active) setCafesLoading(false);
@@ -169,30 +174,28 @@ export function BookingPage() {
 
   function validate(): Partial<Record<Field, string>> {
     const found: Partial<Record<Field, string>> = {};
-    if (!cafeId) found.cafeId = 'Choose a café.';
+    if (!cafeId) found.cafeId = t('booking.validationCafe');
     if (date < today || date > maxDate)
-      found.date = `Choose a date from today to ${BOOKING_RULES.maxDaysAhead} days ahead.`;
+      found.date = t('booking.validationDate', { days: BOOKING_RULES.maxDaysAhead });
     const option = times.find((item) => item.value === time);
-    if (!time) found.time = 'Choose a time.';
-    else if (!option || option.disabled)
-      found.time = 'This time is no longer available. Choose a later time.';
+    if (!time) found.time = t('booking.validationTime');
+    else if (!option || option.disabled) found.time = t('booking.validationTimeGone');
     const guestCount = Number(guests);
     if (!Number.isInteger(guestCount) || guestCount < BOOKING_RULES.minGuests) {
-      found.guests = 'Enter a whole number of guests from 1 to 8.';
+      found.guests = t('booking.validationGuests');
     } else if (guestCount > BOOKING_RULES.maxGuests) {
-      found.guests = 'For more than 8 guests, please call the café.';
+      found.guests = t('booking.validationGuestsMany');
     }
     const name = contact.contactName.trim();
-    if (name.length < 2 || name.length > 100)
-      found.contactName = 'Enter a name from 2 to 100 characters.';
+    if (name.length < 2 || name.length > 100) found.contactName = t('validation.name');
     if (!/^\+\d{8,15}$/.test(contact.contactPhone.replace(/\s/g, ''))) {
-      found.contactPhone = 'Enter a phone number with + and 8 to 15 digits.';
+      found.contactPhone = t('validation.phone');
     }
     const email = contact.contactEmail.trim();
     if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) {
-      found.contactEmail = 'Enter a valid email address.';
+      found.contactEmail = t('validation.email');
     }
-    if (contact.comment.length > 300) found.comment = 'Use 300 characters or fewer.';
+    if (contact.comment.length > 300) found.comment = t('validation.comment');
     return found;
   }
 
@@ -227,7 +230,8 @@ export function BookingPage() {
         const fieldErrors: Partial<Record<Field, string>> = {};
         const other: string[] = [];
         for (const [field, message] of Object.entries(requestError.fields)) {
-          if ((FIELDS as string[]).includes(field)) fieldErrors[field as Field] = message;
+          if ((FIELDS as string[]).includes(field))
+            fieldErrors[field as Field] = apiFieldMessage(field, message, requestError.code);
           else other.push(message);
         }
         setErrors(fieldErrors);
@@ -237,13 +241,11 @@ export function BookingPage() {
           other.length > 0
             ? other.join(' ')
             : requestError.code === 'NO_TABLE_AVAILABLE'
-              ? requestError.message
+              ? (apiCodeMessage(requestError.code) ?? requestError.message)
               : undefined,
         );
       } else {
-        setFormError(
-          guestErrorMessage(requestError, 'We could not book the table. Please try again.'),
-        );
+        setFormError(guestErrorMessage(requestError, t('booking.bookFallback')));
       }
     } finally {
       setSending(false);
@@ -253,38 +255,38 @@ export function BookingPage() {
   if (booking) {
     return (
       <section className="booking-page" aria-labelledby="booking-done-title">
-        <p className="eyebrow">Table booked</p>
+        <p className="eyebrow">{t('booking.doneEyebrow')}</p>
         <h1 id="booking-done-title" ref={resultRef} tabIndex={-1}>
-          See you soon!
+          {t('booking.doneTitle')}
         </h1>
         <p className="checkout-success__number">
-          Booking number: <strong>{booking.bookingNumber}</strong>
+          {t('booking.number')} <strong>{booking.bookingNumber}</strong>
         </p>
         <dl className="checkout-success__details">
           <div>
-            <dt>Café</dt>
+            <dt>{t('booking.cafe')}</dt>
             <dd>
-              {booking.cafe.name}, {booking.cafe.address}
+              {cafeName(booking.cafe.name)}, {cafeAddress(booking.cafe.address)}
             </dd>
           </div>
           <div>
-            <dt>Date</dt>
+            <dt>{t('booking.date')}</dt>
             <dd>{formatDate(booking.date)}</dd>
           </div>
           <div>
-            <dt>Time</dt>
+            <dt>{t('booking.time')}</dt>
             <dd>
               {booking.time}–{booking.endTime}
             </dd>
           </div>
           <div>
-            <dt>Guests</dt>
+            <dt>{t('booking.guests')}</dt>
             <dd>
-              {booking.guests} (table for {booking.tableSeats})
+              {t('booking.guestsValue', { guests: booking.guests, seats: booking.tableSeats })}
             </dd>
           </div>
           <div>
-            <dt>Name</dt>
+            <dt>{t('fields.name')}</dt>
             <dd>{booking.contactName}</dd>
           </div>
         </dl>
@@ -297,7 +299,7 @@ export function BookingPage() {
               idempotencyKey.current = undefined;
             }}
           >
-            Book another table
+            {t('booking.another')}
           </Button>
         </div>
       </section>
@@ -308,34 +310,33 @@ export function BookingPage() {
 
   return (
     <section className="booking-page" aria-labelledby="booking-title">
-      <p className="eyebrow">Eat in</p>
-      <h1 id="booking-title">Book a table</h1>
+      <p className="eyebrow">{t('booking.eyebrow')}</p>
+      <h1 id="booking-title">{t('booking.title')}</h1>
       <p className="page-description">
-        A table is yours for {BOOKING_RULES.durationMinutes} minutes. We pick the best table for
-        your group.
+        {t('booking.description', { minutes: BOOKING_RULES.durationMinutes })}
       </p>
 
-      {formError && <ErrorMessage title="Table not booked">{formError}</ErrorMessage>}
+      {formError && <ErrorMessage title={t('booking.notBooked')}>{formError}</ErrorMessage>}
 
       <form ref={formRef} className="checkout-form booking-form" onSubmit={submit} noValidate>
         <div className="checkout-form__fields">
           <section className="checkout-section" aria-labelledby="booking-when">
-            <h2 id="booking-when">Where and when</h2>
+            <h2 id="booking-when">{t('booking.whereWhen')}</h2>
             <div className="input">
               <label className="input__label" htmlFor="booking-cafe">
-                Café
+                {t('booking.cafe')}
               </label>
               {cafesLoading ? (
-                <Loader label="Loading cafés" />
+                <Loader label={t('booking.loadingCafes')} />
               ) : cafesError ? (
                 <div className="checkout-page__error">
-                  <ErrorMessage title="Cafés not loaded">{cafesError}</ErrorMessage>
+                  <ErrorMessage title={t('booking.cafesNotLoaded')}>{cafesError}</ErrorMessage>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setCafesRetry((count) => count + 1)}
                   >
-                    Retry
+                    {t('common.retry')}
                   </Button>
                 </div>
               ) : (
@@ -359,14 +360,18 @@ export function BookingPage() {
                   >
                     {cafes.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.name}
+                        {cafeName(item.name)}
                       </option>
                     ))}
                   </select>
                   {cafe && (
                     <p id="booking-cafe-details" className="input__message">
-                      {cafe.address}. Open {cafe.opensAt}–{cafe.closesAt}
-                      {cafe.phone ? `. Phone ${cafe.phone}` : ''}.
+                      {t('booking.cafeDetails', {
+                        address: cafeAddress(cafe.address),
+                        opens: cafe.opensAt,
+                        closes: cafe.closesAt,
+                      })}
+                      {cafe.phone ? ` ${t('booking.cafePhone', { phone: cafe.phone })}` : ''}
                     </p>
                   )}
                   {errors.cafeId && (
@@ -380,7 +385,7 @@ export function BookingPage() {
 
             <div className="checkout-date">
               <span id="booking-date-label" className="input__label">
-                Date
+                {t('booking.date')}
               </span>
               <button
                 type="button"
@@ -403,6 +408,7 @@ export function BookingPage() {
                 <div id="booking-date-picker" className="checkout-date__panel">
                   <DayPicker
                     mode="single"
+                    locale={DAY_PICKER_LOCALE[locale]}
                     selected={dateKeyToDate(date)}
                     defaultMonth={dateKeyToDate(date)}
                     startMonth={dateKeyToDate(today)}
@@ -426,7 +432,7 @@ export function BookingPage() {
             <div className="booking-row">
               <div className="input">
                 <label className="input__label" htmlFor="booking-time">
-                  Time
+                  {t('booking.time')}
                 </label>
                 <select
                   id="booking-time"
@@ -442,18 +448,16 @@ export function BookingPage() {
                     changed('time');
                   }}
                 >
-                  <option value="">Choose a time</option>
+                  <option value="">{t('booking.chooseTime')}</option>
                   {times.map((option) => (
                     <option key={option.value} value={option.value} disabled={option.disabled}>
                       {option.value}
-                      {option.disabled ? ' — too soon' : ''}
+                      {option.disabled ? ` — ${t('booking.tooSoon')}` : ''}
                     </option>
                   ))}
                 </select>
                 <span id="booking-time-hint" className="input__message">
-                  {noTimesLeft
-                    ? 'No times are left on this day. Please choose another date.'
-                    : 'Local time of the café.'}
+                  {noTimesLeft ? t('booking.noTimesLeft') : t('booking.localTime')}
                 </span>
                 {errors.time && (
                   <span id="booking-time-error" className="input__message input__message--error">
@@ -462,14 +466,14 @@ export function BookingPage() {
                 )}
               </div>
               <Input
-                label="Guests"
+                label={t('booking.guests')}
                 type="number"
                 inputMode="numeric"
                 min={BOOKING_RULES.minGuests}
                 max={BOOKING_RULES.maxGuests}
                 step={1}
                 value={guests}
-                hint="1 to 8. For more, please call the café."
+                hint={t('booking.guestsHint')}
                 error={errors.guests}
                 onChange={(event) => {
                   setGuests(event.target.value);
@@ -480,9 +484,9 @@ export function BookingPage() {
           </section>
 
           <section className="checkout-section" aria-labelledby="booking-contact">
-            <h2 id="booking-contact">Contact details</h2>
+            <h2 id="booking-contact">{t('fields.contactTitle')}</h2>
             <Input
-              label="Name"
+              label={t('fields.name')}
               autoComplete="name"
               value={contact.contactName}
               maxLength={100}
@@ -493,11 +497,11 @@ export function BookingPage() {
               }}
             />
             <Input
-              label="Phone"
+              label={t('fields.phone')}
               type="tel"
               autoComplete="tel"
               value={contact.contactPhone}
-              hint="International format, for example +998901234567."
+              hint={t('fields.phoneHint')}
               error={errors.contactPhone}
               onChange={(event) => {
                 setContact((current) => ({ ...current, contactPhone: event.target.value }));
@@ -505,7 +509,7 @@ export function BookingPage() {
               }}
             />
             <Input
-              label="Email (optional)"
+              label={t('fields.emailOptional')}
               type="email"
               autoComplete="email"
               value={contact.contactEmail}
@@ -518,7 +522,7 @@ export function BookingPage() {
             />
             <div className="input">
               <label className="input__label" htmlFor="booking-comment">
-                Comment (optional)
+                {t('fields.commentOptional')}
               </label>
               <textarea
                 id="booking-comment"
@@ -541,29 +545,29 @@ export function BookingPage() {
           </section>
         </div>
 
-        <aside className="checkout-form__summary" aria-label="Booking summary">
-          <h2 className="booking-summary__title">Your booking</h2>
+        <aside className="checkout-form__summary" aria-label={t('booking.summaryLabel')}>
+          <h2 className="booking-summary__title">{t('booking.summaryTitle')}</h2>
           <dl className="booking-summary">
             <div>
-              <dt>Café</dt>
-              <dd>{cafe?.name ?? '—'}</dd>
+              <dt>{t('booking.cafe')}</dt>
+              <dd>{cafe ? cafeName(cafe.name) : '—'}</dd>
             </div>
             <div>
-              <dt>Date</dt>
+              <dt>{t('booking.date')}</dt>
               <dd>{formatDate(date)}</dd>
             </div>
             <div>
-              <dt>Time</dt>
+              <dt>{t('booking.time')}</dt>
               <dd>{time || '—'}</dd>
             </div>
             <div>
-              <dt>Guests</dt>
+              <dt>{t('booking.guests')}</dt>
               <dd>{guests || '—'}</dd>
             </div>
           </dl>
           {errorList.length > 0 && (
             <div className="checkout-error-summary" role="alert">
-              <strong>Check these details</strong>
+              <strong>{t('booking.checkDetails')}</strong>
               <ul>
                 {errorList.map((message) => (
                   <li key={message}>{message}</li>
@@ -572,7 +576,7 @@ export function BookingPage() {
             </div>
           )}
           <Button type="submit" size="large" loading={sending} disabled={sending || !cafe}>
-            Book a table
+            {t('booking.submit')}
           </Button>
         </aside>
       </form>

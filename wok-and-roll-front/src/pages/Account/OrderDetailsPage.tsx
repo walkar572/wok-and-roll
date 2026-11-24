@@ -10,6 +10,15 @@ import {
   type OrderResponse,
 } from '../../services/api';
 import { formatDate, formatDateTime } from '../../utils/dates';
+import {
+  cafeAddress,
+  cafeName,
+  modifierName,
+  productName,
+  t as translate,
+  useI18n,
+  zoneName,
+} from '../../i18n';
 import { StatusBadge } from './StatusBadge';
 
 /** One of my orders with all lines and totals (#184). */
@@ -19,6 +28,7 @@ export function OrderDetailsPage() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string>();
   const [retry, setRetry] = useState(0);
+  const { t } = useI18n();
 
   useEffect(() => {
     let active = true;
@@ -30,7 +40,7 @@ export function OrderDetailsPage() {
         if (!active) return;
         if (requestError instanceof ApiRequestError && requestError.status === 404)
           setNotFound(true);
-        else setError(guestErrorMessage(requestError, 'We could not load this order.'));
+        else setError(guestErrorMessage(requestError, translate('orderDetails.loadError')));
       });
     return () => {
       active = false;
@@ -40,13 +50,13 @@ export function OrderDetailsPage() {
   if (notFound) {
     return (
       <PagePlaceholder
-        eyebrow="404"
-        title="Order not found"
-        description={`We could not find order ${orderNumber} in your account.`}
+        eyebrow={t('notFound.eyebrow')}
+        title={t('orderDetails.notFoundTitle')}
+        description={t('orderDetails.notFoundDescription', { number: orderNumber })}
         symbol="?"
-        panelTitle="Check the order number"
-        panelDescription="Only orders placed while you were logged in are in your account."
-        actionLabel="Back to my orders"
+        panelTitle={t('orderDetails.notFoundPanelTitle')}
+        panelDescription={t('orderDetails.notFoundPanelText')}
+        actionLabel={t('orderDetails.back')}
         actionTo="/account"
       />
     );
@@ -55,15 +65,15 @@ export function OrderDetailsPage() {
   return (
     <section className="order-details" aria-labelledby="order-title">
       <Link className="text-link back-link" to="/account">
-        <span aria-hidden="true">←</span> My orders
+        <span aria-hidden="true">←</span> {t('orderDetails.back')}
       </Link>
-      <h1 id="order-title">Order {orderNumber}</h1>
-      {!order && !error && <Loader label="Loading the order" />}
+      <h1 id="order-title">{t('orderDetails.title', { number: orderNumber })}</h1>
+      {!order && !error && <Loader label={t('orderDetails.loading')} />}
       {error && (
         <div className="page-error">
-          <ErrorMessage title="Order not loaded">{error}</ErrorMessage>
+          <ErrorMessage title={t('orderDetails.notLoaded')}>{error}</ErrorMessage>
           <Button variant="outline" onClick={() => setRetry((count) => count + 1)}>
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       )}
@@ -72,38 +82,46 @@ export function OrderDetailsPage() {
           <div>
             <dl className="checkout-success__details">
               <div>
-                <dt>Status</dt>
+                <dt>{t('orderDetails.status')}</dt>
                 <dd>
                   <StatusBadge status={order.status} />
                 </dd>
               </div>
               <div>
-                <dt>Placed</dt>
+                <dt>{t('orderDetails.placed')}</dt>
                 <dd>{formatDateTime(order.createdAt)}</dd>
               </div>
               <div>
-                <dt>{order.scenario === 'PICKUP' ? 'Pickup' : 'Delivery'}</dt>
+                <dt>
+                  {order.scenario === 'PICKUP' ? t('checkout.pickup') : t('checkout.delivery')}
+                </dt>
                 <dd>
                   {formatDate(order.orderDate)}, {order.slotStart}–{order.slotEnd}
                 </dd>
               </div>
               <div>
-                <dt>{order.scenario === 'PICKUP' ? 'Pickup café' : 'Delivery address'}</dt>
+                <dt>
+                  {order.scenario === 'PICKUP'
+                    ? t('success.pickupCafe')
+                    : t('success.deliveryAddress')}
+                </dt>
                 <dd>
                   {order.scenario === 'PICKUP'
-                    ? `${order.cafe.name}, ${order.cafe.address}`
-                    : `${order.deliveryAddress ?? ''} (${order.deliveryZone?.name ?? ''})`}
+                    ? `${cafeName(order.cafe.name)}, ${cafeAddress(order.cafe.address)}`
+                    : `${order.deliveryAddress ?? ''} (${zoneName(order.deliveryZone?.name ?? '')})`}
                 </dd>
               </div>
             </dl>
-            <h2 className="order-details__subtitle">Items</h2>
+            <h2 className="order-details__subtitle">{t('orderDetails.items')}</h2>
             <ul className="order-lines">
               {order.lines.map((line, index) => (
                 <li key={`${line.productId}-${index}`}>
                   <div>
-                    <strong>{line.name}</strong>
+                    <strong>{productName(line.name)}</strong>
                     {line.modifiers.length > 0 && (
-                      <span>{line.modifiers.map((modifier) => modifier.name).join(', ')}</span>
+                      <span>
+                        {line.modifiers.map((modifier) => modifierName(modifier.name)).join(', ')}
+                      </span>
                     )}
                   </div>
                   <span>
