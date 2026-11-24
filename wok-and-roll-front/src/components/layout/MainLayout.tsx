@@ -10,12 +10,9 @@ const pageTitles: Record<string, MessageKey> = {
   '/cart': 'titles.cart',
   '/checkout': 'titles.checkout',
   '/checkout/success': 'titles.success',
-  '/reports': 'titles.reports',
   '/booking': 'titles.booking',
   '/login': 'titles.login',
   '/account': 'titles.account',
-  '/admin': 'titles.admin',
-  '/staff': 'titles.staff',
 };
 
 export function MainLayout() {

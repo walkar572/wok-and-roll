@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader, Toast } from '../../components/common';
+import { CitySwitcher } from '../../components/layout/CitySwitcher';
 import { useCountry } from '../../context/CountryContext';
 import { cafeName, clock, t as translate, useI18n, type MessageKey } from '../../i18n';
 import {
@@ -122,6 +123,8 @@ export function StaffPage() {
       <p className="page-description">{t('staff.description')}</p>
 
       <div className="report-filters">
+        {/* The cafés are those of the chosen city; the panel has no site header, so it is here. */}
+        <CitySwitcher variant="section" />
         <div className="input">
           <label className="input__label" htmlFor="staff-cafe">
             {t('staff.cafe')}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, ErrorMessage, Input } from '../../components/common';
+import { isPanelRole, panelHome } from '../../components/admin/panelSections';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import { phoneHint, t as translate, useI18n } from '../../i18n';
@@ -27,10 +28,9 @@ function safeNext(value: string | null): string | null {
     : null;
 }
 
+// Staff roles start in their first section of the admin panel; a customer in My orders.
 function homeFor(role: Role): string {
-  if (role === 'ADMIN' || role === 'VIEWER') return '/reports';
-  if (role === 'STAFF') return '/staff';
-  return '/account';
+  return isPanelRole(role) ? panelHome(role) : '/account';
 }
 
 function validate(mode: Mode, values: Record<Field, string>) {

@@ -94,7 +94,8 @@ export function BarChart({
   // A 2px surface gap is the minimum between neighbours; bars stay thin.
   const barWidth = Math.max(6, Math.min(MAX_BAR, slot * 0.6, slot - 2));
   const highest = max > 0 ? data.findIndex((d) => d.value === max) : -1;
-  const showEveryLabel = slot >= 28;
+  // At least 28px between two labels: every bar on a wide chart, every 2nd or 3rd on a narrow one.
+  const labelStep = Math.max(1, Math.ceil(28 / slot));
 
   const x = (i: number) => PADDING.left + slot * i + (slot - barWidth) / 2;
   const y = (value: number) => PADDING.top + plotHeight - (plotHeight * value) / scaleMax;
@@ -159,7 +160,7 @@ export function BarChart({
                 className="bar-chart__fill"
                 d={columnPath(x(i), y(datum.value), barWidth, barHeight)}
               />
-              {(showEveryLabel || i % 2 === 0) && (
+              {i % labelStep === 0 && (
                 <text
                   className="bar-chart__label"
                   x={x(i) + barWidth / 2}

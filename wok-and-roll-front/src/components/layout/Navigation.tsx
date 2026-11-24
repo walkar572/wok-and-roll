@@ -22,9 +22,8 @@ export const mainLinks: NavItem[] = [
 
 export const accountLinks: NavItem[] = [
   { to: '/account', label: 'nav.myOrders', loggedIn: true },
-  { to: '/staff', label: 'nav.staff', roles: ['STAFF', 'ADMIN'] },
-  { to: '/reports', label: 'nav.reports', roles: ['ADMIN', 'VIEWER'] },
-  { to: '/admin', label: 'nav.admin', roles: ['ADMIN'] },
+  // Café orders, reports and the menu admin live in the admin panel (/admin) since v1.11.
+  { to: '/admin', label: 'nav.adminPanel', roles: ['ADMIN', 'STAFF', 'VIEWER'] },
 ];
 
 export function visibleLinks(links: NavItem[], role: Role | undefined): NavItem[] {
