@@ -27,6 +27,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.5 | 24 Nov | Portion of a dish (additive): `pieces`, `weightGrams`, `volumeMl` in §3.3, §3.4 and the admin API §3.15. The description now holds only the ingredients; the card shows the portion on its own line ("8 pcs · 250 g"). |
 | 1.6 | 24 Nov | Sixth country (additive): `GBR`, United Kingdom, `GBP`, VAT 20 %, `Europe/London`, with prices, thresholds and zone fees converted like the others (§5), 2 cafés in London and a sales history. The interface is British English for GBR. |
 | 1.7 | 24 Nov | Place of a café on the map (additive): `latitude` and `longitude` in §3.6. The home page shows the cafés of the country on a map next to their list. |
+| 1.8 | 24 Nov | Bigger menu (data only, no new fields): 24 dishes in 5 categories. New categories `Desserts` and `Drinks` (the lemonade moves there); 15 new dishes, priced and in stock in all six countries; extras "Soft egg" (ramen) and "Oat milk" (matcha latte). Edamame is hidden (`visible = false`) and replaced by chili garlic peanuts; past orders keep the name they were ordered with. |
 
 ---
 

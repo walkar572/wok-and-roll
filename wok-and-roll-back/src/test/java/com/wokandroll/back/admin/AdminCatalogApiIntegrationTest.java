@@ -53,7 +53,8 @@ class AdminCatalogApiIntegrationTest {
             get("/api/v1/admin/products?country=KAZ&pageSize=100")
                 .header("Authorization", bearer("ADMIN")))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items", hasSize(10)))
+        // 24 on the menu and the hidden edamame (v1.8): the admin sees hidden dishes too.
+        .andExpect(jsonPath("$.items", hasSize(25)))
         .andExpect(jsonPath("$.items[0].name").value("Salmon avocado roll"))
         .andExpect(jsonPath("$.items[0].pieces").value(8))
         .andExpect(jsonPath("$.items[0].weightGrams").value(250))
