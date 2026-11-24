@@ -32,6 +32,7 @@ public class CafeService {
         c.id(),
         c.countryCode(),
         c.name(),
+        c.city(),
         c.address(),
         c.phone(),
         c.opensAt().format(HH_MM),

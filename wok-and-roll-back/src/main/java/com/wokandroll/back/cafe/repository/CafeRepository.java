@@ -21,6 +21,7 @@ public class CafeRepository {
       long id,
       String countryCode,
       String name,
+      String city,
       String address,
       String phone,
       LocalTime opensAt,
@@ -32,7 +33,7 @@ public class CafeRepository {
 
   private static final String ACTIVE_CAFES_SQL =
       """
-      SELECT cf.id, c.code, cf.name, cf.address, cf.phone, cf.opens_at, cf.closes_at,
+      SELECT cf.id, c.code, cf.name, cf.city, cf.address, cf.phone, cf.opens_at, cf.closes_at,
              cf.slot_capacity, c.time_zone, cf.latitude, cf.longitude
       FROM cafe cf
       JOIN country c ON c.id = cf.country_id
@@ -66,6 +67,7 @@ public class CafeRepository {
         rs.getLong("id"),
         rs.getString("code").trim(),
         rs.getString("name"),
+        rs.getString("city"),
         rs.getString("address"),
         rs.getString("phone"),
         rs.getObject("opens_at", LocalTime.class),

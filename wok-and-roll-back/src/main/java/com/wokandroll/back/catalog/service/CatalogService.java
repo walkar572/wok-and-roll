@@ -2,11 +2,13 @@ package com.wokandroll.back.catalog.service;
 
 import com.wokandroll.back.catalog.dto.CategoryResponse;
 import com.wokandroll.back.catalog.dto.ProductResponse;
+import com.wokandroll.back.catalog.dto.SetItemResponse;
 import com.wokandroll.back.catalog.repository.CatalogRepository;
 import com.wokandroll.back.catalog.repository.CatalogRepository.ProductRow;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /** The menu of one country (#51): categories for the filter and dishes for the cards. */
@@ -27,12 +29,14 @@ public class CatalogService {
 
   /** A null categoryId means all categories. An unknown id gives an empty list. */
   public List<ProductResponse> getProducts(String countryCode, Long categoryId) {
-    return repository.findProducts(countryCode, categoryId).stream()
-        .map(CatalogService::toResponse)
+    List<ProductRow> rows = repository.findProducts(countryCode, categoryId);
+    Map<Long, List<SetItemResponse>> setItems = repository.findSetItems();
+    return rows.stream()
+        .map(row -> toResponse(row, setItems.getOrDefault(row.id(), List.of())))
         .toList();
   }
 
-  private static ProductResponse toResponse(ProductRow row) {
+  private static ProductResponse toResponse(ProductRow row, List<SetItemResponse> setItems) {
     return new ProductResponse(
         row.id(),
         row.categoryId(),
@@ -45,7 +49,9 @@ public class CatalogService {
         money(row.price()),
         row.currency(),
         row.inStock(),
-        row.hasModifiers());
+        row.hasModifiers(),
+        row.regularPrice() == null ? null : money(row.regularPrice()),
+        List.copyOf(setItems));
   }
 
   /** Money always has exactly 2 decimals in the JSON (api-contract.md section 1). */

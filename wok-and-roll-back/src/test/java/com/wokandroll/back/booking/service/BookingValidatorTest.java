@@ -20,6 +20,7 @@ class BookingValidatorTest {
           1,
           "UZB",
           "Wok & Roll Chilanzar",
+          "Tashkent",
           "12 Bunyodkor Ave, Tashkent",
           "+998712000001",
           LocalTime.of(10, 0),

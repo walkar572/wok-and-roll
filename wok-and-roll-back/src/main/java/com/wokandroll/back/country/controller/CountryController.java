@@ -26,7 +26,7 @@ public class CountryController {
   @Operation(
       summary = "All countries with their currency and VAT rate",
       description = "Used by the country switcher. Order as in the seed data, UZB first.")
-  @ApiResponse(responseCode = "200", description = "The 6 countries")
+  @ApiResponse(responseCode = "200", description = "The 7 countries")
   public List<CountryResponse> getCountries() {
     return service.getCountries();
   }

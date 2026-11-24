@@ -99,7 +99,7 @@ class ReportCsvControllerTest {
   @Test
   void parametersFollowTheReportRules() throws Exception {
     mvc.perform(
-            get("/api/v1/reports/sales-by-month.csv?country=USA&year=2026")
+            get("/api/v1/reports/sales-by-month.csv?country=FRA&year=2026")
                 .header("Authorization", bearer("ADMIN")))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));

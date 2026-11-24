@@ -8,7 +8,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
-/** Countries for the switcher (#50): code, name, currency, VAT rate and time zone. */
+/** Countries for the switcher (#50): code, name, currency, VAT rate, time zone and cities. */
 @Service
 public class CountryService {
 
@@ -24,7 +24,12 @@ public class CountryService {
 
   private static CountryResponse toResponse(CountryRow c) {
     return new CountryResponse(
-        c.code(), c.name(), c.currency(), twoDecimals(c.vatRate()), c.timeZone());
+        c.code(),
+        c.name(),
+        c.currency(),
+        twoDecimals(c.vatRate()),
+        c.timeZone(),
+        List.copyOf(c.cities()));
   }
 
   /** Rates always have exactly 2 decimals in the JSON (api-contract.md section 1). */

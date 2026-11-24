@@ -3,6 +3,7 @@ package com.wokandroll.back.cafe;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
@@ -51,7 +52,8 @@ class CafeApiIntegrationTest {
     "GEO, Asia/Tbilisi",
     "UKR, Europe/Kyiv",
     "CHN, Asia/Shanghai",
-    "GBR, Europe/London"
+    "GBR, Europe/London",
+    "USA, America/New_York"
   })
   void everyCountryHasTwoCafesInItsTimeZone(String country, String timeZone) throws Exception {
     mvc.perform(get("/api/v1/cafes").param("country", country))
@@ -73,6 +75,46 @@ class CafeApiIntegrationTest {
         .andExpect(jsonPath("$.items[1].name").value("Wok & Roll Yunusabad"));
   }
 
+  // v1.9: the city of every café, the one the guest chooses in the interface.
+  @ParameterizedTest
+  @CsvSource({
+    "UZB, Tashkent",
+    "KAZ, Almaty",
+    "GEO, Tbilisi",
+    "UKR, Kyiv",
+    "CHN, Shanghai",
+    "GBR, London",
+    "USA, Boston"
+  })
+  void everyCafeIsInTheCityOfItsCountry(String country, String city) throws Exception {
+    mvc.perform(get("/api/v1/cafes").param("country", country))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[*].city", everyItem(is(city))))
+        .andExpect(jsonPath("$.items[*].address", everyItem(endsWith(city))));
+  }
+
+  @Test
+  void theCafesOfBostonHaveTheirPhonesAndPlaces() throws Exception {
+    mvc.perform(get("/api/v1/cafes").param("country", "USA"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].name").value("Wok & Roll Back Bay"))
+        .andExpect(jsonPath("$.items[0].address").value("230 Newbury St, Boston"))
+        .andExpect(jsonPath("$.items[0].phone").value("+16175550142"))
+        .andExpect(jsonPath("$.items[0].latitude").value(42.349702))
+        .andExpect(jsonPath("$.items[1].name").value("Wok & Roll Seaport"))
+        .andExpect(jsonPath("$.items[1].phone").value("+16175550173"));
+  }
+
+  @Test
+  void aCafeWithoutACityIsRefused() {
+    assertThatThrownBy(
+            () ->
+                jdbc.sql("UPDATE cafe SET city = ' ' WHERE id = :id")
+                    .param("id", cafeId("Wok & Roll Yunusabad"))
+                    .update())
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
   // Every café of the seed is on the map, inside its city (v1.7): latitude and longitude ranges.
   @ParameterizedTest
   @CsvSource({
@@ -81,7 +123,8 @@ class CafeApiIntegrationTest {
     "GEO, 41.6, 41.8, 44.7, 44.9",
     "UKR, 50.3, 50.6, 30.3, 30.7",
     "CHN, 31.1, 31.4, 121.3, 121.7",
-    "GBR, 51.4, 51.6, -0.3, 0.1"
+    "GBR, 51.4, 51.6, -0.3, 0.1",
+    "USA, 42.3, 42.4, -71.2, -71.0"
   })
   void everyCafeIsOnTheMapInItsCity(
       String country, double south, double north, double west, double east) throws Exception {

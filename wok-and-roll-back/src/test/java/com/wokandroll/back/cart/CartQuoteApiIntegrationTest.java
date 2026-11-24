@@ -136,6 +136,63 @@ class CartQuoteApiIntegrationTest {
   }
 
   @Test
+  void deliveryInBostonInDollars() throws Exception {
+    // 2 x Salmon avocado roll 6.20 = 12.40; udon 4.35 + Large 1.20 + Extra chicken 0.95 = 6.50;
+    // subtotal 18.90, tax 7 % = 1.323 -> 1.32 -> 20.22; from 8.00 the discount is 3 % = 0.6066
+    // -> 0.61; Boston: Downtown 1.55 is added last: 21.16
+    long downtown =
+        jdbc.sql("SELECT id FROM delivery_zone WHERE name = 'Boston: Downtown'")
+            .query(Long.class)
+            .single();
+    quote(
+            """
+            {"country": "USA", "scenario": "DELIVERY", "deliveryZoneId": %d, "items": [
+              {"productId": %d, "quantity": 2},
+              {"productId": %d, "quantity": 1, "modifierIds": [%d, %d]}
+            ]}
+            """
+                .formatted(
+                    downtown,
+                    productId("Salmon avocado roll"),
+                    productId("Firecracker udon"),
+                    modifierId("Firecracker udon", "Large"),
+                    modifierId("Firecracker udon", "Extra chicken")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.country").value("USA"))
+        .andExpect(jsonPath("$.currency").value("USD"))
+        .andExpect(jsonPath("$.lines[1].unitPrice").value(6.50))
+        .andExpect(jsonPath("$.subtotal").value(18.90))
+        .andExpect(jsonPath("$.vatRate").value(7.00))
+        .andExpect(jsonPath("$.vat").value(1.32))
+        .andExpect(jsonPath("$.amountInclVat").value(20.22))
+        .andExpect(jsonPath("$.discountRate").value(3.00))
+        .andExpect(jsonPath("$.discount").value(0.61))
+        .andExpect(jsonPath("$.deliveryFee").value(1.55))
+        .andExpect(jsonPath("$.total").value(21.16));
+  }
+
+  @Test
+  void aSetIsPricedLikeAnyDish() throws Exception {
+    // Party set 40.95 (its dishes one by one: 50.65); tax 7 % = 2.8665 -> 2.87 -> 43.82;
+    // from 40.00 the discount is 5 % = 2.191 -> 2.19; pickup: 41.63
+    quote(
+            """
+            {"country": "USA", "scenario": "PICKUP", "items": [
+              {"productId": %d, "quantity": 1}
+            ]}
+            """
+                .formatted(productId("Party set")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lines[0].name").value("Party set"))
+        .andExpect(jsonPath("$.lines[0].unitPrice").value(40.95))
+        .andExpect(jsonPath("$.subtotal").value(40.95))
+        .andExpect(jsonPath("$.vat").value(2.87))
+        .andExpect(jsonPath("$.discountRate").value(5.00))
+        .andExpect(jsonPath("$.discount").value(2.19))
+        .andExpect(jsonPath("$.total").value(41.63));
+  }
+
+  @Test
   void zoneOfAnotherCountryIsRejected() throws Exception {
     long kazZone =
         jdbc.sql(

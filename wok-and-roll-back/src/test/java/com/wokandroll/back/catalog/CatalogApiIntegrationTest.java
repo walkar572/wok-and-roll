@@ -1,15 +1,24 @@
 package com.wokandroll.back.catalog;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,47 +43,155 @@ class CatalogApiIntegrationTest {
   void categoriesOfUzbekistan() throws Exception {
     mvc.perform(get("/api/v1/categories").param("country", "UZB"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(5))
+        .andExpect(jsonPath("$.length()").value(6))
         .andExpect(jsonPath("$[0].name").value("Sushi & rolls"))
-        .andExpect(jsonPath("$[1].name").value("From the wok"))
-        .andExpect(jsonPath("$[2].name").value("Sides"))
-        .andExpect(jsonPath("$[3].name").value("Desserts"))
-        .andExpect(jsonPath("$[4].name").value("Drinks"));
+        .andExpect(jsonPath("$[1].name").value("Sets"))
+        .andExpect(jsonPath("$[2].name").value("From the wok"))
+        .andExpect(jsonPath("$[3].name").value("Sides"))
+        .andExpect(jsonPath("$[4].name").value("Desserts"))
+        .andExpect(jsonPath("$[5].name").value("Drinks"));
   }
 
   @Test
   void productsOfUzbekistanMatchTheSeed() throws Exception {
     mvc.perform(get("/api/v1/products").param("country", "UZB"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(24))
+        .andExpect(jsonPath("$.length()").value(30))
         .andExpect(jsonPath("$[0].name").value("Salmon avocado roll"))
         .andExpect(jsonPath("$[0].description").value("Salmon, avocado, cucumber."))
         .andExpect(jsonPath("$[0].pieces").value(8))
         .andExpect(jsonPath("$[0].weightGrams").value(250))
         .andExpect(jsonPath("$[0].volumeMl").value(nullValue()))
         .andExpect(jsonPath("$[0].price").value(79000.00))
+        .andExpect(jsonPath("$[0].regularPrice").value(nullValue()))
+        .andExpect(jsonPath("$[0].setItems.length()").value(0))
         .andExpect(jsonPath("$[1].name").value("Tuna nigiri"))
         .andExpect(jsonPath("$[1].inStock").value(false))
-        .andExpect(jsonPath("$[4].name").value("Philadelphia roll"))
-        .andExpect(jsonPath("$[4].price").value(85000.00))
-        .andExpect(jsonPath("$[7].name").value("Salmon sashimi"))
-        .andExpect(jsonPath("$[7].pieces").value(6))
-        .andExpect(jsonPath("$[8].name").value("Firecracker udon"))
-        .andExpect(jsonPath("$[8].hasModifiers").value(true))
-        .andExpect(jsonPath("$[10].name").value("Teriyaki chicken noodles"))
-        .andExpect(jsonPath("$[10].hasModifiers").value(false))
-        .andExpect(jsonPath("$[10].imageUrl").value("/images/teriyaki-noodles.png"))
-        .andExpect(jsonPath("$[11].name").value("Chicken ramen"))
-        .andExpect(jsonPath("$[11].hasModifiers").value(true))
-        .andExpect(jsonPath("$[17].name").value("Chili garlic peanuts"))
-        .andExpect(jsonPath("$[17].weightGrams").value(120))
-        .andExpect(jsonPath("$[18].name").value("Mochi ice cream"))
-        .andExpect(jsonPath("$[18].pieces").value(3))
-        .andExpect(jsonPath("$[21].name").value("Yuzu lemonade"))
-        .andExpect(jsonPath("$[21].weightGrams").value(nullValue()))
-        .andExpect(jsonPath("$[21].volumeMl").value(400))
-        .andExpect(jsonPath("$[23].name").value("Jasmine green tea"))
-        .andExpect(jsonPath("$[23].volumeMl").value(500));
+        .andExpect(jsonPath("$[3].name").value("Philadelphia roll"))
+        .andExpect(jsonPath("$[3].price").value(85000.00))
+        .andExpect(jsonPath("$[6].name").value("Salmon sashimi"))
+        .andExpect(jsonPath("$[6].pieces").value(6))
+        .andExpect(jsonPath("$[7].name").value("Wok & Roll set for two"))
+        .andExpect(jsonPath("$[13].name").value("Lunch combo"))
+        .andExpect(jsonPath("$[14].name").value("Firecracker udon"))
+        .andExpect(jsonPath("$[14].hasModifiers").value(true))
+        .andExpect(jsonPath("$[16].name").value("Teriyaki chicken noodles"))
+        .andExpect(jsonPath("$[16].hasModifiers").value(false))
+        .andExpect(jsonPath("$[16].imageUrl").value("/images/teriyaki-noodles.png"))
+        .andExpect(jsonPath("$[17].name").value("Chicken ramen"))
+        .andExpect(jsonPath("$[17].hasModifiers").value(true))
+        .andExpect(jsonPath("$[23].name").value("Chili garlic peanuts"))
+        .andExpect(jsonPath("$[23].weightGrams").value(120))
+        .andExpect(jsonPath("$[24].name").value("Mochi ice cream"))
+        .andExpect(jsonPath("$[24].pieces").value(3))
+        .andExpect(jsonPath("$[27].name").value("Yuzu lemonade"))
+        .andExpect(jsonPath("$[27].weightGrams").value(nullValue()))
+        .andExpect(jsonPath("$[27].volumeMl").value(400))
+        .andExpect(jsonPath("$[29].name").value("Jasmine green tea"))
+        .andExpect(jsonPath("$[29].volumeMl").value(500));
+  }
+
+  // v1.10: a set has its dishes and their sum in the country next to its own, lower price.
+  @Test
+  void aSetShowsItsDishesAndWhatThemCostOneByOne() throws Exception {
+    mvc.perform(get("/api/v1/products").param("country", "UZB"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[8].name").value("Philadelphia set"))
+        .andExpect(jsonPath("$[8].price").value(199000.00))
+        .andExpect(jsonPath("$[8].regularPrice").value(239000.00))
+        .andExpect(jsonPath("$[8].pieces").value(24))
+        .andExpect(jsonPath("$[8].setItems.length()").value(2))
+        .andExpect(jsonPath("$[8].setItems[0].productId").value(productId("Philadelphia roll")))
+        .andExpect(jsonPath("$[8].setItems[0].name").value("Philadelphia roll"))
+        .andExpect(jsonPath("$[8].setItems[0].quantity").value(2))
+        .andExpect(jsonPath("$[8].setItems[1].name").value("California roll"))
+        .andExpect(jsonPath("$[8].setItems[1].quantity").value(1))
+        .andExpect(jsonPath("$[7].name").value("Wok & Roll set for two"))
+        .andExpect(jsonPath("$[7].price").value(189000.00))
+        .andExpect(jsonPath("$[7].regularPrice").value(223000.00))
+        .andExpect(jsonPath("$[7].setItems[3].name").value("Jasmine green tea"))
+        .andExpect(jsonPath("$[7].setItems[3].quantity").value(2));
+  }
+
+  @Test
+  void theSetsCategoryHasSevenSets() throws Exception {
+    mvc.perform(
+            get("/api/v1/products")
+                .param("country", "KAZ")
+                .param("categoryId", "" + categoryId("Sets")))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath(
+                "$[*].name",
+                contains(
+                    "Wok & Roll set for two",
+                    "Philadelphia set",
+                    "Salmon set",
+                    "Dragon set",
+                    "Classic set",
+                    "Party set",
+                    "Lunch combo")))
+        .andExpect(jsonPath("$[*].inStock", everyItem(is(true))));
+  }
+
+  // Every set is cheaper than its dishes one by one, in every currency.
+  @ParameterizedTest
+  @ValueSource(strings = {"UZB", "KAZ", "GEO", "UKR", "CHN", "GBR", "USA"})
+  void everySetIsCheaperThanItsDishes(String country) throws Exception {
+    String body =
+        mvc.perform(get("/api/v1/products").param("country", country))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    List<Map<String, Object>> sets = JsonPath.read(body, "$[?(@.setItems.length() > 0)]");
+    assertThat(sets).hasSize(7);
+    for (Map<String, Object> set : sets) {
+      BigDecimal price = new BigDecimal(set.get("price").toString());
+      BigDecimal regular = new BigDecimal(set.get("regularPrice").toString());
+      assertThat(price).as("%s in %s", set.get("name"), country).isLessThan(regular);
+    }
+  }
+
+  @Test
+  void theModalOfASetHasItsDishesToo() throws Exception {
+    mvc.perform(get("/api/v1/products/" + productId("Party set")).param("country", "USA"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.price").value(40.95))
+        .andExpect(jsonPath("$.regularPrice").value(50.65))
+        .andExpect(jsonPath("$.currency").value("USD"))
+        .andExpect(jsonPath("$.setItems.length()").value(5))
+        .andExpect(jsonPath("$.setItems[3].name").value("Dragon roll"))
+        .andExpect(jsonPath("$.modifiers.length()").value(0));
+    mvc.perform(get("/api/v1/products/" + productId("Gyoza")).param("country", "USA"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.regularPrice").value(nullValue()))
+        .andExpect(jsonPath("$.setItems.length()").value(0));
+  }
+
+  @Test
+  void aSetWithADishNotSoldInTheCountryHasNoRegularPrice() throws Exception {
+    jdbc.sql(
+            """
+            DELETE FROM regional_price
+            WHERE product_id = (SELECT id FROM product WHERE name = 'Gyoza')
+              AND country_id = (SELECT id FROM country WHERE code = 'GEO')
+            """)
+        .update();
+
+    mvc.perform(get("/api/v1/products").param("country", "GEO"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[13].name").value("Lunch combo"))
+        .andExpect(jsonPath("$[13].regularPrice").value(nullValue()))
+        .andExpect(jsonPath("$[13].setItems.length()").value(3))
+        .andExpect(jsonPath("$[8].regularPrice").value(51.90));
+  }
+
+  private long productId(String name) {
+    return jdbc.sql("SELECT id FROM product WHERE name = :name")
+        .param("name", name)
+        .query(Long.class)
+        .single();
   }
 
   // v1.8: edamame left the menu for the peanuts; the old orders keep its name.
@@ -125,15 +242,33 @@ class CatalogApiIntegrationTest {
   void theWholeMenuIsSoldInTheUnitedKingdomInPounds() throws Exception {
     mvc.perform(get("/api/v1/products").param("country", "GBR"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(24))
+        .andExpect(jsonPath("$.length()").value(30))
         .andExpect(jsonPath("$[0].name").value("Salmon avocado roll"))
         .andExpect(jsonPath("$[0].price").value(4.95))
         .andExpect(jsonPath("$[0].currency").value("GBP"))
         .andExpect(jsonPath("$[1].inStock").value(false))
-        .andExpect(jsonPath("$[3].price").value(11.75))
-        .andExpect(jsonPath("$[8].hasModifiers").value(true))
-        .andExpect(jsonPath("$[11].price").value(4.05))
-        .andExpect(jsonPath("$[21].price").value(1.50));
+        .andExpect(jsonPath("$[7].price").value(11.75))
+        .andExpect(jsonPath("$[7].regularPrice").value(13.95))
+        .andExpect(jsonPath("$[14].hasModifiers").value(true))
+        .andExpect(jsonPath("$[17].price").value(4.05))
+        .andExpect(jsonPath("$[27].price").value(1.50));
+  }
+
+  @Test
+  void theWholeMenuIsSoldInTheUnitedStatesInDollars() throws Exception {
+    mvc.perform(get("/api/v1/products").param("country", "USA"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(30))
+        .andExpect(jsonPath("$[0].name").value("Salmon avocado roll"))
+        .andExpect(jsonPath("$[0].price").value(6.20))
+        .andExpect(jsonPath("$[0].currency").value("USD"))
+        .andExpect(jsonPath("$[1].inStock").value(false))
+        .andExpect(jsonPath("$[3].price").value(6.70))
+        .andExpect(jsonPath("$[8].price").value(15.75))
+        .andExpect(jsonPath("$[8].regularPrice").value(18.85))
+        .andExpect(jsonPath("$[14].hasModifiers").value(true))
+        .andExpect(jsonPath("$[17].hasModifiers").value(true))
+        .andExpect(jsonPath("$[29].price").value(1.40));
   }
 
   @Test
@@ -142,7 +277,7 @@ class CatalogApiIntegrationTest {
 
     mvc.perform(get("/api/v1/products").param("country", "UZB"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(24))
+        .andExpect(jsonPath("$.length()").value(30))
         .andExpect(jsonPath("$[*].name", not(hasItem("No price dish"))));
   }
 }

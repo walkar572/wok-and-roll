@@ -30,9 +30,16 @@ class CountryControllerTest {
   @Test
   void returnsTheShapeFromTheContract() throws Exception {
     CountryResponse uzb =
-        new CountryResponse("UZB", "Uzbekistan", "UZS", new BigDecimal("15.00"), "Asia/Tashkent");
+        new CountryResponse(
+            "UZB",
+            "Uzbekistan",
+            "UZS",
+            new BigDecimal("15.00"),
+            "Asia/Tashkent",
+            List.of("Tashkent"));
     CountryResponse ukr =
-        new CountryResponse("UKR", "Ukraine", "UAH", new BigDecimal("8.00"), "Europe/Kyiv");
+        new CountryResponse(
+            "UKR", "Ukraine", "UAH", new BigDecimal("8.00"), "Europe/Kyiv", List.of("Kyiv"));
     when(service.getCountries()).thenReturn(List.of(uzb, ukr));
 
     mvc.perform(get("/api/v1/countries"))
@@ -43,6 +50,7 @@ class CountryControllerTest {
         .andExpect(jsonPath("$[0].currency").value("UZS"))
         .andExpect(jsonPath("$[0].vatRate").value(15.00))
         .andExpect(jsonPath("$[0].timeZone").value("Asia/Tashkent"))
+        .andExpect(jsonPath("$[0].cities[0]").value("Tashkent"))
         .andExpect(jsonPath("$[1].code").value("UKR"))
         .andExpect(jsonPath("$[1].timeZone").value("Europe/Kyiv"))
         .andExpect(content().string(containsString("\"vatRate\":8.00")));

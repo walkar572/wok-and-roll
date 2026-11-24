@@ -55,7 +55,7 @@ class RequestIdFilterTest {
             HttpStatus.BAD_REQUEST,
             "VALIDATION_ERROR",
             "Request validation failed",
-            Map.of("country", "must be one of UZB, KAZ, GEO, UKR, CHN, GBR"));
+            Map.of("country", "must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"));
       }
       if (status == 404) {
         throw new NotFoundException("Product 404 is not sold in UZB");

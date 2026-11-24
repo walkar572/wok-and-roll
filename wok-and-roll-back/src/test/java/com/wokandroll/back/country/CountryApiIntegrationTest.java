@@ -30,12 +30,14 @@ class CountryApiIntegrationTest {
   void countriesComeFromTheSeedInOrder() throws Exception {
     mvc.perform(get("/api/v1/countries"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(6))
+        .andExpect(jsonPath("$.length()").value(7))
         .andExpect(jsonPath("$[0].code").value("UZB"))
         .andExpect(jsonPath("$[0].name").value("Uzbekistan"))
         .andExpect(jsonPath("$[0].currency").value("UZS"))
         .andExpect(jsonPath("$[0].vatRate").value(15.00))
         .andExpect(jsonPath("$[0].timeZone").value("Asia/Tashkent"))
+        .andExpect(jsonPath("$[0].cities.length()").value(1))
+        .andExpect(jsonPath("$[0].cities[0]").value("Tashkent"))
         .andExpect(jsonPath("$[1].code").value("KAZ"))
         .andExpect(jsonPath("$[1].timeZone").value("Asia/Almaty"))
         .andExpect(jsonPath("$[2].code").value("GEO"))
@@ -50,7 +52,14 @@ class CountryApiIntegrationTest {
         .andExpect(jsonPath("$[5].name").value("United Kingdom"))
         .andExpect(jsonPath("$[5].currency").value("GBP"))
         .andExpect(jsonPath("$[5].vatRate").value(20.00))
-        .andExpect(jsonPath("$[5].timeZone").value("Europe/London"));
+        .andExpect(jsonPath("$[5].timeZone").value("Europe/London"))
+        .andExpect(jsonPath("$[5].cities[0]").value("London"))
+        .andExpect(jsonPath("$[6].code").value("USA"))
+        .andExpect(jsonPath("$[6].name").value("United States"))
+        .andExpect(jsonPath("$[6].currency").value("USD"))
+        .andExpect(jsonPath("$[6].vatRate").value(7.00))
+        .andExpect(jsonPath("$[6].timeZone").value("America/New_York"))
+        .andExpect(jsonPath("$[6].cities[0]").value("Boston"));
   }
 
   @Test
@@ -58,5 +67,6 @@ class CountryApiIntegrationTest {
     assertThat(countryClock.zone("KAZ")).isEqualTo(ZoneId.of("Asia/Almaty"));
     assertThat(countryClock.zone("CHN")).isEqualTo(ZoneId.of("Asia/Shanghai"));
     assertThat(countryClock.zone("GBR")).isEqualTo(ZoneId.of("Europe/London"));
+    assertThat(countryClock.zone("USA")).isEqualTo(ZoneId.of("America/New_York"));
   }
 }

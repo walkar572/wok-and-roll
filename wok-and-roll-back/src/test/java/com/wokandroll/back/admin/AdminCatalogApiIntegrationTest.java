@@ -54,7 +54,7 @@ class AdminCatalogApiIntegrationTest {
                 .header("Authorization", bearer("ADMIN")))
         .andExpect(status().isOk())
         // 24 on the menu and the hidden edamame (v1.8): the admin sees hidden dishes too.
-        .andExpect(jsonPath("$.items", hasSize(25)))
+        .andExpect(jsonPath("$.items", hasSize(31)))
         .andExpect(jsonPath("$.items[0].name").value("Salmon avocado roll"))
         .andExpect(jsonPath("$.items[0].pieces").value(8))
         .andExpect(jsonPath("$.items[0].weightGrams").value(250))

@@ -4,12 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * One café: pickup point, booking venue and kitchen for its delivery zones (contract 3.6). The
- * latitude and longitude (v1.7) put it on the map of the home page; both are null when unknown.
+ * latitude and longitude (v1.7) put it on the map of the home page; both are null when unknown. The
+ * city (v1.9) is the one the guest chooses in the interface.
  */
 public record CafeResponse(
     @Schema(example = "1") long id,
     @Schema(example = "UZB") String country,
     @Schema(example = "Wok & Roll Chilanzar") String name,
+    @Schema(description = "City in English", example = "Tashkent") String city,
     @Schema(example = "12 Bunyodkor Ave, Tashkent") String address,
     @Schema(example = "+998712000001", nullable = true) String phone,
     @Schema(description = "Local time, HH:mm", example = "10:00") String opensAt,

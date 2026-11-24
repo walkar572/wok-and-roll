@@ -47,7 +47,8 @@ class DeliveryZoneApiIntegrationTest {
     "GEO, 3.50, 4.50, 6.50",
     "UKR, 50.00, 65.00, 100.00",
     "CHN, 8.00, 11.00, 17.00",
-    "GBR, 0.95, 1.25, 1.85"
+    "GBR, 0.95, 1.25, 1.85",
+    "USA, 1.20, 1.55, 2.35"
   })
   void everyCountryHasThreeZonesWithItsOwnFees(
       String country, String near, String center, String far) throws Exception {

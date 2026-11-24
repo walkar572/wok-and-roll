@@ -47,7 +47,9 @@ class ProductDetailControllerTest {
                 "UZS",
                 true,
                 true,
-                List.of(new ModifierResponse(2, "SIZE", "Large", new BigDecimal("12.00")))));
+                List.of(new ModifierResponse(2, "SIZE", "Large", new BigDecimal("12.00"))),
+                null,
+                List.of()));
 
     mvc.perform(get("/api/v1/products/5").param("country", "UZB"))
         .andExpect(status().isOk())
@@ -64,11 +66,11 @@ class ProductDetailControllerTest {
 
   @Test
   void unknownCountryIsValidationError() throws Exception {
-    mvc.perform(get("/api/v1/products/5").param("country", "USA"))
+    mvc.perform(get("/api/v1/products/5").param("country", "FRA"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
         .andExpect(
-            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR"));
+            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"));
     verifyNoInteractions(service);
   }
 

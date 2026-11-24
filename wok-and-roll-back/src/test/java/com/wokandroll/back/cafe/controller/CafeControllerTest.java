@@ -33,6 +33,7 @@ class CafeControllerTest {
             1,
             "UZB",
             "Wok & Roll Chilanzar",
+            "Tashkent",
             "12 Bunyodkor Ave, Tashkent",
             "+998712000001",
             "10:00",
@@ -48,6 +49,7 @@ class CafeControllerTest {
         .andExpect(jsonPath("$.items[0].id").value(1))
         .andExpect(jsonPath("$.items[0].country").value("UZB"))
         .andExpect(jsonPath("$.items[0].name").value("Wok & Roll Chilanzar"))
+        .andExpect(jsonPath("$.items[0].city").value("Tashkent"))
         .andExpect(jsonPath("$.items[0].address").value("12 Bunyodkor Ave, Tashkent"))
         .andExpect(jsonPath("$.items[0].phone").value("+998712000001"))
         .andExpect(jsonPath("$.items[0].opensAt").value("10:00"))
@@ -59,11 +61,11 @@ class CafeControllerTest {
 
   @Test
   void unknownCountryIsValidationError() throws Exception {
-    mvc.perform(get("/api/v1/cafes").param("country", "USA"))
+    mvc.perform(get("/api/v1/cafes").param("country", "FRA"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
         .andExpect(
-            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR"));
+            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"));
     verifyNoInteractions(service);
   }
 

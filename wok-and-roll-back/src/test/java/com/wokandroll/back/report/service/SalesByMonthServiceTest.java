@@ -106,7 +106,7 @@ class SalesByMonthServiceTest {
 
   @Test
   void unknownCountryIs400() {
-    assertThatThrownBy(() -> service.salesByMonth("USA", 2026))
+    assertThatThrownBy(() -> service.salesByMonth("FRA", 2026))
         .isInstanceOfSatisfying(
             ApiException.class, e -> assertThat(e.getFields()).containsKey("country"));
   }

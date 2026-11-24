@@ -1,6 +1,8 @@
 package com.wokandroll.back.catalog.detail;
 
 import com.wokandroll.back.catalog.detail.dto.ModifierResponse;
+import com.wokandroll.back.catalog.dto.SetItemResponse;
+import com.wokandroll.back.catalog.repository.CatalogRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +28,8 @@ public class ProductDetailRepository {
       Integer volumeMl,
       BigDecimal price,
       String currency,
-      boolean inStock) {}
+      boolean inStock,
+      BigDecimal regularPrice) {}
 
   private final JdbcClient jdbc;
 
@@ -43,7 +46,10 @@ public class ProductDetailRepository {
     return jdbc.sql(
             """
             SELECT p.id, p.category_id, p.name, p.description, p.image_url,
-                   p.pieces, p.weight_grams, p.volume_ml, rp.price, c.currency_code, rp.in_stock
+                   p.pieces, p.weight_grams, p.volume_ml, rp.price, c.currency_code, rp.in_stock,
+            """
+                + CatalogRepository.REGULAR_PRICE_SQL
+                + """
             FROM product p
             JOIN category cat ON cat.id = p.category_id
             JOIN regional_price rp ON rp.product_id = p.id
@@ -65,8 +71,18 @@ public class ProductDetailRepository {
                     rs.getObject("volume_ml", Integer.class),
                     rs.getBigDecimal("price"),
                     rs.getString("currency_code").trim(),
-                    rs.getBoolean("in_stock")))
+                    rs.getBoolean("in_stock"),
+                    rs.getBigDecimal("regular_price")))
         .optional();
+  }
+
+  /** The dishes of a set in their order; empty for a dish. */
+  public List<SetItemResponse> findSetItems(long setId) {
+    return jdbc.sql(
+            CatalogRepository.SET_ITEMS_SQL + "WHERE si.set_id = :setId\nORDER BY si.sort_order")
+        .param("setId", setId)
+        .query((rs, i) -> CatalogRepository.setItem(rs))
+        .list();
   }
 
   /** Visible modifiers with a price in this country. Order: SIZE, then EXTRA, then id. */

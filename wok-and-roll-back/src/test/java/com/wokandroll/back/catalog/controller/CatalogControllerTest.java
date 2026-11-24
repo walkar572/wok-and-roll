@@ -43,7 +43,9 @@ class CatalogControllerTest {
         new BigDecimal("52.00"),
         "UZS",
         true,
-        false);
+        false,
+        null,
+        List.of());
   }
 
   @Test
@@ -85,11 +87,11 @@ class CatalogControllerTest {
 
   @Test
   void unknownCountryIsValidationError() throws Exception {
-    mvc.perform(get("/api/v1/products").param("country", "USA"))
+    mvc.perform(get("/api/v1/products").param("country", "FRA"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
         .andExpect(
-            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR"));
+            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"));
     verifyNoInteractions(service);
   }
 

@@ -58,10 +58,10 @@ class CountryClockTest {
 
   @Test
   void unknownCountryIsAnError() {
-    when(zones.find("USA")).thenReturn(Optional.empty());
+    when(zones.find("FRA")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> countryClock.today("USA"))
+    assertThatThrownBy(() -> countryClock.today("FRA"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Unknown country: USA");
+        .hasMessage("Unknown country: FRA");
   }
 }

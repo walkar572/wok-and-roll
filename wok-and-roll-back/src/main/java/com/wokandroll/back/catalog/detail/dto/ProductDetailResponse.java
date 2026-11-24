@@ -1,5 +1,6 @@
 package com.wokandroll.back.catalog.detail.dto;
 
+import com.wokandroll.back.catalog.dto.SetItemResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,4 +28,11 @@ public record ProductDetailResponse(
     @Schema(description = "true if the dish has at least one modifier priced in this country")
         boolean hasModifiers,
     @Schema(description = "SIZE first, then EXTRA, then id. Empty when there are none")
-        List<ModifierResponse> modifiers) {}
+        List<ModifierResponse> modifiers,
+    @Schema(
+            description = "A set only: the price of its dishes one by one (same as 3.3)",
+            example = "239000.00",
+            nullable = true)
+        BigDecimal regularPrice,
+    @Schema(description = "The dishes of a set in their order; empty for a dish")
+        List<SetItemResponse> setItems) {}

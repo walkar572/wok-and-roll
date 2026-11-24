@@ -19,8 +19,10 @@ class CountryServiceTest {
   @Test
   void keepsTheOrderAndGivesTheVatRateTwoDecimals() {
     CountryRow uzb =
-        new CountryRow("UZB", "Uzbekistan", "UZS", new BigDecimal("15"), "Asia/Tashkent");
-    CountryRow ukr = new CountryRow("UKR", "Ukraine", "UAH", new BigDecimal("8.0"), "Europe/Kyiv");
+        new CountryRow(
+            "UZB", "Uzbekistan", "UZS", new BigDecimal("15"), "Asia/Tashkent", List.of("Tashkent"));
+    CountryRow ukr =
+        new CountryRow("UKR", "Ukraine", "UAH", new BigDecimal("8.0"), "Europe/Kyiv", List.of());
     when(repository.findAll()).thenReturn(List.of(uzb, ukr));
 
     List<CountryResponse> result = service.getCountries();
@@ -32,5 +34,7 @@ class CountryServiceTest {
     assertThat(result.get(1).vatRate().toPlainString()).isEqualTo("8.00");
     assertThat(result.get(0).timeZone()).isEqualTo("Asia/Tashkent");
     assertThat(result.get(1).timeZone()).isEqualTo("Europe/Kyiv");
+    assertThat(result.get(0).cities()).containsExactly("Tashkent");
+    assertThat(result.get(1).cities()).isEmpty();
   }
 }

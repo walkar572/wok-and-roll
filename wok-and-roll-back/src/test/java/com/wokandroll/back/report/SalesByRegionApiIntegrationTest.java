@@ -85,7 +85,7 @@ class SalesByRegionApiIntegrationTest {
     mvc.perform(get(MARCH_2031).header("Authorization", viewer()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalOrders").value(0))
-        .andExpect(jsonPath("$.regions.length()").value(6))
+        .andExpect(jsonPath("$.regions.length()").value(7))
         .andExpect(jsonPath("$.regions[0].country").value("UZB"))
         .andExpect(jsonPath("$.regions[0].countryName").value("Uzbekistan"))
         .andExpect(jsonPath("$.regions[0].currency").value("UZS"))
@@ -96,7 +96,10 @@ class SalesByRegionApiIntegrationTest {
         .andExpect(jsonPath("$.regions[4].averageCheck").value(0.00))
         .andExpect(jsonPath("$.regions[5].country").value("GBR"))
         .andExpect(jsonPath("$.regions[5].currency").value("GBP"))
-        .andExpect(jsonPath("$.regions[5].orders").value(0));
+        .andExpect(jsonPath("$.regions[5].orders").value(0))
+        .andExpect(jsonPath("$.regions[6].country").value("USA"))
+        .andExpect(jsonPath("$.regions[6].currency").value("USD"))
+        .andExpect(jsonPath("$.regions[6].orders").value(0));
   }
 
   @Test

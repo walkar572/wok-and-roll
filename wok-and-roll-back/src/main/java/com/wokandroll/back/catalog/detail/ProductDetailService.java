@@ -45,7 +45,9 @@ public class ProductDetailService {
         row.currency(),
         row.inStock(),
         !modifiers.isEmpty(),
-        modifiers);
+        modifiers,
+        row.regularPrice() == null ? null : money(row.regularPrice()),
+        repository.findSetItems(productId));
   }
 
   /** Money always has exactly 2 decimals in the JSON (api-contract.md section 1). */
