@@ -100,6 +100,42 @@ class CartQuoteApiIntegrationTest {
   }
 
   @Test
+  void deliveryInTheUnitedKingdomInPounds() throws Exception {
+    // 2 x Salmon avocado roll 4.95 = 9.90; udon 3.45 + Large 0.95 + Extra chicken 0.75 = 5.15;
+    // subtotal 15.05, VAT 20 % = 3.01 -> 18.06; from 6.00 the discount is 3 % = 0.5418 -> 0.54;
+    // London: Westminster 1.25 is added last: 18.77
+    long westminster =
+        jdbc.sql("SELECT id FROM delivery_zone WHERE name = 'London: Westminster'")
+            .query(Long.class)
+            .single();
+    quote(
+            """
+            {"country": "GBR", "scenario": "DELIVERY", "deliveryZoneId": %d, "items": [
+              {"productId": %d, "quantity": 2},
+              {"productId": %d, "quantity": 1, "modifierIds": [%d, %d]}
+            ]}
+            """
+                .formatted(
+                    westminster,
+                    productId("Salmon avocado roll"),
+                    productId("Firecracker udon"),
+                    modifierId("Firecracker udon", "Large"),
+                    modifierId("Firecracker udon", "Extra chicken")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.country").value("GBR"))
+        .andExpect(jsonPath("$.currency").value("GBP"))
+        .andExpect(jsonPath("$.lines[1].unitPrice").value(5.15))
+        .andExpect(jsonPath("$.subtotal").value(15.05))
+        .andExpect(jsonPath("$.vatRate").value(20.00))
+        .andExpect(jsonPath("$.vat").value(3.01))
+        .andExpect(jsonPath("$.amountInclVat").value(18.06))
+        .andExpect(jsonPath("$.discountRate").value(3.00))
+        .andExpect(jsonPath("$.discount").value(0.54))
+        .andExpect(jsonPath("$.deliveryFee").value(1.25))
+        .andExpect(jsonPath("$.total").value(18.77));
+  }
+
+  @Test
   void zoneOfAnotherCountryIsRejected() throws Exception {
     long kazZone =
         jdbc.sql(

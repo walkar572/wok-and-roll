@@ -81,11 +81,11 @@ class SalesByRegionApiIntegrationTest {
   }
 
   @Test
-  void aPeriodWithoutOrdersGivesAllFiveCountriesWithZeros() throws Exception {
+  void aPeriodWithoutOrdersGivesEveryCountryWithZeros() throws Exception {
     mvc.perform(get(MARCH_2031).header("Authorization", viewer()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalOrders").value(0))
-        .andExpect(jsonPath("$.regions.length()").value(5))
+        .andExpect(jsonPath("$.regions.length()").value(6))
         .andExpect(jsonPath("$.regions[0].country").value("UZB"))
         .andExpect(jsonPath("$.regions[0].countryName").value("Uzbekistan"))
         .andExpect(jsonPath("$.regions[0].currency").value("UZS"))
@@ -93,7 +93,10 @@ class SalesByRegionApiIntegrationTest {
         .andExpect(jsonPath("$.regions[4].currency").value("CNY"))
         .andExpect(jsonPath("$.regions[4].orders").value(0))
         .andExpect(jsonPath("$.regions[4].total").value(0.00))
-        .andExpect(jsonPath("$.regions[4].averageCheck").value(0.00));
+        .andExpect(jsonPath("$.regions[4].averageCheck").value(0.00))
+        .andExpect(jsonPath("$.regions[5].country").value("GBR"))
+        .andExpect(jsonPath("$.regions[5].currency").value("GBP"))
+        .andExpect(jsonPath("$.regions[5].orders").value(0));
   }
 
   @Test

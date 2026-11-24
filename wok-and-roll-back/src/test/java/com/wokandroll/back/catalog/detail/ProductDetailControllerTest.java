@@ -67,7 +67,8 @@ class ProductDetailControllerTest {
     mvc.perform(get("/api/v1/products/5").param("country", "USA"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-        .andExpect(jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN"));
+        .andExpect(
+            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR"));
     verifyNoInteractions(service);
   }
 

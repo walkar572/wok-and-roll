@@ -73,6 +73,20 @@ class CatalogApiIntegrationTest {
   }
 
   @Test
+  void theWholeMenuIsSoldInTheUnitedKingdomInPounds() throws Exception {
+    mvc.perform(get("/api/v1/products").param("country", "GBR"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(10))
+        .andExpect(jsonPath("$[0].name").value("Salmon avocado roll"))
+        .andExpect(jsonPath("$[0].price").value(4.95))
+        .andExpect(jsonPath("$[0].currency").value("GBP"))
+        .andExpect(jsonPath("$[1].inStock").value(false))
+        .andExpect(jsonPath("$[3].price").value(11.75))
+        .andExpect(jsonPath("$[4].hasModifiers").value(true))
+        .andExpect(jsonPath("$[9].price").value(1.50));
+  }
+
+  @Test
   void dishWithoutPriceInTheCountryIsNotReturned() throws Exception {
     jdbc.sql("INSERT INTO product (category_id, name) VALUES (1, 'No price dish')").update();
 

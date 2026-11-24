@@ -1,6 +1,7 @@
 package com.wokandroll.back.report.service;
 
 import com.wokandroll.back.common.error.ApiException;
+import com.wokandroll.back.common.web.CountryCodes;
 import com.wokandroll.back.report.dto.MonthSales;
 import com.wokandroll.back.report.dto.RegionSales;
 import com.wokandroll.back.report.dto.SalesByMonthResponse;
@@ -63,9 +64,7 @@ public class ReportService {
       throw validation("year", "must be from " + FIRST_YEAR + " to " + lastYear);
     }
     CountryInfo info =
-        repository
-            .country(country)
-            .orElseThrow(() -> validation("country", "must be one of UZB, KAZ, GEO, UKR, CHN"));
+        repository.country(country).orElseThrow(() -> validation("country", CountryCodes.MESSAGE));
     List<MonthSalesRow> rows = repository.salesByMonth(country, year);
     List<MonthSales> months = rows.stream().map(ReportService::toMonth).toList();
     long orders = rows.stream().mapToLong(MonthSalesRow::orders).sum();

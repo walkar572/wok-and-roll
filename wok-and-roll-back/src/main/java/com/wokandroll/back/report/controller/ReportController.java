@@ -37,7 +37,7 @@ public class ReportController {
   @Operation(
       summary = "Sales by region for a period, each country in its own currency",
       security = @SecurityRequirement(name = SecurityConfig.BEARER))
-  @ApiResponse(responseCode = "200", description = "All 5 countries, zeros without orders")
+  @ApiResponse(responseCode = "200", description = "All 6 countries, zeros without orders")
   @ApiResponse(
       responseCode = "400",
       description =

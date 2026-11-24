@@ -30,7 +30,7 @@ class CountryApiIntegrationTest {
   void countriesComeFromTheSeedInOrder() throws Exception {
     mvc.perform(get("/api/v1/countries"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(5))
+        .andExpect(jsonPath("$.length()").value(6))
         .andExpect(jsonPath("$[0].code").value("UZB"))
         .andExpect(jsonPath("$[0].name").value("Uzbekistan"))
         .andExpect(jsonPath("$[0].currency").value("UZS"))
@@ -45,12 +45,18 @@ class CountryApiIntegrationTest {
         .andExpect(jsonPath("$[3].timeZone").value("Europe/Kyiv"))
         .andExpect(jsonPath("$[4].code").value("CHN"))
         .andExpect(jsonPath("$[4].currency").value("CNY"))
-        .andExpect(jsonPath("$[4].timeZone").value("Asia/Shanghai"));
+        .andExpect(jsonPath("$[4].timeZone").value("Asia/Shanghai"))
+        .andExpect(jsonPath("$[5].code").value("GBR"))
+        .andExpect(jsonPath("$[5].name").value("United Kingdom"))
+        .andExpect(jsonPath("$[5].currency").value("GBP"))
+        .andExpect(jsonPath("$[5].vatRate").value(20.00))
+        .andExpect(jsonPath("$[5].timeZone").value("Europe/London"));
   }
 
   @Test
   void countryClockReadsTheTimeZoneFromTheDatabase() {
     assertThat(countryClock.zone("KAZ")).isEqualTo(ZoneId.of("Asia/Almaty"));
     assertThat(countryClock.zone("CHN")).isEqualTo(ZoneId.of("Asia/Shanghai"));
+    assertThat(countryClock.zone("GBR")).isEqualTo(ZoneId.of("Europe/London"));
   }
 }

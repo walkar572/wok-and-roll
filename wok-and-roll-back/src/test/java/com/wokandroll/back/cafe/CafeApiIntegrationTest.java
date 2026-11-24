@@ -44,7 +44,8 @@ class CafeApiIntegrationTest {
     "KAZ, Asia/Almaty",
     "GEO, Asia/Tbilisi",
     "UKR, Europe/Kyiv",
-    "CHN, Asia/Shanghai"
+    "CHN, Asia/Shanghai",
+    "GBR, Europe/London"
   })
   void everyCountryHasTwoCafesInItsTimeZone(String country, String timeZone) throws Exception {
     mvc.perform(get("/api/v1/cafes").param("country", country))
