@@ -209,39 +209,39 @@
 
 /* ---- the railing over the photo ---------------------------------------------------------- */
 
+/* Openwork: thin gold lines on a shade that fades from the top edge of the photo to nothing, so
+   the dish shows through and the gold still reads on a light photo. */
 .hero-fence {
   position: absolute;
-  top: 40px;
+  top: 0;
   right: 0;
   left: 0;
   z-index: 1;
-  height: 52px;
+  height: 72px;
+  background: linear-gradient(rgb(32 31 27 / 38%), rgb(32 31 27 / 14%) 55%, rgb(32 31 27 / 0%));
   pointer-events: none;
-  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 30%));
 }
 
 .hero-fence svg {
   display: block;
+  filter: drop-shadow(0 1px 1px rgb(32 31 27 / 50%));
 }
 
 .hero-fence__rail {
-  fill: var(--red-600);
-}
-
-.hero-fence__post {
-  fill: var(--red-700);
-}
-
-.hero-fence__line,
-.hero-fence__knob {
   fill: var(--saffron-500);
+  opacity: 0.95;
+}
+
+.hero-fence__rail--thin {
+  opacity: 0.6;
 }
 
 .hero-fence__fret {
   fill: none;
-  stroke: var(--red-600);
-  stroke-width: 2.6;
+  stroke: var(--saffron-500);
+  stroke-width: 1.6;
   stroke-linecap: square;
+  opacity: 0.9;
 }
 
 /* The price card stands in front of the railing, so it is not see-through any more. */
@@ -256,10 +256,6 @@
 }
 
 @media (max-width: 767px) {
-  .hero-fence {
-    top: 30px;
-  }
-
   .hero-carousel__controls {
     right: 12px;
     left: auto;

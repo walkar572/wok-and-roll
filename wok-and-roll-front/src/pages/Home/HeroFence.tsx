@@ -1,32 +1,25 @@
 import { useId } from 'react';
 
 /**
- * A Chinese railing across the top of the dish photo: red rails and posts with gold knobs and a
- * fret lattice (the square "回" spiral) between them. It sits over the photo and under the price
- * card. Decoration only, hidden from screen readers.
+ * An openwork Chinese railing along the top edge of the dish photo: thin gold rails and the
+ * square "回" fret between them, drawn with lines only over a soft shade that fades out, so the
+ * photo shows through. It sits under the price card. Decoration only, hidden from screen readers.
  */
 export function HeroFence() {
-  const bay = `${useId().replace(/:/g, '')}-bay`;
-  // One bay is a post and three spirals; the pattern repeats it across any width.
-  const spirals = [8, 32, 56];
+  const fret = `${useId().replace(/:/g, '')}-fret`;
 
   return (
     <div className="hero-fence" aria-hidden="true">
-      <svg width="100%" height="100%" focusable="false">
+      <svg width="100%" height="44" focusable="false">
         <defs>
-          <pattern id={bay} width="78" height="52" patternUnits="userSpaceOnUse">
-            {spirals.map((x) => (
-              <path key={x} className="hero-fence__fret" d={`M${x} 39V19h20v20h-14v-14h8v8`} />
-            ))}
-            <rect className="hero-fence__post" x="0" y="8" width="6" height="44" />
-            <circle className="hero-fence__knob" cx="3" cy="6" r="4" />
+          <pattern id={fret} width="24" height="44" patternUnits="userSpaceOnUse">
+            <path className="hero-fence__fret" d="M3 34V14H21V30H9V20H15V25" />
           </pattern>
         </defs>
-        <rect width="100%" height="52" fill={`url(#${bay})`} />
-        <rect className="hero-fence__rail" y="12" width="100%" height="5" />
-        <rect className="hero-fence__line" y="12" width="100%" height="1" />
-        <rect className="hero-fence__rail" y="40" width="100%" height="5" />
-        <rect className="hero-fence__line" y="44" width="100%" height="1" />
+        <rect width="100%" height="44" fill={`url(#${fret})`} />
+        <rect className="hero-fence__rail" y="7" width="100%" height="1.5" />
+        <rect className="hero-fence__rail" y="33.5" width="100%" height="1.5" />
+        <rect className="hero-fence__rail hero-fence__rail--thin" y="38" width="100%" height="1" />
       </svg>
     </div>
   );
