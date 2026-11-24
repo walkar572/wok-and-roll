@@ -47,8 +47,20 @@ test.describe('menu API', () => {
       expect(productsResponse.status(), country.code + ' products').toBe(200);
       const categories = await categoriesResponse.json();
       const products = await productsResponse.json();
-      expect(categories.map(({ name }) => name)).toEqual(['Sushi & rolls', 'From the wok', 'Sides']);
-      expect(products).toHaveLength(10);
+      expect(categories.map(({ name }) => name)).toEqual([
+        'Sushi & rolls',
+        'From the wok',
+        'Sides',
+        'Desserts',
+        'Drinks',
+      ]);
+      // v1.8: 24 dishes; edamame left the menu for the peanuts.
+      expect(products).toHaveLength(24);
+      expect(products.map(({ name }) => name)).not.toContain('Edamame');
+      expect(products.find(({ name }) => name === 'Chili garlic peanuts')).toMatchObject({
+        weightGrams: 120,
+        inStock: true,
+      });
       for (const product of products) {
         expect(product.id).toEqual(expect.any(Number));
         expect(product.categoryId).toEqual(expect.any(Number));

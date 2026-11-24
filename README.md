@@ -36,13 +36,30 @@ currency), cafés, delivery zones and about 3,400 orders from June to November 2
 reports have data at once.
 
 Dish photos live in `wok-and-roll-front/public/images` (512 × 512 PNG, the dish on a cream
-background). Until a file is there, the dish shows a neutral placeholder. Four photos are free
-stock photos under the [Pexels license](https://www.pexels.com/license/), cropped and put on the
-cream background:
+background where the photo allows it). Until a file is there, the dish shows a neutral
+placeholder; a photo can be replaced by a file with the same name. Nineteen photos are free stock
+photos under the [Pexels license](https://www.pexels.com/license/), cropped and, where the table
+allowed it, put on the cream background:
 [California roll](https://www.pexels.com/photo/sushi-roll-on-white-ceramic-plate-10692544/),
 [set for two](https://www.pexels.com/photo/close-up-photo-of-sushi-served-on-table-248444/),
 [teriyaki noodles](https://www.pexels.com/photo/close-up-of-chicken-noodles-dish-24738507/),
-[edamame](https://www.pexels.com/photo/close-up-of-fresh-edamame-beans-in-bowl-28460867/).
+[edamame](https://www.pexels.com/photo/close-up-of-fresh-edamame-beans-in-bowl-28460867/) (hidden
+from the menu since v1.8),
+[Philadelphia roll](https://www.pexels.com/photo/sushi-on-ceramic-plate-3620705/),
+[dragon roll](https://www.pexels.com/photo/plate-of-sushi-858496/),
+[crunchy shrimp roll](https://www.pexels.com/photo/plate-of-sushi-343870/),
+[chicken ramen](https://www.pexels.com/photo/top-view-of-a-bowl-of-ramen-20802552/),
+[beef yakisoba](https://www.pexels.com/photo/photo-of-food-on-a-white-plate-6718705/),
+[spicy egg fried rice](https://www.pexels.com/photo/close-up-of-a-bowl-of-kimchi-fried-rice-with-an-egg-24738523/),
+[chicken karaage](https://www.pexels.com/photo/fried-chicken-1860202/),
+[spring rolls](https://www.pexels.com/photo/fried-spring-rolls-and-dumplings-on-top-of-tray-218769/),
+[peanuts](https://www.pexels.com/photo/close-up-photo-of-a-bowl-full-of-roasted-groundnuts-on-brown-wooden-table-2112789/),
+[mochi ice cream](https://www.pexels.com/photo/mochi-ice-cream-on-the-wooden-tray-6645975/),
+[matcha cheesecake](https://www.pexels.com/photo/sliced-cake-on-black-plate-1860209/),
+[matcha latte](https://www.pexels.com/photo/a-glass-of-matcha-latte-8004562/),
+[jasmine tea](https://www.pexels.com/photo/cup-of-aromatic-jasmine-tea-served-on-table-in-garden-7138780/),
+[salmon sashimi](https://www.pexels.com/photo/sushi-on-a-wooden-bowl-8472633/),
+[mango sticky rice](https://www.pexels.com/photo/mango-and-rice-with-dipping-sauce-on-a-white-plate-19856579/).
 
 The café map on the home page uses [MapLibre GL](https://maplibre.org/) with free vector tiles
 from [OpenFreeMap](https://openfreemap.org/) (no API key). Map data © OpenStreetMap
@@ -68,7 +85,7 @@ Guests can order and book a table without an account.
 | Header | Stays at the top while the page scrolls (menu, country and basket always one tap away); soft rounded highlight on hover; on a phone a black menu grows out of the menu button, and the country list and the menu never open over each other |
 | Languages | The country switcher shows every country with its language and currency in that language (United Kingdom · English · GBP). The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English (dishes, messages, money and dates too); the brand "Wok & Roll" and the "Wok. Roll." of the home title stay |
 | Home | A slideshow of dishes from the menu with their price in the chosen country (arrows, swipe, pause; it stops on hover and with reduced motion); the cafés of the country on a map and in a list with address, hours, "open now" in the café's time zone, phone and "Book a table" (the booking form opens with that café); four favourite dishes |
-| Menu and cart | Dish cards with the ingredients and the portion (pieces, grams, ml) that grow a little and light up on hover, country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
+| Menu and cart | 24 dishes in 5 categories (sushi and rolls, from the wok, sides, desserts, drinks); dish cards with the ingredients and the portion (pieces, grams, ml) that grow a little and light up on hover, country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields, totals from the server, idempotent order placement |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |
 | Accounts | Register, log in, log out, session expiry; My orders with paging and order details |
