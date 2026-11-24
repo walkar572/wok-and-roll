@@ -135,5 +135,6 @@ voice.
 Backend: about 500 unit and integration tests (integration tests against PostgreSQL), Spotless
 with Google Java Style. Frontend: TypeScript strict, ESLint with jsx-a11y, Prettier. CI runs both on every pull
 request. Accessibility: keyboard navigation, visible focus, labels and error messages tied to
-fields, WCAG AA colour contrast, charts with keyboard tooltips and a table with every value.
+fields, WCAG AA colour contrast, charts with keyboard tooltips and a table with every value, a home slideshow
+with a pause button that stops on hover and focus and does not move with reduced motion.
 Responsive layouts at 320 / 768 / 1200 px with 44 px touch targets.

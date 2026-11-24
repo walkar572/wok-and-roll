@@ -1,7 +1,8 @@
 const { test, expect } = require('@playwright/test');
 const pricingExamples = require('../../../test-data/pricing-examples.json');
 const { addFirecrackerUdon } = require('./helpers/cart');
-const { countrySelect: countrySelectName, kk, uz } = require('./helpers/text');
+const { kk, uz } = require('./helpers/text');
+const { chooseCountry, countrySwitcher } = require('./helpers/country');
 
 const kaz = pricingExamples.find((example) => example.country === 'KAZ');
 if (!kaz) throw new Error('No pricing example found for KAZ.');
@@ -13,10 +14,8 @@ const udonInKazakhstan = /2\s190,00\s*₸/;
 const cartTotalInKazakhstan = /2\s628,00\s*₸/;
 
 test('country switch changes the language, the currency and the exact price, and survives reload', async ({ page }) => {
-  const countrySelect = page.getByRole('combobox', { name: countrySelectName });
-
   await page.goto('/menu');
-  await expect(countrySelect).toHaveValue('UZB');
+  await expect(countrySwitcher(page)).toHaveText('UZB');
   await expect(page.locator('html')).toHaveAttribute('lang', /^uz/);
 
   const udon = (text) => page.getByRole('article').filter({
@@ -24,13 +23,12 @@ test('country switch changes the language, the currency and the exact price, and
   });
   await expect(udon(uz)).toContainText(udonInUzbekistan);
 
-  await countrySelect.selectOption('KAZ');
-  await expect(countrySelect).toHaveValue('KAZ');
+  await chooseCountry(page, 'KAZ');
   await expect(page.locator('html')).toHaveAttribute('lang', /^kk/);
   await expect(udon(kk)).toContainText(udonInKazakhstan);
 
   await page.reload();
-  await expect(page.getByRole('combobox', { name: countrySelectName })).toHaveValue('KAZ');
+  await expect(countrySwitcher(page)).toHaveText('KAZ');
   await expect(udon(kk)).toContainText(udonInKazakhstan);
 
   await addFirecrackerUdon(page, kk);
@@ -46,7 +44,7 @@ test('the United Kingdom gets British English and pounds; the brand words of the
   // textContent: the <br> between the two brand words gives no text
   await expect(title).toHaveText(/^Wok\.\s*Roll\. Yana bir bor\.$/);
 
-  await page.getByRole('combobox', { name: countrySelectName }).selectOption('GBR');
+  await chooseCountry(page, 'GBR');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB');
   await expect(title).toHaveText(/^Wok\.\s*Roll\. Repeat\.$/);
 

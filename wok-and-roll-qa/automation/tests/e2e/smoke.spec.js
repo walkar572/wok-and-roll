@@ -1,10 +1,11 @@
 const { test, expect } = require('@playwright/test');
-const { countrySelect, uz } = require('./helpers/text');
+const { uz } = require('./helpers/text');
+const { countrySwitcher } = require('./helpers/country');
 
 test('home shows the country and menu page opens', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/.+/);
-  await expect(page.getByRole('combobox', { name: countrySelect })).toHaveValue('UZB');
+  await expect(countrySwitcher(page)).toHaveText('UZB');
 
   await page.goto('/menu');
   await expect(page).toHaveURL(/\/menu\/?$/);
