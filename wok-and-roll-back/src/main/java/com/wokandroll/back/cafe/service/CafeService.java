@@ -36,6 +36,8 @@ public class CafeService {
         c.phone(),
         c.opensAt().format(HH_MM),
         c.closesAt().format(HH_MM),
-        c.timeZone());
+        c.timeZone(),
+        c.latitude(),
+        c.longitude());
   }
 }

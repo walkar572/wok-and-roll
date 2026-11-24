@@ -2,7 +2,10 @@ package com.wokandroll.back.cafe.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/** One café: pickup point, booking venue and kitchen for its delivery zones (contract 3.6). */
+/**
+ * One café: pickup point, booking venue and kitchen for its delivery zones (contract 3.6). The
+ * latitude and longitude (v1.7) put it on the map of the home page; both are null when unknown.
+ */
 public record CafeResponse(
     @Schema(example = "1") long id,
     @Schema(example = "UZB") String country,
@@ -11,4 +14,7 @@ public record CafeResponse(
     @Schema(example = "+998712000001", nullable = true) String phone,
     @Schema(description = "Local time, HH:mm", example = "10:00") String opensAt,
     @Schema(description = "Local time, HH:mm", example = "22:00") String closesAt,
-    @Schema(description = "IANA time zone", example = "Asia/Tashkent") String timeZone) {}
+    @Schema(description = "IANA time zone", example = "Asia/Tashkent") String timeZone,
+    @Schema(description = "WGS 84 degrees", example = "41.272187", nullable = true) Double latitude,
+    @Schema(description = "WGS 84 degrees", example = "69.203167", nullable = true)
+        Double longitude) {}

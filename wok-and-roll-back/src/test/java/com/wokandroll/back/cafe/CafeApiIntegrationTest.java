@@ -1,10 +1,15 @@
 package com.wokandroll.back.cafe;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,6 +24,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +73,61 @@ class CafeApiIntegrationTest {
         .andExpect(jsonPath("$.items[1].name").value("Wok & Roll Yunusabad"));
   }
 
+  // Every café of the seed is on the map, inside its city (v1.7): latitude and longitude ranges.
+  @ParameterizedTest
+  @CsvSource({
+    "UZB, 41.2, 41.4, 69.1, 69.4",
+    "KAZ, 43.1, 43.4, 76.8, 77.1",
+    "GEO, 41.6, 41.8, 44.7, 44.9",
+    "UKR, 50.3, 50.6, 30.3, 30.7",
+    "CHN, 31.1, 31.4, 121.3, 121.7",
+    "GBR, 51.4, 51.6, -0.3, 0.1"
+  })
+  void everyCafeIsOnTheMapInItsCity(
+      String country, double south, double north, double west, double east) throws Exception {
+    mvc.perform(get("/api/v1/cafes").param("country", country))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath(
+                "$.items[*].latitude", everyItem(both(greaterThan(south)).and(lessThan(north)))))
+        .andExpect(
+            jsonPath(
+                "$.items[*].longitude", everyItem(both(greaterThan(west)).and(lessThan(east)))));
+  }
+
+  @Test
+  void chilanzarIsAtItsAddress() throws Exception {
+    mvc.perform(get("/api/v1/cafes").param("country", "UZB"))
+        .andExpect(jsonPath("$.items[0].name").value("Wok & Roll Chilanzar"))
+        .andExpect(jsonPath("$.items[0].latitude").value(41.272187))
+        .andExpect(jsonPath("$.items[0].longitude").value(69.203167));
+  }
+
+  @Test
+  void aCafeWithoutAPlaceIsStillOffered() throws Exception {
+    jdbc.sql("UPDATE cafe SET latitude = NULL, longitude = NULL WHERE id = :id")
+        .param("id", cafeId("Wok & Roll Yunusabad"))
+        .update();
+
+    mvc.perform(get("/api/v1/cafes").param("country", "UZB"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[1].latitude").value(nullValue()))
+        .andExpect(jsonPath("$.items[1].longitude").value(nullValue()));
+  }
+
+  @Test
+  void halfAPlaceIsRefusedByTheDatabase() {
+    long medeu = cafeId("Wok & Roll Medeu");
+
+    assertThatThrownBy(
+            () ->
+                jdbc.sql("UPDATE cafe SET longitude = NULL WHERE id = :id")
+                    .param("id", medeu)
+                    .update())
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
   @Test
   void inactiveCafeIsNotOffered() throws Exception {
     long yunusabad = cafeId("Wok & Roll Yunusabad");
@@ -88,6 +149,8 @@ class CafeApiIntegrationTest {
     assertThat(medeu.closesAt()).isEqualTo(LocalTime.of(22, 0));
     assertThat(medeu.slotCapacity()).isEqualTo(5);
     assertThat(medeu.timeZone()).isEqualTo("Asia/Almaty");
+    assertThat(medeu.latitude()).isEqualTo(43.249177);
+    assertThat(medeu.longitude()).isEqualTo(76.956143);
     assertThat(repository.findActive(999_999)).isEmpty();
   }
 

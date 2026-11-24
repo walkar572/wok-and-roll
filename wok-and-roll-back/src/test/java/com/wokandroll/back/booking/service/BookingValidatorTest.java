@@ -25,7 +25,9 @@ class BookingValidatorTest {
           LocalTime.of(10, 0),
           LocalTime.of(22, 0),
           5,
-          "Asia/Tashkent");
+          "Asia/Tashkent",
+          41.272187,
+          69.203167);
 
   /** Friday 20 Nov 2026, 17:10 in Tashkent. */
   private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 20, 17, 10);

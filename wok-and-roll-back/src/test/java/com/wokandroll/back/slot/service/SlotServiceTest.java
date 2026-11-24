@@ -43,7 +43,9 @@ class SlotServiceTest {
           LocalTime.of(10, 0),
           LocalTime.of(22, 0),
           5,
-          "Asia/Tashkent");
+          "Asia/Tashkent",
+          41.272187,
+          69.203167);
 
   private final CafeRepository cafes = mock(CafeRepository.class);
   private final SlotRepository slots = mock(SlotRepository.class);

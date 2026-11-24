@@ -37,7 +37,9 @@ class CafeControllerTest {
             "+998712000001",
             "10:00",
             "22:00",
-            "Asia/Tashkent");
+            "Asia/Tashkent",
+            41.272187,
+            69.203167);
     when(service.getCafes("UZB")).thenReturn(new CafeListResponse(List.of(chilanzar)));
 
     mvc.perform(get("/api/v1/cafes").param("country", "UZB"))
@@ -50,7 +52,9 @@ class CafeControllerTest {
         .andExpect(jsonPath("$.items[0].phone").value("+998712000001"))
         .andExpect(jsonPath("$.items[0].opensAt").value("10:00"))
         .andExpect(jsonPath("$.items[0].closesAt").value("22:00"))
-        .andExpect(jsonPath("$.items[0].timeZone").value("Asia/Tashkent"));
+        .andExpect(jsonPath("$.items[0].timeZone").value("Asia/Tashkent"))
+        .andExpect(jsonPath("$.items[0].latitude").value(41.272187))
+        .andExpect(jsonPath("$.items[0].longitude").value(69.203167));
   }
 
   @Test

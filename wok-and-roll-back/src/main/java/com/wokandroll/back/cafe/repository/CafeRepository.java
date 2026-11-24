@@ -1,5 +1,6 @@
 package com.wokandroll.back.cafe.repository;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
@@ -12,7 +13,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class CafeRepository {
 
-  /** One café. The opening hours are local times in the time zone of its country. */
+  /**
+   * One café. The opening hours are local times in the time zone of its country. The latitude and
+   * longitude are both null when the café is not on the map yet.
+   */
   public record CafeRow(
       long id,
       String countryCode,
@@ -22,12 +26,14 @@ public class CafeRepository {
       LocalTime opensAt,
       LocalTime closesAt,
       int slotCapacity,
-      String timeZone) {}
+      String timeZone,
+      Double latitude,
+      Double longitude) {}
 
   private static final String ACTIVE_CAFES_SQL =
       """
       SELECT cf.id, c.code, cf.name, cf.address, cf.phone, cf.opens_at, cf.closes_at,
-             cf.slot_capacity, c.time_zone
+             cf.slot_capacity, c.time_zone, cf.latitude, cf.longitude
       FROM cafe cf
       JOIN country c ON c.id = cf.country_id
       WHERE cf.active
@@ -65,6 +71,12 @@ public class CafeRepository {
         rs.getObject("opens_at", LocalTime.class),
         rs.getObject("closes_at", LocalTime.class),
         rs.getInt("slot_capacity"),
-        rs.getString("time_zone"));
+        rs.getString("time_zone"),
+        degrees(rs.getBigDecimal("latitude")),
+        degrees(rs.getBigDecimal("longitude")));
+  }
+
+  private static Double degrees(BigDecimal value) {
+    return value == null ? null : value.doubleValue();
   }
 }

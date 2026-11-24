@@ -18,7 +18,17 @@ class CafeServiceTest {
 
   private static CafeRow cafe(long id, String name, String phone, LocalTime opensAt) {
     return new CafeRow(
-        id, "KAZ", name, "Almaty", phone, opensAt, LocalTime.of(22, 0), 5, "Asia/Almaty");
+        id,
+        "KAZ",
+        name,
+        "Almaty",
+        phone,
+        opensAt,
+        LocalTime.of(22, 0),
+        5,
+        "Asia/Almaty",
+        43.235697,
+        76.874601);
   }
 
   @Test
@@ -39,6 +49,32 @@ class CafeServiceTest {
     assertThat(items.get(0).closesAt()).isEqualTo("22:00");
     assertThat(items.get(0).timeZone()).isEqualTo("Asia/Almaty");
     assertThat(items.get(1).phone()).isNull();
+  }
+
+  @Test
+  void givesThePlaceOnTheMapAndKeepsAnUnknownPlaceEmpty() {
+    CafeRow bostandyk = cafe(4, "Wok & Roll Bostandyk", null, LocalTime.of(10, 0));
+    CafeRow newCafe =
+        new CafeRow(
+            11,
+            "KAZ",
+            "Wok & Roll Esentai",
+            "Almaty",
+            null,
+            LocalTime.of(10, 0),
+            LocalTime.of(22, 0),
+            5,
+            "Asia/Almaty",
+            null,
+            null);
+    when(repository.findAllActive("KAZ")).thenReturn(List.of(bostandyk, newCafe));
+
+    List<CafeResponse> items = service.getCafes("KAZ").items();
+
+    assertThat(items.get(0).latitude()).isEqualTo(43.235697);
+    assertThat(items.get(0).longitude()).isEqualTo(76.874601);
+    assertThat(items.get(1).latitude()).isNull();
+    assertThat(items.get(1).longitude()).isNull();
   }
 
   @Test

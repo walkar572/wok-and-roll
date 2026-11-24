@@ -26,6 +26,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.4 | 24 Nov | Real price levels (§5): prices, discount thresholds and delivery fees in each currency at the level of Tashkent, converted at November 2026 rates. The interface language follows the country; the API stays English. |
 | 1.5 | 24 Nov | Portion of a dish (additive): `pieces`, `weightGrams`, `volumeMl` in §3.3, §3.4 and the admin API §3.15. The description now holds only the ingredients; the card shows the portion on its own line ("8 pcs · 250 g"). |
 | 1.6 | 24 Nov | Sixth country (additive): `GBR`, United Kingdom, `GBP`, VAT 20 %, `Europe/London`, with prices, thresholds and zone fees converted like the others (§5), 2 cafés in London and a sales history. The interface is British English for GBR. |
+| 1.7 | 24 Nov | Place of a café on the map (additive): `latitude` and `longitude` in §3.6. The home page shows the cafés of the country on a map next to their list. |
 
 ---
 
@@ -331,18 +332,21 @@ Cafés of the chain. Every café takes pickup orders and table bookings, and is 
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 6 codes |
 
 ```json
 {
   "items": [
     { "id": 1, "country": "UZB", "name": "Wok & Roll Chilanzar", "address": "12 Bunyodkor Ave, Tashkent",
-      "phone": "+998712000001", "opensAt": "10:00", "closesAt": "22:00", "timeZone": "Asia/Tashkent" }
+      "phone": "+998712000001", "opensAt": "10:00", "closesAt": "22:00", "timeZone": "Asia/Tashkent",
+      "latitude": 41.272187, "longitude": 69.203167 }
   ]
 }
 ```
 
 Active cafés of the country, ordered by name. Seed: 2 cafés per country. Responses: `200` · `400` (missing or unknown `country`).
+
+- v1.7: `latitude` and `longitude` are WGS 84 degrees with 6 decimals. Both are numbers or both are `null` (the database refuses one without the other): a café without a place is still offered for pickup and booking, only not on the map. The seed places are the street addresses, found with OpenStreetMap Nominatim.
 
 ### 3.7 `GET /api/v1/delivery-zones?country=UZB`
 
@@ -1037,6 +1041,7 @@ Backend notes:
 | An invalid line fails the whole quote, with its field path | The UI marks the exact line, and the server never shows totals for a cart it cannot price. |
 | `hasModifiers` in the product list | The card knows whether to open the modal without an extra request per dish. |
 | Shape errors use `VALIDATION_ERROR`; cart business errors have their own codes (`UNKNOWN_PRODUCT`, `PRODUCT_NOT_SOLD`, `OUT_OF_STOCK`, `INVALID_MODIFIER`, `UNKNOWN_COUNTRY`) | Matches #116 / #119 and `pricing.md`. The UI can show a precise message (for example "out of stock"), and still handles every `400` with `fields` the same way. |
+| The map of the home page uses `latitude` and `longitude` of `/cafes` (v1.7), not a separate endpoint, and OpenStreetMap tiles from OpenFreeMap | The list and the map show the same cafés from one request. OpenFreeMap needs no key and has no request limit, so there is no secret in the frontend and no bill. |
 | One café resource for pickup and table booking (`/cafes`, not `/pickup-points`) | One list and one set of opening hours. The UI still says "pickup point" in checkout. The public list in `SecurityConfig` (#134) changes from `pickup-points` to `cafes`. |
 | Time slots are calculated from opening hours; only the reservations are stored | No daily job to create slot rows; capacity is enforced by one atomic SQL statement (§3.8). |
 | "Today" is the date in the country's time zone | A guest in Kyiv at 23:30 must still be able to order for today; one Tashkent date was wrong for GEO, UKR and CHN. Replaces "Tashkent date" from the Decision Log, 5 Nov. |
