@@ -25,6 +25,11 @@ export interface Product {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  /** Pieces in a portion (rolls, gyoza); null when not counted. */
+  pieces: number | null;
+  weightGrams: number | null;
+  /** Drinks have a volume instead of a weight. */
+  volumeMl: number | null;
   price: number;
   currency: string;
   inStock: boolean;
@@ -494,6 +499,15 @@ function parseCategory(item: unknown): Category {
   return { id: item.id, name: item.name };
 }
 
+/** A portion amount: a positive whole number, or null (missing in older answers: null too). */
+function isAmount(value: unknown): value is number | null | undefined {
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === 'number' && Number.isInteger(value) && value > 0)
+  );
+}
+
 function parseProduct(item: unknown): Product {
   if (
     !isRecord(item) ||
@@ -507,6 +521,9 @@ function parseProduct(item: unknown): Product {
     !item.name.trim() ||
     (item.description !== null && typeof item.description !== 'string') ||
     (item.imageUrl !== null && typeof item.imageUrl !== 'string') ||
+    !isAmount(item.pieces) ||
+    !isAmount(item.weightGrams) ||
+    !isAmount(item.volumeMl) ||
     typeof item.price !== 'number' ||
     !Number.isFinite(item.price) ||
     item.price < 0 ||
@@ -524,6 +541,9 @@ function parseProduct(item: unknown): Product {
     name: item.name,
     description: item.description,
     imageUrl: item.imageUrl,
+    pieces: item.pieces ?? null,
+    weightGrams: item.weightGrams ?? null,
+    volumeMl: item.volumeMl ?? null,
     price: item.price,
     currency: item.currency,
     inStock: item.inStock,

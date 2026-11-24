@@ -4,7 +4,14 @@ import { DishImage } from '../../components/common/DishImage';
 import { Icon } from '../../components/common/Icon';
 import { useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
-import { categoryName, countryName, productDescription, productName, useI18n } from '../../i18n';
+import {
+  categoryName,
+  countryName,
+  productDescription,
+  productName,
+  useI18n,
+  portionText,
+} from '../../i18n';
 import {
   formatPrice,
   guestErrorMessage,
@@ -112,6 +119,7 @@ export function MenuPage() {
           {products.map((product) => {
             const name = productName(product.name);
             const description = productDescription(product.name, product.description);
+            const portion = portionText(product);
             const action = product.hasModifiers ? t('menu.customize') : t('menu.details');
             return (
               <article className="menu-card" key={product.id}>
@@ -128,7 +136,12 @@ export function MenuPage() {
                       <span className="menu-card__stock">{t('menu.outOfStock')}</span>
                     )}
                   </div>
-                  {description && <p>{description}</p>}
+                  {(description || portion) && (
+                    <div className="menu-card__text">
+                      {description && <p>{description}</p>}
+                      {portion && <p className="dish-portion">{portion}</p>}
+                    </div>
+                  )}
                   <div className="menu-card__footer">
                     <strong>{formatPrice(product.price, product.currency)}</strong>
                     <Button

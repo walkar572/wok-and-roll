@@ -4,7 +4,7 @@ import { Button, ErrorMessage, Loader } from '../../components/common';
 import { DishImage } from '../../components/common/DishImage';
 import { Icon } from '../../components/common/Icon';
 import { useCountry } from '../../context/CountryContext';
-import { countryName, productDescription, productName, useI18n } from '../../i18n';
+import { countryName, productDescription, productName, useI18n, portionText } from '../../i18n';
 import { formatPrice, guestErrorMessage, loadProducts, type Product } from '../../services/api';
 
 export function HomePage() {
@@ -87,6 +87,7 @@ export function HomePage() {
           <div className="favorite-grid">
             {favorites.map((item) => {
               const description = productDescription(item.name, item.description);
+              const portion = portionText(item);
               return (
                 <Link className="favorite-card" to="/menu" key={item.id}>
                   <DishImage
@@ -99,7 +100,12 @@ export function HomePage() {
                   />
                   <div>
                     <h3>{productName(item.name)}</h3>
-                    {description && <p>{description}</p>}
+                    {(description || portion) && (
+                      <div className="favorite-card__text">
+                        {description && <p>{description}</p>}
+                        {portion && <p className="dish-portion">{portion}</p>}
+                      </div>
+                    )}
                     <span>{formatPrice(item.price, item.currency)}</span>
                   </div>
                 </Link>

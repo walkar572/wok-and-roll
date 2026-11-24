@@ -8,7 +8,14 @@ import {
   type CountryCode,
   type ProductDetail,
 } from '../../services/api';
-import { countryName, modifierName, productDescription, productName, useI18n } from '../../i18n';
+import {
+  countryName,
+  modifierName,
+  productDescription,
+  productName,
+  useI18n,
+  portionText,
+} from '../../i18n';
 import { DishImage } from '../../components/common/DishImage';
 
 interface ProductDetailModalProps {
@@ -161,6 +168,9 @@ export function ProductDetailModal({
           )}
           {productDescription(product.name, product.description) && (
             <p>{productDescription(product.name, product.description)}</p>
+          )}
+          {portionText(product) && (
+            <p className="dish-portion product-modal__portion">{portionText(product)}</p>
           )}
           <p className="product-modal__price">{formatPrice(product.price, product.currency)}</p>
           {!product.inStock && (

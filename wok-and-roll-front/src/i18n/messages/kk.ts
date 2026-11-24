@@ -104,6 +104,11 @@ export const kk: Messages = {
     extras: 'Қосымшалар',
     quantity: 'Саны',
     add: 'Қосу · {price}',
+    portion: {
+      pieces: '{count}\u00a0дана',
+      grams: '{count}\u00a0г',
+      ml: '{count}\u00a0мл',
+    },
   },
   cart: {
     eyebrow: 'Сіздің таңдауыңыз',

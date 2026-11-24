@@ -300,8 +300,14 @@ input:focus-visible {
   font-size: var(--font-size-heading-h4);
 }
 
-.favorite-card p {
+.favorite-card__text {
+  display: grid;
+  gap: 4px;
   margin: 0 0 16px;
+}
+
+.favorite-card p {
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-meta-small);
   line-height: 1.5;
@@ -425,11 +431,31 @@ input:focus-visible {
   font-size: var(--font-size-meta-small);
 }
 
-.menu-card__content > p {
+.menu-card__text {
+  display: grid;
+  gap: 6px;
   margin: 10px 0 18px;
+}
+
+.menu-card__text p {
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-body-small);
   line-height: 1.5;
+}
+
+/* The portion under the ingredients: "8 dona · 250 g". */
+.menu-card__text .dish-portion,
+.favorite-card__text .dish-portion,
+.dish-portion {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-meta-small);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.product-modal__portion {
+  margin-top: 4px !important;
 }
 
 .menu-card__footer {
@@ -1105,8 +1131,12 @@ input:focus-visible {
     font-size: var(--font-size-body-large);
   }
 
-  .menu-card__content > p {
+  .menu-card__text {
+    gap: 2px;
     margin: 4px 0 8px;
+  }
+
+  .menu-card__text p {
     font-size: var(--font-size-card-mobile);
   }
 
@@ -1191,7 +1221,8 @@ input:focus-visible {
     line-height: 1.15;
   }
 
-  .favorite-card p {
+  .favorite-card__text {
+    gap: 2px;
     margin: 0 0 8px;
   }
 
@@ -1518,6 +1549,17 @@ input:focus-visible {
 }
 
 @media (max-width: 360px) {
+  /* A long price ("189 000,00 soʻm") and the 44 px button must fit in the narrow card. */
+  .menu-card__footer {
+    gap: 8px;
+  }
+
+  .menu-card__footer strong {
+    min-width: 0;
+    font-size: var(--font-size-body-small);
+    white-space: nowrap;
+  }
+
   .checkout-form__fields,
   .checkout-section,
   .checkout-date {

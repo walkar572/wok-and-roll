@@ -104,6 +104,11 @@ export const ka: Messages = {
     extras: 'დამატებები',
     quantity: 'რაოდენობა',
     add: 'დამატება · {price}',
+    portion: {
+      pieces: '{count}\u00a0ცალი',
+      grams: '{count}\u00a0გ',
+      ml: '{count}\u00a0მლ',
+    },
   },
   cart: {
     eyebrow: 'თქვენი არჩევანი',

@@ -16,9 +16,9 @@ interface CatalogTexts {
 const catalog: Record<Locale, CatalogTexts> = {
   uz: {
     products: {
-      'Salmon avocado roll': ['Losos va avokadoli roll', 'Losos, avokado, bodring. 8 dona.'],
-      'Tuna nigiri': ['Tunets nigiri', 'Ziravorli guruch ustida tunets. 2 dona.'],
-      'California roll': ['Kaliforniya roll', 'Qisqichbaqa, avokado, bodring, kunjut. 8 dona.'],
+      'Salmon avocado roll': ['Losos va avokadoli roll', 'Losos, avokado, bodring.'],
+      'Tuna nigiri': ['Tunets nigiri', 'Ziravorli guruch ustida tunets.'],
+      'California roll': ['Kaliforniya roll', 'Qisqichbaqa, avokado, bodring, kunjut.'],
       'Wok & Roll set for two': [
         'Wok & Roll ikki kishilik seti',
         'Losos va avokadoli roll, Kaliforniya roll va gyoza.',
@@ -29,9 +29,9 @@ const catalog: Record<Locale, CatalogTexts> = {
         'Teriyaki tovuqli ugra',
         'Tuxumli ugra, tovuq, teriyaki sousi, sabzavotlar.',
       ],
-      Gyoza: ['Gyoza', 'Qovurilgan tovuqli chuchvara. 5 dona.'],
+      Gyoza: ['Gyoza', 'Qovurilgan tovuqli chuchvara.'],
       Edamame: ['Edamame', 'Dengiz tuzi bilan bugʻda pishirilgan soya dukkaklari.'],
-      'Yuzu lemonade': ['Yuzu limonadi', 'Yuzu qoʻshilgan uy limonadi. 400 ml.'],
+      'Yuzu lemonade': ['Yuzu limonadi', 'Yuzu qoʻshilgan uy limonadi.'],
     },
     categories: { 'Sushi & rolls': 'Sushi va rollar', 'From the wok': 'Wokdan', Sides: 'Gazaklar' },
     modifiers: {
@@ -87,9 +87,9 @@ const catalog: Record<Locale, CatalogTexts> = {
   },
   kk: {
     products: {
-      'Salmon avocado roll': ['Лосось пен авокадо роллы', 'Лосось, авокадо, қияр. 8 дана.'],
-      'Tuna nigiri': ['Тунец нигири', 'Дәмдеуішті күріштегі тунец. 2 дана.'],
-      'California roll': ['Калифорния роллы', 'Краб, авокадо, қияр, күнжіт. 8 дана.'],
+      'Salmon avocado roll': ['Лосось пен авокадо роллы', 'Лосось, авокадо, қияр.'],
+      'Tuna nigiri': ['Тунец нигири', 'Дәмдеуішті күріштегі тунец.'],
+      'California roll': ['Калифорния роллы', 'Краб, авокадо, қияр, күнжіт.'],
       'Wok & Roll set for two': [
         'Wok & Roll екі адамдық сеті',
         'Лосось пен авокадо роллы, Калифорния роллы және гёдза.',
@@ -100,9 +100,9 @@ const catalog: Record<Locale, CatalogTexts> = {
         'Тауық етімен терияки кеспесі',
         'Жұмыртқалы кеспе, тауық еті, терияки соусы, көкөністер.',
       ],
-      Gyoza: ['Гёдза', 'Қуырылған тауық етті тұшпара. 5 дана.'],
+      Gyoza: ['Гёдза', 'Қуырылған тауық етті тұшпара.'],
       Edamame: ['Эдамаме', 'Теңіз тұзымен буға пісірілген соя бұршағы.'],
-      'Yuzu lemonade': ['Юзу лимонады', 'Юзу қосылған үй лимонады. 400 мл.'],
+      'Yuzu lemonade': ['Юзу лимонады', 'Юзу қосылған үй лимонады.'],
     },
     categories: {
       'Sushi & rolls': 'Суши мен роллдар',
@@ -169,9 +169,9 @@ const catalog: Record<Locale, CatalogTexts> = {
   },
   ka: {
     products: {
-      'Salmon avocado roll': ['ორაგულისა და ავოკადოს როლი', 'ორაგული, ავოკადო, კიტრი. 8 ცალი.'],
-      'Tuna nigiri': ['თინუსის ნიგირი', 'თინუსი შეზავებულ ბრინჯზე. 2 ცალი.'],
-      'California roll': ['კალიფორნიის როლი', 'კიბორჩხალა, ავოკადო, კიტრი, სეზამი. 8 ცალი.'],
+      'Salmon avocado roll': ['ორაგულისა და ავოკადოს როლი', 'ორაგული, ავოკადო, კიტრი.'],
+      'Tuna nigiri': ['თინუსის ნიგირი', 'თინუსი შეზავებულ ბრინჯზე.'],
+      'California roll': ['კალიფორნიის როლი', 'კიბორჩხალა, ავოკადო, კიტრი, სეზამი.'],
       'Wok & Roll set for two': [
         'Wok & Roll სეტი ორისთვის',
         'ორაგულისა და ავოკადოს როლი, კალიფორნიის როლი და გიოძა.',
@@ -182,9 +182,9 @@ const catalog: Record<Locale, CatalogTexts> = {
         'ტერიაკის ატრია ქათმით',
         'კვერცხის ატრია, ქათამი, ტერიაკის სოუსი, ბოსტნეული.',
       ],
-      Gyoza: ['გიოძა', 'შემწვარი ქათმის პელმენი. 5 ცალი.'],
+      Gyoza: ['გიოძა', 'შემწვარი ქათმის პელმენი.'],
       Edamame: ['ედამამე', 'ორთქლზე მოხარშული სოიოს პარკები ზღვის მარილით.'],
-      'Yuzu lemonade': ['იუძუს ლიმონათი', 'სახლის ლიმონათი იუძუთი. 400 მლ.'],
+      'Yuzu lemonade': ['იუძუს ლიმონათი', 'სახლის ლიმონათი იუძუთი.'],
     },
     categories: {
       'Sushi & rolls': 'სუში და როლები',
@@ -251,9 +251,9 @@ const catalog: Record<Locale, CatalogTexts> = {
   },
   uk: {
     products: {
-      'Salmon avocado roll': ['Рол з лососем і авокадо', 'Лосось, авокадо, огірок. 8 шматочків.'],
-      'Tuna nigiri': ['Нігірі з тунцем', 'Тунець на приправленому рисі. 2 шматочки.'],
-      'California roll': ['Каліфорнія рол', 'Краб, авокадо, огірок, кунжут. 8 шматочків.'],
+      'Salmon avocado roll': ['Рол з лососем і авокадо', 'Лосось, авокадо, огірок.'],
+      'Tuna nigiri': ['Нігірі з тунцем', 'Тунець на приправленому рисі.'],
+      'California roll': ['Каліфорнія рол', 'Краб, авокадо, огірок, кунжут.'],
       'Wok & Roll set for two': [
         'Сет Wok & Roll на двох',
         'Рол з лососем і авокадо, Каліфорнія рол і ґьодза.',
@@ -264,9 +264,9 @@ const catalog: Record<Locale, CatalogTexts> = {
         'Локшина теріякі з куркою',
         'Яєчна локшина, курка, соус теріякі, овочі.',
       ],
-      Gyoza: ['Ґьодза', 'Смажені пельмені з куркою. 5 шматочків.'],
+      Gyoza: ['Ґьодза', 'Смажені пельмені з куркою.'],
       Edamame: ['Едамаме', 'Соєві боби на пару з морською сіллю.'],
-      'Yuzu lemonade': ['Лимонад юдзу', 'Домашній лимонад з юдзу. 400 мл.'],
+      'Yuzu lemonade': ['Лимонад юдзу', 'Домашній лимонад з юдзу.'],
     },
     categories: { 'Sushi & rolls': 'Суші та роли', 'From the wok': 'З воку', Sides: 'Закуски' },
     modifiers: {
@@ -329,16 +329,16 @@ const catalog: Record<Locale, CatalogTexts> = {
   },
   zh: {
     products: {
-      'Salmon avocado roll': ['三文鱼牛油果卷', '三文鱼、牛油果、黄瓜。8 块。'],
-      'Tuna nigiri': ['金枪鱼握寿司', '调味米饭配金枪鱼。2 块。'],
-      'California roll': ['加州卷', '蟹肉、牛油果、黄瓜、芝麻。8 块。'],
+      'Salmon avocado roll': ['三文鱼牛油果卷', '三文鱼、牛油果、黄瓜。'],
+      'Tuna nigiri': ['金枪鱼握寿司', '调味米饭配金枪鱼。'],
+      'California roll': ['加州卷', '蟹肉、牛油果、黄瓜、芝麻。'],
       'Wok & Roll set for two': ['Wok & Roll 双人套餐', '三文鱼牛油果卷、加州卷和日式煎饺。'],
       'Firecracker udon': ['香辣乌冬面', '乌冬面、鸡肉、辣椒、芝麻。'],
       'Miso mushroom rice': ['味噌蘑菇饭', '香菇、时令青菜、味噌。'],
       'Teriyaki chicken noodles': ['照烧鸡肉面', '鸡蛋面、鸡肉、照烧酱、蔬菜。'],
-      Gyoza: ['日式煎饺', '香煎鸡肉饺子。5 个。'],
+      Gyoza: ['日式煎饺', '香煎鸡肉饺子。'],
       Edamame: ['毛豆', '海盐蒸毛豆。'],
-      'Yuzu lemonade': ['柚子柠檬水', '自制柚子柠檬水。400 毫升。'],
+      'Yuzu lemonade': ['柚子柠檬水', '自制柚子柠檬水。'],
     },
     categories: { 'Sushi & rolls': '寿司和卷', 'From the wok': '炒锅菜', Sides: '小食' },
     modifiers: {

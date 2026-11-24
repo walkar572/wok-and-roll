@@ -73,6 +73,22 @@ export function productDescription(name: string, description: string | null): st
   return catalogTexts(currentLocale).products[name]?.[1] ?? description;
 }
 
+/** The numbers of a portion, as the API gives them. */
+export interface Portion {
+  pieces: number | null;
+  weightGrams: number | null;
+  volumeMl: number | null;
+}
+
+/** The portion of a dish on one line: "8 dona · 250 g", "400 ml"; null when nothing is known. */
+export function portionText(portion: Portion): string | null {
+  const parts: string[] = [];
+  if (portion.pieces) parts.push(t('product.portion.pieces', { count: portion.pieces }));
+  if (portion.weightGrams) parts.push(t('product.portion.grams', { count: portion.weightGrams }));
+  if (portion.volumeMl) parts.push(t('product.portion.ml', { count: portion.volumeMl }));
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 export function categoryName(name: string): string {
   return catalogTexts(currentLocale).categories[name] ?? name;
 }

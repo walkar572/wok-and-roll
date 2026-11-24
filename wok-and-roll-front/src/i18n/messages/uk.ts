@@ -104,6 +104,11 @@ export const uk: Messages = {
     extras: 'Додатки',
     quantity: 'Кількість',
     add: 'Додати · {price}',
+    portion: {
+      pieces: '{count}\u00a0шт.',
+      grams: '{count}\u00a0г',
+      ml: '{count}\u00a0мл',
+    },
   },
   cart: {
     eyebrow: 'Ваш вибір',

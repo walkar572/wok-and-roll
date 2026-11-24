@@ -104,6 +104,11 @@ export const zh: Messages = {
     extras: '加料',
     quantity: '数量',
     add: '加入 · {price}',
+    portion: {
+      pieces: '{count}\u00a0件',
+      grams: '{count}\u00a0克',
+      ml: '{count}\u00a0毫升',
+    },
   },
   cart: {
     eyebrow: '您的选择',

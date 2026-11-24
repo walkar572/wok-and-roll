@@ -104,6 +104,11 @@ export const uz: Messages = {
     extras: 'Qoʻshimchalar',
     quantity: 'Soni',
     add: 'Qoʻshish · {price}',
+    portion: {
+      pieces: '{count}\u00a0dona',
+      grams: '{count}\u00a0g',
+      ml: '{count}\u00a0ml',
+    },
   },
   cart: {
     eyebrow: 'Tanlovingiz',

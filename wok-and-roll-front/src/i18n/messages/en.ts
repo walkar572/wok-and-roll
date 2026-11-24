@@ -105,6 +105,11 @@ export const en = {
     extras: 'Extras',
     quantity: 'Quantity',
     add: 'Add · {price}',
+    portion: {
+      pieces: '{count}\u00a0pcs',
+      grams: '{count}\u00a0g',
+      ml: '{count}\u00a0ml',
+    },
   },
   cart: {
     eyebrow: 'Your picks',
