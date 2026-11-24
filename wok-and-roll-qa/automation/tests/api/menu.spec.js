@@ -9,12 +9,13 @@ const countries = [
   { code: 'CHN', currency: 'CNY', vatRate: 18 },
 ];
 
+// Real price levels (migration V2026_11_22_0900): Tashkent level converted to every currency.
 const seededUdonPrices = {
-  UZB: { currency: 'UZS', price: 48 },
-  KAZ: { currency: 'KZT', price: 52 },
-  GEO: { currency: 'GEL', price: 45 },
-  UKR: { currency: 'UAH', price: 42 },
-  CHN: { currency: 'CNY', price: 54 },
+  UZB: { currency: 'UZS', price: 55000 },
+  KAZ: { currency: 'KZT', price: 2190 },
+  GEO: { currency: 'GEL', price: 11.9 },
+  UKR: { currency: 'UAH', price: 179 },
+  CHN: { currency: 'CNY', price: 31 },
 };
 
 function hasAtMostTwoDecimalPlaces(value) {
