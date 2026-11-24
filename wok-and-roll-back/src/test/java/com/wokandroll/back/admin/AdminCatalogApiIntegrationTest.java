@@ -55,6 +55,8 @@ class AdminCatalogApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items", hasSize(10)))
         .andExpect(jsonPath("$.items[0].name").value("Salmon avocado roll"))
+        .andExpect(jsonPath("$.items[0].pieces").value(8))
+        .andExpect(jsonPath("$.items[0].weightGrams").value(250))
         .andExpect(jsonPath("$.items[0].price").value(3190.00))
         .andExpect(jsonPath("$.items[0].currency").value("KZT"))
         .andExpect(jsonPath("$.items[0].inStock").value(true))
@@ -74,11 +76,13 @@ class AdminCatalogApiIntegrationTest {
                     .content(
                         """
                         {"categoryId": 2, "name": "Spicy ramen", "description": "Pork, egg.",
-                         "imageUrl": "/images/udon.png"}
+                         "imageUrl": "/images/udon.png", "weightGrams": 400}
                         """))
             .andExpect(status().isCreated())
             .andExpect(header().exists("Location"))
             .andExpect(jsonPath("$.visible").value(true))
+            .andExpect(jsonPath("$.pieces").value(nullValue()))
+            .andExpect(jsonPath("$.weightGrams").value(400))
             .andExpect(jsonPath("$.price").value(nullValue()))
             .andReturn()
             .getResponse()
@@ -106,9 +110,11 @@ class AdminCatalogApiIntegrationTest {
             patch("/api/v1/admin/products/" + id)
                 .header("Authorization", bearer("ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"visible\": false, \"version\": 0}"))
+                .content("{\"visible\": false, \"weightGrams\": 0, \"pieces\": 6, \"version\": 0}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.visible").value(false))
+        .andExpect(jsonPath("$.weightGrams").value(nullValue()))
+        .andExpect(jsonPath("$.pieces").value(6))
         .andExpect(jsonPath("$.name").value("Spicy ramen"))
         .andExpect(jsonPath("$.version").value(1));
 
@@ -150,12 +156,18 @@ class AdminCatalogApiIntegrationTest {
             post("/api/v1/admin/products")
                 .header("Authorization", bearer("ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"categoryId\": 999, \"name\": \"\", \"imageUrl\": \"http://x/y.png\"}"))
+                .content(
+                    """
+                    {"categoryId": 999, "name": "", "imageUrl": "http://x/y.png",
+                     "pieces": 0, "weightGrams": 10000}
+                    """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
         .andExpect(jsonPath("$.fields.categoryId").exists())
         .andExpect(jsonPath("$.fields.name").exists())
-        .andExpect(jsonPath("$.fields.imageUrl").exists());
+        .andExpect(jsonPath("$.fields.imageUrl").exists())
+        .andExpect(jsonPath("$.fields.pieces").value("must be from 1 to 999"))
+        .andExpect(jsonPath("$.fields.weightGrams").value("must be from 1 to 9999"));
     mvc.perform(
             patch("/api/v1/admin/products/9999")
                 .header("Authorization", bearer("ADMIN"))

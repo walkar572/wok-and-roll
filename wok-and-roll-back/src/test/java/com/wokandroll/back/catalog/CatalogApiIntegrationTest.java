@@ -2,6 +2,7 @@ package com.wokandroll.back.catalog;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,13 +45,21 @@ class CatalogApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(10))
         .andExpect(jsonPath("$[0].name").value("Salmon avocado roll"))
+        .andExpect(jsonPath("$[0].description").value("Salmon, avocado, cucumber."))
+        .andExpect(jsonPath("$[0].pieces").value(8))
+        .andExpect(jsonPath("$[0].weightGrams").value(250))
+        .andExpect(jsonPath("$[0].volumeMl").value(nullValue()))
         .andExpect(jsonPath("$[0].price").value(79000.00))
         .andExpect(jsonPath("$[1].name").value("Tuna nigiri"))
         .andExpect(jsonPath("$[1].inStock").value(false))
         .andExpect(jsonPath("$[4].name").value("Firecracker udon"))
         .andExpect(jsonPath("$[4].hasModifiers").value(true))
         .andExpect(jsonPath("$[6].name").value("Teriyaki chicken noodles"))
-        .andExpect(jsonPath("$[6].hasModifiers").value(false));
+        .andExpect(jsonPath("$[6].hasModifiers").value(false))
+        .andExpect(jsonPath("$[6].imageUrl").value("/images/teriyaki-noodles.png"))
+        .andExpect(jsonPath("$[9].name").value("Yuzu lemonade"))
+        .andExpect(jsonPath("$[9].weightGrams").value(nullValue()))
+        .andExpect(jsonPath("$[9].volumeMl").value(400));
   }
 
   @Test

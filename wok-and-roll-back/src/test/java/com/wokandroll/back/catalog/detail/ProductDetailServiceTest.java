@@ -26,6 +26,9 @@ class ProductDetailServiceTest {
         "Firecracker udon",
         "Udon noodles, chicken, chili, sesame.",
         "/images/udon.png",
+        null,
+        350,
+        null,
         new BigDecimal("48.00"),
         "UZS",
         true);

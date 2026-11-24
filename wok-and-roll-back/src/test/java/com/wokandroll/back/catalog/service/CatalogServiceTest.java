@@ -24,8 +24,11 @@ class CatalogServiceTest {
         8,
         3,
         "Gyoza",
-        "Pan-fried chicken dumplings. 5 pieces.",
+        "Pan-fried chicken dumplings.",
         "/images/gyoza.png",
+        5,
+        150,
+        null,
         new BigDecimal("30"),
         "GEL",
         true,
@@ -52,6 +55,9 @@ class CatalogServiceTest {
     assertThat(gyoza.id()).isEqualTo(8);
     assertThat(gyoza.categoryId()).isEqualTo(3);
     assertThat(gyoza.imageUrl()).isEqualTo("/images/gyoza.png");
+    assertThat(gyoza.pieces()).isEqualTo(5);
+    assertThat(gyoza.weightGrams()).isEqualTo(150);
+    assertThat(gyoza.volumeMl()).isNull();
     assertThat(gyoza.price().toPlainString()).isEqualTo("30.00");
     assertThat(gyoza.currency()).isEqualTo("GEL");
     assertThat(gyoza.inStock()).isTrue();

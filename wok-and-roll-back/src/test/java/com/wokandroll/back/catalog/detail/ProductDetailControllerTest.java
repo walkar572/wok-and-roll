@@ -1,5 +1,6 @@
 package com.wokandroll.back.catalog.detail;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -39,6 +40,9 @@ class ProductDetailControllerTest {
                 "Firecracker udon",
                 "Udon noodles, chicken, chili, sesame.",
                 "/images/udon.png",
+                null,
+                350,
+                null,
                 new BigDecimal("48.00"),
                 "UZS",
                 true,
@@ -48,6 +52,9 @@ class ProductDetailControllerTest {
     mvc.perform(get("/api/v1/products/5").param("country", "UZB"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(5))
+        .andExpect(jsonPath("$.pieces").value(nullValue()))
+        .andExpect(jsonPath("$.weightGrams").value(350))
+        .andExpect(jsonPath("$.volumeMl").value(nullValue()))
         .andExpect(jsonPath("$.price").value(48.00))
         .andExpect(jsonPath("$.currency").value("UZS"))
         .andExpect(jsonPath("$.hasModifiers").value(true))

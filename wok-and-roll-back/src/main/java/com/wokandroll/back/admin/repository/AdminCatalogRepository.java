@@ -22,7 +22,7 @@ public class AdminCatalogRepository {
   private static final String PRODUCTS_SQL =
       """
       SELECT p.id, p.category_id, cat.name AS category_name, p.name, p.description, p.image_url,
-             p.visible, p.version, c.code AS country, c.currency_code, rp.price, rp.in_stock,
+             p.pieces, p.weight_grams, p.volume_ml, p.visible, p.version, c.code AS country, c.currency_code, rp.price, rp.in_stock,
              rp.version AS price_version
       FROM product p
       JOIN category cat ON cat.id = p.category_id
@@ -73,18 +73,31 @@ public class AdminCatalogRepository {
         > 0;
   }
 
+  /** The portion of a dish; every field can be null. */
+  public record Portion(Integer pieces, Integer weightGrams, Integer volumeMl) {}
+
   public long insertProduct(
-      long categoryId, String name, String description, String imageUrl, boolean visible) {
+      long categoryId,
+      String name,
+      String description,
+      String imageUrl,
+      Portion portion,
+      boolean visible) {
     return jdbc.sql(
             """
-            INSERT INTO product (category_id, name, description, image_url, visible)
-            VALUES (:categoryId, :name, :description, :imageUrl, :visible)
+            INSERT INTO product (category_id, name, description, image_url,
+                                 pieces, weight_grams, volume_ml, visible)
+            VALUES (:categoryId, :name, :description, :imageUrl,
+                    :pieces, :weightGrams, :volumeMl, :visible)
             RETURNING id
             """)
         .param("categoryId", categoryId)
         .param("name", name)
         .param("description", description)
         .param("imageUrl", imageUrl)
+        .param("pieces", portion.pieces())
+        .param("weightGrams", portion.weightGrams())
+        .param("volumeMl", portion.volumeMl())
         .param("visible", visible)
         .query(Long.class)
         .single();
@@ -92,7 +105,8 @@ public class AdminCatalogRepository {
 
   /**
    * Changes only the sent fields. A {@code set*} flag says whether the field was sent, so a
-   * description can also be removed. Returns false when the version did not match.
+   * description can also be removed. In {@code portion} a null keeps the value and 0 removes it.
+   * Returns false when the version did not match.
    */
   public boolean updateProduct(
       long id,
@@ -103,6 +117,7 @@ public class AdminCatalogRepository {
       String description,
       boolean setImageUrl,
       String imageUrl,
+      Portion portion,
       Boolean visible) {
     return jdbc.sql(
                 """
@@ -113,6 +128,9 @@ public class AdminCatalogRepository {
                                      ELSE description END,
                   image_url = CASE WHEN :setImageUrl THEN CAST(:imageUrl AS varchar)
                                    ELSE image_url END,
+                  pieces = NULLIF(COALESCE(CAST(:pieces AS smallint), pieces), 0),
+                  weight_grams = NULLIF(COALESCE(CAST(:weightGrams AS smallint), weight_grams), 0),
+                  volume_ml = NULLIF(COALESCE(CAST(:volumeMl AS smallint), volume_ml), 0),
                   visible = COALESCE(CAST(:visible AS boolean), visible),
                   version = version + 1
                 WHERE id = :id AND version = :version
@@ -125,6 +143,9 @@ public class AdminCatalogRepository {
             .param("description", description)
             .param("setImageUrl", setImageUrl)
             .param("imageUrl", imageUrl)
+            .param("pieces", portion.pieces())
+            .param("weightGrams", portion.weightGrams())
+            .param("volumeMl", portion.volumeMl())
             .param("visible", visible)
             .update()
         == 1;
@@ -263,6 +284,9 @@ public class AdminCatalogRepository {
         rs.getString("name"),
         rs.getString("description"),
         rs.getString("image_url"),
+        rs.getObject("pieces", Integer.class),
+        rs.getObject("weight_grams", Integer.class),
+        rs.getObject("volume_ml", Integer.class),
         rs.getBoolean("visible"),
         rs.getInt("version"),
         rs.getString("country").trim(),

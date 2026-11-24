@@ -16,6 +16,9 @@ public final class AdminDtos {
       @Schema(example = "Firecracker udon") String name,
       @Schema(example = "Udon noodles, chicken, chili, sesame.") String description,
       @Schema(example = "/images/udon.png") String imageUrl,
+      @Schema(example = "8", nullable = true) Integer pieces,
+      @Schema(example = "350", nullable = true) Integer weightGrams,
+      @Schema(example = "400", nullable = true) Integer volumeMl,
       @Schema(example = "true") boolean visible,
       @Schema(example = "0") int version,
       @Schema(example = "UZB") String country,
@@ -31,17 +34,26 @@ public final class AdminDtos {
       @Schema(example = "Ramen noodles, pork, egg, chili.") String description,
       @Schema(example = "/images/udon.png", description = "Must start with /images/")
           String imageUrl,
+      @Schema(example = "8", description = "Pieces in a portion, 1-999; empty: not counted")
+          Integer pieces,
+      @Schema(example = "350", description = "Weight of a portion in grams, 1-9999")
+          Integer weightGrams,
+      @Schema(example = "400", description = "Volume of a drink in millilitres, 1-9999")
+          Integer volumeMl,
       @Schema(example = "true") Boolean visible) {}
 
   /**
    * PATCH /admin/products/{id}: only the sent fields change. An empty description or image URL
-   * removes it. {@code version} is required.
+   * removes it, and so does 0 for pieces, weightGrams or volumeMl. {@code version} is required.
    */
   public record UpdateProductRequest(
       Long categoryId,
       String name,
       String description,
       String imageUrl,
+      Integer pieces,
+      Integer weightGrams,
+      Integer volumeMl,
       Boolean visible,
       @Schema(example = "0", requiredMode = Schema.RequiredMode.REQUIRED) Integer version) {}
 

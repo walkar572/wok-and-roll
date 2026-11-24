@@ -11,6 +11,15 @@ public record ProductDetailResponse(
     @Schema(example = "Firecracker udon") String name,
     @Schema(example = "Udon noodles, chicken, chili, sesame.", nullable = true) String description,
     @Schema(example = "/images/udon.png", nullable = true) String imageUrl,
+    @Schema(
+            description = "Pieces in a portion; null when not counted",
+            example = "8",
+            nullable = true)
+        Integer pieces,
+    @Schema(description = "Weight of a portion in grams", example = "350", nullable = true)
+        Integer weightGrams,
+    @Schema(description = "Volume of a drink in millilitres", example = "400", nullable = true)
+        Integer volumeMl,
     @Schema(description = "Base price in local currency, before VAT", example = "48.00")
         BigDecimal price,
     @Schema(example = "UZS") String currency,

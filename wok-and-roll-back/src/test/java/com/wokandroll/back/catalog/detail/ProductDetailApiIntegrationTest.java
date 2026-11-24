@@ -1,5 +1,6 @@
 package com.wokandroll.back.catalog.detail;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,6 +32,8 @@ class ProductDetailApiIntegrationTest {
     mvc.perform(get("/api/v1/products/5").param("country", "UZB"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.name").value("Firecracker udon"))
+        .andExpect(jsonPath("$.pieces").value(nullValue()))
+        .andExpect(jsonPath("$.weightGrams").value(350))
         .andExpect(jsonPath("$.price").value(55000.00))
         .andExpect(jsonPath("$.currency").value("UZS"))
         .andExpect(jsonPath("$.hasModifiers").value(true))

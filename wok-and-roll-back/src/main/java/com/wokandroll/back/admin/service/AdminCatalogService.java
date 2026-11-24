@@ -9,6 +9,7 @@ import com.wokandroll.back.admin.dto.AdminDtos.PriceResponse;
 import com.wokandroll.back.admin.dto.AdminDtos.UpdateCategoryRequest;
 import com.wokandroll.back.admin.dto.AdminDtos.UpdateProductRequest;
 import com.wokandroll.back.admin.repository.AdminCatalogRepository;
+import com.wokandroll.back.admin.repository.AdminCatalogRepository.Portion;
 import com.wokandroll.back.common.error.ApiException;
 import com.wokandroll.back.common.error.NotFoundException;
 import com.wokandroll.back.common.web.PageRequest;
@@ -60,6 +61,11 @@ public class AdminCatalogService {
     String name = text("name", request.name(), 150, true, problems);
     String description = text("description", request.description(), 1000, false, problems);
     String imageUrl = imageUrl(request.imageUrl(), problems);
+    Portion portion =
+        new Portion(
+            amount("pieces", request.pieces(), 999, false, problems),
+            amount("weightGrams", request.weightGrams(), 9999, false, problems),
+            amount("volumeMl", request.volumeMl(), 9999, false, problems));
     problems.throwIfAny();
 
     long id =
@@ -68,6 +74,7 @@ public class AdminCatalogService {
             name,
             description,
             imageUrl,
+            portion,
             request.visible() == null || request.visible());
     return product(id, country);
   }
@@ -90,6 +97,11 @@ public class AdminCatalogService {
             ? null
             : text("description", request.description(), 1000, false, problems);
     String imageUrl = request.imageUrl() == null ? null : imageUrl(request.imageUrl(), problems);
+    Portion portion =
+        new Portion(
+            amount("pieces", request.pieces(), 999, true, problems),
+            amount("weightGrams", request.weightGrams(), 9999, true, problems),
+            amount("volumeMl", request.volumeMl(), 9999, true, problems));
     problems.throwIfAny();
 
     boolean updated =
@@ -102,6 +114,7 @@ public class AdminCatalogService {
             description,
             request.imageUrl() != null,
             imageUrl,
+            portion,
             request.visible());
     if (!updated) {
       throw versionConflict();
@@ -199,6 +212,23 @@ public class AdminCatalogService {
       return null;
     }
     return text;
+  }
+
+  /**
+   * A portion amount (pieces, grams, millilitres): a whole number from 1 to {@code max}; null when
+   * not sent. On PATCH, 0 is allowed too and removes the value.
+   */
+  private static Integer amount(
+      String field, Integer value, int max, boolean zeroRemoves, Problems problems) {
+    if (value == null) {
+      return null;
+    }
+    int min = zeroRemoves ? 0 : 1;
+    if (value < min || value > max) {
+      problems.add(field, "must be from " + min + " to " + max);
+      return null;
+    }
+    return value;
   }
 
   /** Only a path served by the frontend: the API never loads a URL (OWASP API7). */

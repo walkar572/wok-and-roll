@@ -21,6 +21,9 @@ public class ProductDetailRepository {
       String name,
       String description,
       String imageUrl,
+      Integer pieces,
+      Integer weightGrams,
+      Integer volumeMl,
       BigDecimal price,
       String currency,
       boolean inStock) {}
@@ -40,7 +43,7 @@ public class ProductDetailRepository {
     return jdbc.sql(
             """
             SELECT p.id, p.category_id, p.name, p.description, p.image_url,
-                   rp.price, c.currency_code, rp.in_stock
+                   p.pieces, p.weight_grams, p.volume_ml, rp.price, c.currency_code, rp.in_stock
             FROM product p
             JOIN category cat ON cat.id = p.category_id
             JOIN regional_price rp ON rp.product_id = p.id
@@ -57,6 +60,9 @@ public class ProductDetailRepository {
                     rs.getString("name"),
                     rs.getString("description"),
                     rs.getString("image_url"),
+                    rs.getObject("pieces", Integer.class),
+                    rs.getObject("weight_grams", Integer.class),
+                    rs.getObject("volume_ml", Integer.class),
                     rs.getBigDecimal("price"),
                     rs.getString("currency_code").trim(),
                     rs.getBoolean("in_stock")))
