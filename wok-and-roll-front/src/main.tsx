@@ -5,6 +5,7 @@ import './App.css';
 import './design-tokens.css';
 import './figma-layout.css';
 import './features.css';
+import './home-decor.css';
 import './admin-panel.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

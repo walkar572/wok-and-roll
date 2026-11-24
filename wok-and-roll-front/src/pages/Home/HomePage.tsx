@@ -8,6 +8,7 @@ import { countryName, productDescription, productName, useI18n, portionText } fr
 import { formatPrice, guestErrorMessage, loadProducts, type Product } from '../../services/api';
 import { CafesSection } from './CafesSection';
 import { HeroCarousel, type HeroSlide } from './HeroCarousel';
+import { HeroLanterns } from './HeroLanterns';
 
 // Dishes of the hero slideshow, in this order (English API names; the photos are in /images).
 const HERO_DISHES = [
@@ -68,6 +69,7 @@ export function HomePage() {
 
   return (
     <div className="home-page">
+      <HeroLanterns />
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero__copy">
           <p className="eyebrow">{t('home.eyebrow')}</p>
