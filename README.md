@@ -65,8 +65,9 @@ Guests can order and book a table without an account.
 
 | Area | What works |
 |---|---|
+| Header | Stays at the top while the page scrolls (menu, country and basket always one tap away); soft rounded highlight on hover; on a phone a black menu grows out of the menu button, and the country list and the menu never open over each other |
 | Languages | The country switcher shows every country with its language and currency in that language (United Kingdom · English · GBP). The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English (dishes, messages, money and dates too); the brand "Wok & Roll" and the "Wok. Roll." of the home title stay |
-| Home | A slideshow of dishes from the menu with their price in the chosen country (arrows, swipe, pause; it stops on hover and with reduced motion); the cafés of the country on a map and in a list with address, hours, "open now" in the café's time zone, phone and "Book a table" (the booking form opens with that café); favourite dishes |
+| Home | A slideshow of dishes from the menu with their price in the chosen country (arrows, swipe, pause; it stops on hover and with reduced motion); the cafés of the country on a map and in a list with address, hours, "open now" in the café's time zone, phone and "Book a table" (the booking form opens with that café); four favourite dishes |
 | Menu and cart | Dish cards with the ingredients and the portion (pieces, grams, ml) that grow a little and light up on hover, country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields, totals from the server, idempotent order placement |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |

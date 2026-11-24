@@ -18,6 +18,8 @@ const uz = {
   pricesError: 'Joriy narxlarni olib boʻlmadi. Qayta urinib koʻring.',
   priceSummary: 'Narxlar xulosasi',
   viewMenu: 'Menyuni koʻrish',
+  openMenu: 'Menyuni ochish',
+  closeMenu: 'Menyuni yopish',
   cafesTitle: 'Kafelarimiz',
   chilonzor: 'Wok & Roll Chilonzor',
   yunusobod: 'Wok & Roll Yunusobod',

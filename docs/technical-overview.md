@@ -141,4 +141,6 @@ map is an extra: every café is also in the list next to it, the markers are but
 name, the map does not take the page scroll (Ctrl + wheel or two fingers), and without WebGL the
 list stays with a short note. MapLibre (about 290 KB gzip) is a separate chunk, loaded only when
 the map is about to scroll into view.
-Responsive layouts at 320 / 768 / 1200 px with 44 px touch targets.
+Responsive layouts at 320 / 768 / 1200 px with 44 px touch targets. The header is sticky, and
+keyboard focus never hides under it (WCAG 2.4.11 Focus Not Obscured): Shift+Tab to a link under
+the header moves the page down; a mouse click never moves it.
