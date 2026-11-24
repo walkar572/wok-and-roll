@@ -562,6 +562,362 @@ input:focus-visible {
   height: var(--size-icon-sm);
 }
 
+/* "View the menu": an outlined pill next to a section title. It goes to another page, like the
+   black "Find your favourite" pill of the hero, and lights up a little on hover the same way. */
+a.pill-link {
+  display: inline-flex;
+  min-height: var(--size-control);
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-action-default);
+  border-radius: var(--radius-full);
+  padding: 10px 24px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+a.pill-link:hover {
+  background: var(--color-bg-card-hover);
+  box-shadow: 0 6px 16px rgb(38 30 20 / 10%);
+}
+
+a.pill-link:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+a.pill-link svg {
+  transition: transform 160ms ease;
+}
+
+a.pill-link:hover svg {
+  transform: translateX(3px);
+}
+
+/* Our cafés: the map and the cards side by side; the cards alone when no café is on the map. */
+.home-cafes {
+  padding-top: 80px;
+}
+
+.home-cafes__description {
+  max-width: 520px;
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.cafes-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: stretch;
+  gap: 24px;
+}
+
+.cafes-layout--list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cafes-layout--list .cafe-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cafe-map {
+  position: relative;
+  min-height: 440px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+
+/* Over the position: relative of .maplibregl-map, which loads later with the map. */
+.cafe-map .cafe-map__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.cafe-map__fallback {
+  display: flex;
+  min-height: inherit;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 24px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.cafe-map__fallback svg {
+  flex: none;
+}
+
+/* The MapLibre controls in the style of the site. */
+.cafe-map .maplibregl-ctrl-group {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgb(38 30 20 / 14%);
+}
+
+.cafe-map .maplibregl-ctrl-group button {
+  width: 36px;
+  height: 36px;
+}
+
+.cafe-map .maplibregl-ctrl button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--color-border-focus);
+}
+
+.cafe-map .maplibregl-cooperative-gesture-screen {
+  font-family: var(--font-family-body);
+}
+
+.cafe-marker {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  filter: drop-shadow(0 4px 6px rgb(38 30 20 / 30%));
+}
+
+.cafe-marker::after {
+  width: 0;
+  height: 0;
+  margin-top: -2px;
+  border-top: 10px solid var(--color-bg-brand);
+  border-right: 7px solid transparent;
+  border-left: 7px solid transparent;
+  content: '';
+}
+
+.cafe-marker__pin {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--color-bg-brand);
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+
+.cafe-marker__pin svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cafe-marker__label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  font-family: var(--font-family-body);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.cafe-marker:hover .cafe-marker__pin {
+  transform: scale(1.08);
+}
+
+.cafe-marker.is-active .cafe-marker__pin {
+  background: var(--color-action-default);
+  transform: scale(1.12);
+}
+
+.cafe-marker.is-active::after {
+  border-top-color: var(--color-action-default);
+}
+
+.cafe-marker.is-active .cafe-marker__label,
+.cafe-marker:hover .cafe-marker__label,
+.cafe-marker:focus-visible .cafe-marker__label {
+  display: block;
+}
+
+.cafe-marker:focus-visible {
+  outline: none;
+}
+
+.cafe-marker:focus-visible .cafe-marker__pin {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.cafe-list {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cafe-card {
+  display: grid;
+  height: 100%;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  background: var(--color-bg-surface);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+/* The café chosen on the map: a brand frame (not only a colour: the pin button is pressed too). */
+.cafe-card.is-active {
+  border-color: var(--color-bg-brand);
+  box-shadow: 0 0 0 1px var(--color-bg-brand);
+}
+
+.cafe-card__head {
+  display: grid;
+  gap: 6px;
+}
+
+.cafe-card h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.cafe-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.cafe-status__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cafe-status.is-open {
+  color: var(--color-feedback-success);
+}
+
+.cafe-card__facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+  list-style: none;
+}
+
+.cafe-card__facts li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cafe-card__facts svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.cafe-card__facts a {
+  color: var(--color-text-primary);
+  text-underline-offset: 3px;
+}
+
+.cafe-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cafe-card__locate {
+  display: grid;
+  width: var(--size-control);
+  height: var(--size-control);
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  padding: 0;
+  color: var(--color-text-brand);
+  background: var(--color-bg-surface);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.cafe-card__locate:hover {
+  border-color: var(--color-text-brand);
+  background: var(--color-bg-card-hover);
+}
+
+.cafe-card__locate[aria-pressed='true'] {
+  border-color: var(--color-bg-brand);
+  color: var(--color-text-on-brand);
+  background: var(--color-bg-brand);
+}
+
+.cafe-card__locate:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+a.cafe-card__book {
+  min-height: var(--size-control);
+  flex: 1;
+  border-radius: var(--radius-full);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.pill-link,
+  a.pill-link svg,
+  .cafe-marker__pin,
+  .cafe-card,
+  .cafe-card__locate {
+    transition: none;
+  }
+
+  a.pill-link:hover svg {
+    transform: none;
+  }
+}
+
 .favorite-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1946,5 +2302,53 @@ input:focus-visible {
 
   .checkout-date .rdp-month_grid {
     table-layout: fixed;
+  }
+}
+
+/* Our cafés on smaller screens: the map above the cards. */
+@media (max-width: 900px) {
+  .cafes-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cafe-map {
+    min-height: 360px;
+  }
+
+  .cafe-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .home-cafes {
+    padding-top: 32px;
+  }
+
+  .home-cafes__description {
+    font-size: 14px;
+  }
+
+  .cafes-layout {
+    gap: 16px;
+  }
+
+  .cafe-map {
+    min-height: 280px;
+  }
+
+  .cafe-list,
+  .cafes-layout--list .cafe-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .cafe-card {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .cafe-card h3 {
+    font-size: 20px;
   }
 }

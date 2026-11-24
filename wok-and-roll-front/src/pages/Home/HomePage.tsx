@@ -6,6 +6,7 @@ import { Icon } from '../../components/common/Icon';
 import { useCountry } from '../../context/CountryContext';
 import { countryName, productDescription, productName, useI18n, portionText } from '../../i18n';
 import { formatPrice, guestErrorMessage, loadProducts, type Product } from '../../services/api';
+import { CafesSection } from './CafesSection';
 import { HeroCarousel, type HeroSlide } from './HeroCarousel';
 
 // Dishes of the hero slideshow, in this order (English API names; the photos are in /images).
@@ -88,13 +89,15 @@ export function HomePage() {
         <HeroCarousel slides={slides} />
       </section>
 
+      <CafesSection />
+
       <section className="home-shortcuts" aria-labelledby="favorites-title">
         <div className="section-heading">
           <div>
             <p className="eyebrow">{t('home.favoritesEyebrow')}</p>
             <h2 id="favorites-title">{t('home.favoritesTitle')}</h2>
           </div>
-          <Link to="/menu">
+          <Link className="pill-link" to="/menu">
             {t('home.viewMenu')} <Icon name="arrow" />
           </Link>
         </div>

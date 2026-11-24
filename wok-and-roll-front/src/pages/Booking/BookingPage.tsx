@@ -111,7 +111,9 @@ export function BookingPage() {
       .then((result) => {
         if (!active) return;
         setCafes(result);
-        setCafeId(result[0]?.id);
+        // "Book a table" on a café card of the home page opens the form with that café.
+        const wanted = Number(new URLSearchParams(window.location.search).get('cafe'));
+        setCafeId((result.find(({ id }) => id === wanted) ?? result[0])?.id);
         if (result.length === 0) setCafesError(translate('booking.noCafes'));
       })
       .catch((requestError: unknown) => {

@@ -83,6 +83,7 @@ export function mockLoadCafes(country: CountryCode): Cafe[] {
       opensAt: '10:00',
       closesAt: '22:00',
       timeZone: 'Asia/Tashkent',
+      location: { latitude: 41.272187, longitude: 69.203167 },
     },
   ];
 }

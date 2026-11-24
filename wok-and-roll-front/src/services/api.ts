@@ -82,6 +82,12 @@ export interface CartQuote {
   total: number;
 }
 
+/** WGS 84 degrees of a café on the map (contract v1.7). */
+export interface CafeLocation {
+  latitude: number;
+  longitude: number;
+}
+
 export interface Cafe {
   id: number;
   country: CountryCode;
@@ -91,6 +97,8 @@ export interface Cafe {
   opensAt: string;
   closesAt: string;
   timeZone: string;
+  /** Null when the café is not on the map yet. */
+  location: CafeLocation | null;
 }
 
 export interface DeliveryZone {
@@ -565,6 +573,19 @@ function parseProductDetails(item: unknown): ProductDetail {
   return { ...product, modifiers };
 }
 
+function isDegrees(value: unknown, limit: number): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= limit;
+}
+
+// Both degrees or none (an older server sends none): a café without them is not on the map.
+function parseCafeLocation(latitude: unknown, longitude: unknown): CafeLocation | null {
+  if (latitude == null && longitude == null) return null;
+  if (!isDegrees(latitude, 90) || !isDegrees(longitude, 180)) {
+    throw new Error('Cafés API returned an invalid café location.');
+  }
+  return { latitude, longitude };
+}
+
 function parseCafe(value: unknown): Cafe {
   if (
     !isRecord(value) ||
@@ -593,6 +614,7 @@ function parseCafe(value: unknown): Cafe {
     opensAt: value.opensAt,
     closesAt: value.closesAt,
     timeZone: value.timeZone,
+    location: parseCafeLocation(value.latitude, value.longitude),
   };
 }
 
