@@ -39,3 +39,22 @@ test('country switch changes the language, the currency and the exact price, and
   await expect(page.getByText(kk.vat(kaz.expected.vatRate), { exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: kk.priceSummary })).toContainText(cartTotalInKazakhstan);
 });
+
+test('the United Kingdom gets British English and pounds; the brand words of the title stay', async ({ page }) => {
+  const title = page.getByRole('heading', { level: 1 });
+  await page.goto('/');
+  // textContent: the <br> between the two brand words gives no text
+  await expect(title).toHaveText(/^Wok\.\s*Roll\. Yana bir bor\.$/);
+
+  await page.getByRole('combobox', { name: countrySelectName }).selectOption('GBR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB');
+  await expect(title).toHaveText(/^Wok\.\s*Roll\. Repeat\.$/);
+
+  await page.goto('/menu');
+  const udon = page.getByRole('article').filter({
+    has: page.getByRole('heading', { name: 'Firecracker udon', exact: true }),
+  });
+  await expect(udon).toContainText('£3.45');
+  await expect(udon).toContainText('350 g');
+  await expect(page.getByRole('link', { name: /^Basket, dishes:/ })).toBeVisible();
+});

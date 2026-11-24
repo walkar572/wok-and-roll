@@ -18,7 +18,7 @@ React + TypeScript (Vite)  ──HTTP JSON /api/v1──▶  Spring Boot: contro
 | Rule | Example |
 |---|---|
 | Base path `/api/v1`, plural nouns, kebab-case | `/api/v1/products`, `/api/v1/pickup-points` |
-| Country is a query parameter (3-letter code from the plan) | `?country=UZB` (UZB, KAZ, GEO, UKR, CHN) |
+| Country is a query parameter (3-letter code from the plan) | `?country=UZB` (UZB, KAZ, GEO, UKR, CHN, GBR) |
 | JSON fields in camelCase | `orderDate`, `amountInclVat` |
 | Dates `YYYY-MM-DD`, date-time ISO-8601 in UTC | `"orderDate": "2026-11-05"` |
 | Money: `BigDecimal` with scale 2 as a JSON number, plus a `currency` field | `"total": 446.20, "currency": "UZS"` |

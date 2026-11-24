@@ -1,7 +1,7 @@
 # Wok & Roll
 
-Teamwork 2026, Team 12. A web app for a sushi and wok restaurant chain in five countries
-(Uzbekistan, Kazakhstan, Georgia, Ukraine, China): menu with modifiers, cart and checkout with
+Teamwork 2026, Team 12. A web app for a sushi and wok restaurant chain in six countries
+(Uzbekistan, Kazakhstan, Georgia, Ukraine, China, the United Kingdom): menu with modifiers, cart and checkout with
 regional prices and VAT, pickup or delivery with time slots, table booking, accounts with order
 history, role-based tools for staff and admins, and sales reports with PDF and CSV export.
 
@@ -61,8 +61,8 @@ Guests can order and book a table without an account.
 
 | Area | What works |
 |---|---|
-| Languages | The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese (dishes, messages, money and dates too) |
-| Menu and cart | Dish cards with the ingredients and the portion (pieces, grams, ml), country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
+| Languages | The interface follows the country: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English (dishes, messages, money and dates too); the brand "Wok & Roll" and the "Wok. Roll." of the home title stay |
+| Menu and cart | Dish cards with the ingredients and the portion (pieces, grams, ml) that grow a little and light up on hover, country switcher in the header (saved), regional prices and stock, modifiers that change the unit price, cart with a live counter, quantity validation |
 | Checkout | Pickup café or delivery zone with a fee, date and 30-minute time slots (full and past slots disabled), validation with messages next to the fields, totals from the server, idempotent order placement |
 | Booking | Café, date (30 days ahead), time, 1–8 guests; the server picks the smallest free table; no double booking even for parallel requests |
 | Accounts | Register, log in, log out, session expiry; My orders with paging and order details |

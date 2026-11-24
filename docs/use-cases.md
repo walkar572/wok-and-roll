@@ -7,11 +7,11 @@ Goal: Allow the guest to select their country and view menu and cart prices in t
 ### Preconditions
 - The website is accessible.
 - The guest can access the country switcher in the header.
-- The system supports five countries: Uzbekistan (UZB), Kazakhstan (KAZ), Georgia (GEO), Ukraine (UKR), and China (CHN).
+- The system supports six countries: Uzbekistan (UZB), Kazakhstan (KAZ), Georgia (GEO), Ukraine (UKR), China (CHN), and the United Kingdom (GBR).
 
 ### Main Success Scenario
 1. The guest opens the website.
-2. The system displays a country switcher in the header with five available countries.
+2. The system displays a country switcher in the header with six available countries.
 3. The system checks whether the guest has previously selected a country.
 4. If a previous selection exists, the system restores it and displays the selected country in the header.
 5. Otherwise, the system applies the default country (UZB).

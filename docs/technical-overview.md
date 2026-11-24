@@ -17,7 +17,7 @@ calculates totals, it shows the numbers of the quote.
 
 | Table | Key fields | Notes |
 |---|---|---|
-| `country`, `currency` | `code` (UZB…), `currency_code`, `time_zone` | 5 countries, each with its own currency and IANA time zone |
+| `country`, `currency` | `code` (UZB…), `currency_code`, `time_zone` | 6 countries, each with its own currency and IANA time zone |
 | `vat_rate` | `country_id`, `rate` | one rate per country, percent |
 | `discount_threshold` | `country_id`, `min_amount`, `discount_rate` | 5 tiers per country, local currency |
 | `category`, `product` | `name`, `visible`, `version`; `pieces`, `weight_grams`, `volume_ml` | hidden instead of deleted, so old orders stay correct; the portion is shown as "8 pcs · 250 g" |
@@ -67,11 +67,13 @@ discount 3 % = 5.865 → **5.87** → total 195.50 − 5.87 + 20.00 = **209.63 U
 | Georgia (GEO) | GEL | 12 % |
 | Ukraine (UKR) | UAH | 8 % |
 | China (CHN) | CNY | 18 % |
+| United Kingdom (GBR) | GBP | 20 % |
 
 ### Discount thresholds and delivery fees (local currency)
 
 Prices, thresholds and fees are at the level of Tashkent and converted at November 2026 rates
-(1 USD ≈ 12,700 UZS · 510 KZT · 2.70 GEL · 41.5 UAH · 7.15 CNY), so a discount means the same in
+(1 USD ≈ 12,700 UZS · 510 KZT · 2.70 GEL · 41.5 UAH · 7.15 CNY ·
+0.79 GBP), so a discount means the same in
 every country: 3 % from about two dishes, 15 % only for very big orders.
 
 | Country | Currency | 3 % from | 5 % from | 7 % from | 10 % from | 15 % from | Delivery zones |
@@ -81,6 +83,7 @@ every country: 3 % from about two dishes, 15 % only for very big orders.
 | GEO | GEL | 20 | 100 | 150 | 200 | 1,000 | 3.50 / 4.50 / 6.50 |
 | UKR | UAH | 300 | 1,600 | 2,300 | 3,300 | 16,000 | 50 / 65 / 100 |
 | CHN | CNY | 55 | 280 | 400 | 550 | 2,800 | 8 / 11 / 17 |
+| GBR | GBP | 6 | 30 | 45 | 60 | 300 | 0.95 / 1.25 / 1.85 |
 
 Below the first threshold there is no discount. Each country has three zones: near, center, far.
 
@@ -120,10 +123,11 @@ menu and route guards; the server checks every request again.
 ## 6. Languages
 
 The interface speaks the language of the chosen country: Uzbek (Latin), Kazakh, Georgian,
-Ukrainian, Chinese; only the brand "Wok & Roll" stays. Dish names, categories, cafés and zones
+Ukrainian, Chinese, British English (GBR: basket, collection, favourite); only the brand
+"Wok & Roll" and the "Wok. Roll." of the home title stay. Dish names, categories, cafés and zones
 are translated in the frontend by their English name from the API (a new dish shows as entered).
 API errors are translated by `code` and field. Money and dates use the conventions of the
-language (176 249,00 soʻm, 2 190,00 ₸, ¥31.00); `<html lang>` follows, so screen readers switch
+language (176 249,00 soʻm, 2 190,00 ₸, ¥31.00, £3.45); `<html lang>` follows, so screen readers switch
 voice.
 
 ## 7. Quality

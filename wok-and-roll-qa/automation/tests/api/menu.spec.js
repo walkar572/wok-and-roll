@@ -7,6 +7,7 @@ const countries = [
   { code: 'GEO', currency: 'GEL', vatRate: 12 },
   { code: 'UKR', currency: 'UAH', vatRate: 8 },
   { code: 'CHN', currency: 'CNY', vatRate: 18 },
+  { code: 'GBR', currency: 'GBP', vatRate: 20 },
 ];
 
 // Real price levels (migration V2026_11_22_0900): Tashkent level converted to every currency.
@@ -16,6 +17,7 @@ const seededUdonPrices = {
   GEO: { currency: 'GEL', price: 11.9 },
   UKR: { currency: 'UAH', price: 179 },
   CHN: { currency: 'CNY', price: 31 },
+  GBR: { currency: 'GBP', price: 3.45 },
 };
 
 function hasAtMostTwoDecimalPlaces(value) {
@@ -23,7 +25,7 @@ function hasAtMostTwoDecimalPlaces(value) {
 }
 
 test.describe('menu API', () => {
-  test('returns the five countries with their currency and VAT from the seed', async ({ request }) => {
+  test('returns the six countries with their currency and VAT from the seed', async ({ request }) => {
     const response = await request.get(apiBaseUrl + '/api/v1/countries');
     expect(response.status()).toBe(200);
     const actual = await response.json();
