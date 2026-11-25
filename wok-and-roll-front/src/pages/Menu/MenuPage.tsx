@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader } from '../../components/common';
+import { DishImage } from '../../components/common/DishImage';
+import { DishMarks } from '../../components/common/DishMarks';
 import { Icon } from '../../components/common/Icon';
+import { ChooseCity } from '../../components/layout/ChooseCity';
 import { useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
 import {
-  formatPrice,
+  categoryName,
+  placeName,
+  productDescription,
+  productName,
+  useI18n,
+  portionText,
+} from '../../i18n';
+import {
   guestErrorMessage,
   loadCategories,
   loadProducts,
@@ -13,10 +23,12 @@ import {
   type Product,
 } from '../../services/api';
 import { ProductDetailModal } from './ProductDetailModal';
+import { DishPrice, SavingBadge, setComposition, setSaving } from './sets';
 
 export function MenuPage() {
-  const { country } = useCountry();
+  const { country, city, allCities } = useCountry();
   const { addItem } = useCart();
+  const { t } = useI18n();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<{
@@ -36,6 +48,8 @@ export function MenuPage() {
     setError(undefined);
     setCategories([]);
     setProducts([]);
+    // "All cities": no dishes until a city is chosen, so nothing can be ordered across cities.
+    if (allCities) return undefined;
 
     Promise.all([loadCategories(country), loadProducts(country, categoryId)])
       .then(([loadedCategories, loadedProducts]) => {
@@ -45,7 +59,7 @@ export function MenuPage() {
       })
       .catch((requestError: unknown) => {
         if (!active) return;
-        setError(guestErrorMessage(requestError, 'We could not load the menu. Please try again.'));
+        setError(guestErrorMessage(requestError, t('menu.error')));
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -54,24 +68,37 @@ export function MenuPage() {
     return () => {
       active = false;
     };
-  }, [country, categoryId, retryCount]);
+  }, [country, categoryId, retryCount, t, allCities]);
+
+  const header = (
+    <header className="menu-page__header">
+      <p className="eyebrow">{t('menu.eyebrow')}</p>
+      <h1 id="menu-title">{t('menu.title')}</h1>
+      <p>{t('menu.description')}</p>
+    </header>
+  );
+
+  if (allCities) {
+    return (
+      <section className="menu-page" aria-labelledby="menu-title">
+        {header}
+        <ChooseCity />
+      </section>
+    );
+  }
 
   return (
     <section className="menu-page" aria-labelledby="menu-title">
-      <header className="menu-page__header">
-        <p className="eyebrow">Fresh from the wok</p>
-        <h1 id="menu-title">The menu</h1>
-        <p>A little something for every craving.</p>
-      </header>
+      {header}
 
       <div className="menu-toolbar">
-        <nav className="menu-categories" aria-label="Filter menu by category">
+        <nav className="menu-categories" aria-label={t('menu.filter')}>
           <Button
             variant={categoryId === undefined ? 'primary' : 'outline'}
             aria-pressed={categoryId === undefined}
             onClick={() => setSelectedCategory(null)}
           >
-            All dishes
+            {t('menu.all')}
           </Button>
           {categories.map((category) => (
             <Button
@@ -80,70 +107,82 @@ export function MenuPage() {
               aria-pressed={categoryId === category.id}
               onClick={() => setSelectedCategory({ country, id: category.id })}
             >
-              {category.name}
+              {categoryName(category.name)}
             </Button>
           ))}
         </nav>
         <p className="menu-toolbar__country">
-          Prices for {country}
+          {t('menu.pricesFor', { country: placeName(country, city) })}
         </p>
       </div>
 
-      {isLoading && <Loader label="Loading the menu" />}
+      {isLoading && <Loader label={t('menu.loading')} />}
       {error && (
         <div className="menu-page__error">
-          <ErrorMessage title="Menu unavailable">{error}</ErrorMessage>
+          <ErrorMessage title={t('menu.unavailable')}>{error}</ErrorMessage>
           <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
-            Try again
+            {t('common.tryAgain')}
           </Button>
         </div>
       )}
       {!isLoading && !error && products.length === 0 && (
         <div className="menu-empty">
-          <h2>No dishes found</h2>
-          <p>There are no available dishes for this selection.</p>
+          <h2>{t('menu.emptyTitle')}</h2>
+          <p>{t('menu.emptyText')}</p>
         </div>
       )}
       {!isLoading && !error && products.length > 0 && (
         <div className="menu-grid">
-          {products.map((product) => (
-            <article className="menu-card" key={product.id}>
-              {product.imageUrl ? (
-                <img
-                  className="menu-card__image"
+          {products.map((product) => {
+            const name = productName(product.name);
+            // A set lists its dishes instead of the ingredients.
+            const description =
+              setComposition(product) ?? productDescription(product.name, product.description);
+            const portion = portionText(product);
+            const saving = setSaving(product);
+            const action = product.hasModifiers ? t('menu.customize') : t('menu.details');
+            return (
+              <article className="menu-card" key={product.id}>
+                <DishImage
                   src={product.imageUrl}
-                  alt={product.name}
-                  loading="lazy"
+                  alt={name}
+                  className="menu-card__image"
+                  placeholderClassName="menu-card__image--placeholder"
                 />
-              ) : (
-                <div className="menu-card__image menu-card__image--placeholder" aria-hidden="true">
-                  ✳
+                <div className="menu-card__content">
+                  <div className="menu-card__heading">
+                    <h2>{name}</h2>
+                    {saving !== null && (
+                      <SavingBadge className="menu-card__saving" percent={saving} />
+                    )}
+                    {!product.inStock && (
+                      <span className="menu-card__stock">{t('menu.outOfStock')}</span>
+                    )}
+                  </div>
+                  {(description || portion || product.spicy || product.vegetarian) && (
+                    <div className="menu-card__text">
+                      {description && <p>{description}</p>}
+                      {portion && <p className="dish-portion">{portion}</p>}
+                      <DishMarks product={product} />
+                    </div>
+                  )}
+                  <div className="menu-card__footer">
+                    <DishPrice product={product} />
+                    <Button
+                      className="menu-card__action"
+                      variant="outline"
+                      size="small"
+                      aria-label={`${action}: ${name}`}
+                      onClick={() => setSelectedProductId(product.id)}
+                    >
+                      <span className="menu-card__action-text">{action}</span>
+                      <Icon className="menu-card__action-icon" name="plus" />
+                    </Button>
+                  </div>
                 </div>
-              )}
-              <div className="menu-card__content">
-                <div className="menu-card__heading">
-                  <h2>{product.name}</h2>
-                  {!product.inStock && <span className="menu-card__stock">Out of stock</span>}
-                </div>
-                {product.description && <p>{product.description}</p>}
-                <div className="menu-card__footer">
-                  <strong>{formatPrice(product.price, product.currency)}</strong>
-                  <Button
-                    className="menu-card__action"
-                    variant="outline"
-                    size="small"
-                    aria-label={`${product.hasModifiers ? 'Customize' : 'Details'}, ${product.name}`}
-                    onClick={() => setSelectedProductId(product.id)}
-                  >
-                    <span className="menu-card__action-text">
-                      {product.hasModifiers ? 'Customize' : 'Details'}
-                    </span>
-                    <Icon className="menu-card__action-icon" name="plus" />
-                  </Button>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 

@@ -3,7 +3,7 @@
     "exampleId": "UZB-project-plan-delivery-400",
     "country": "UZB",
     "items": [
-      { "productName": "Edamame", "quantity": 1, "modifierNames": [] },
+      { "productName": "Chili garlic peanuts", "quantity": 1, "modifierNames": [] },
       { "productName": "Miso mushroom rice", "quantity": 1, "modifierNames": ["Regular"] },
       { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large", "Extra chicken", "Fried egg"] },
       { "productName": "Wok & Roll set for two", "quantity": 2, "modifierNames": [] }
@@ -13,7 +13,7 @@
     "exampleId": "UZB-project-plan-pickup-400",
     "country": "UZB",
     "items": [
-      { "productName": "Edamame", "quantity": 1, "modifierNames": [] },
+      { "productName": "Chili garlic peanuts", "quantity": 1, "modifierNames": [] },
       { "productName": "Miso mushroom rice", "quantity": 1, "modifierNames": ["Regular"] },
       { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large", "Extra chicken", "Fried egg"] },
       { "productName": "Wok & Roll set for two", "quantity": 2, "modifierNames": [] }
@@ -23,7 +23,7 @@
     "exampleId": "GEO-threshold-700",
     "country": "GEO",
     "items": [
-      { "productName": "Edamame", "quantity": 1, "modifierNames": [] },
+      { "productName": "Chili garlic peanuts", "quantity": 1, "modifierNames": [] },
       { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large"] },
       { "productName": "Firecracker udon", "quantity": 1, "modifierNames": ["Large", "Fried egg"] },
       { "productName": "Wok & Roll set for two", "quantity": 4, "modifierNames": [] }

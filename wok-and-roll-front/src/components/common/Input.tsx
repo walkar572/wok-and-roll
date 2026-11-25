@@ -43,10 +43,7 @@ export function Input({
         {...props}
       />
       {message && (
-        <span
-          className={`input__message input__message--${resolvedStatus}`}
-          id={messageId}
-        >
+        <span className={`input__message input__message--${resolvedStatus}`} id={messageId}>
           {message}
         </span>
       )}

@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, ErrorMessage, Loader, TotalsBlock } from '../../components/common';
+import { Button, ErrorMessage, Loader, Receipt } from '../../components/common';
+import { ChooseCity } from '../../components/layout/ChooseCity';
 import { getCartItemKey, useCart } from '../../context/CartContext';
 import { useCountry } from '../../context/CountryContext';
+import { placeName, t as translate, useI18n } from '../../i18n';
+import { apiCodeMessage, apiFieldMessage } from '../../services/apiMessages';
 import { ApiRequestError, guestErrorMessage, quoteCart, type CartQuote } from '../../services/api';
 import { CartLine } from './CartLine';
 
 // Field keys for one cart line, for example "items[0].quantity" (API contract, §4).
 const LINE_FIELD = /^items\[(\d+)\]\.([A-Za-z]+)/;
-const FIELD_LABELS: Record<string, string> = { country: 'Country', items: 'Cart' };
 
 interface QuoteError {
   message: string;
@@ -19,9 +21,10 @@ interface QuoteError {
 
 function toQuoteError(requestError: unknown): QuoteError {
   const quoteError: QuoteError = {
-    message: requestError instanceof ApiRequestError && requestError.code === 'VALIDATION_ERROR'
-      ? 'Please check the highlighted fields.'
-      : guestErrorMessage(requestError, 'We could not get the current prices. Please try again.'),
+    message:
+      requestError instanceof ApiRequestError && requestError.code === 'VALIDATION_ERROR'
+        ? translate('cart.checkHighlighted')
+        : guestErrorMessage(requestError, translate('cart.pricesFallback')),
     fields: {},
     quantityErrors: {},
     lineErrors: {},
@@ -30,20 +33,23 @@ function toQuoteError(requestError: unknown): QuoteError {
 
   for (const [field, message] of Object.entries(requestError.fields)) {
     const match = LINE_FIELD.exec(field);
+    const text = apiFieldMessage(field, message, requestError.code);
     if (!match) {
-      quoteError.fields[field] = message;
+      quoteError.fields[field] = text;
     } else if (match[2] === 'quantity') {
-      quoteError.quantityErrors[Number(match[1])] = message;
+      quoteError.quantityErrors[Number(match[1])] = text;
     } else {
-      quoteError.lineErrors[Number(match[1])] = message;
+      // The line gets the reason of the error code when there is one (out of stock, not sold).
+      quoteError.lineErrors[Number(match[1])] = apiCodeMessage(requestError.code) ?? text;
     }
   }
   return quoteError;
 }
 
 export function CartPage() {
-  const { country } = useCountry();
+  const { country, city, allCities } = useCountry();
   const { items, setItemQuantity, removeItem } = useCart();
+  const { t } = useI18n();
   const [quote, setQuote] = useState<CartQuote>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<QuoteError>();
@@ -51,22 +57,24 @@ export function CartPage() {
   const lineHeadings = useRef(new Map<string, HTMLHeadingElement>());
   const emptyHeading = useRef<HTMLHeadingElement>(null);
   const focusAfterRemove = useRef<number | null>(null);
-  const currentQuote = quote
-    && quote.country === country
-    && quote.lines.length === items.length
-    && quote.lines.every((line, index) => (
-      line.productId === items[index].productId
-      && line.quantity === items[index].quantity
-    ))
-    ? quote
-    : undefined;
+  const currentQuote =
+    quote &&
+    quote.country === country &&
+    quote.lines.length === items.length &&
+    quote.lines.every(
+      (line, index) =>
+        line.productId === items[index].productId && line.quantity === items[index].quantity,
+    )
+      ? quote
+      : undefined;
 
   useEffect(() => {
     let active = true;
     setQuote(undefined);
     setError(undefined);
 
-    if (items.length === 0) {
+    // No prices for "All cities": the quote needs the country of one city.
+    if (items.length === 0 || allCities) {
       setIsLoading(false);
       return () => {
         active = false;
@@ -96,7 +104,7 @@ export function CartPage() {
     return () => {
       active = false;
     };
-  }, [country, items, retryCount]);
+  }, [country, items, retryCount, allCities]);
 
   // After Remove, keyboard focus goes to the next line, or to the empty cart message.
   useEffect(() => {
@@ -115,12 +123,16 @@ export function CartPage() {
   if (items.length === 0) {
     return (
       <section className="cart-page" aria-labelledby="cart-title">
-        <p className="eyebrow">Your picks</p>
-        <h1 id="cart-title">Your cart</h1>
+        <p className="eyebrow">{t('cart.eyebrow')}</p>
+        <h1 id="cart-title">{t('cart.title')}</h1>
         <div className="cart-empty">
-          <h2 ref={emptyHeading} tabIndex={-1}>Your cart is waiting</h2>
-          <p>There’s nothing in your cart yet. Find a favorite to get started.</p>
-          <Link className="button button--primary" to="/menu">Browse the menu</Link>
+          <h2 ref={emptyHeading} tabIndex={-1}>
+            {t('cart.emptyTitle')}
+          </h2>
+          <p>{t('cart.emptyText')}</p>
+          <Link className="button button--primary" to="/menu">
+            {t('cart.browse')}
+          </Link>
         </div>
       </section>
     );
@@ -128,63 +140,84 @@ export function CartPage() {
 
   return (
     <section className="cart-page" aria-labelledby="cart-title">
-      <p className="eyebrow">Your picks</p>
-      <h1 id="cart-title">Your cart</h1>
-      <p className="cart-page__description">Review your dishes and current prices for {country}.</p>
+      <p className="eyebrow">{t('cart.eyebrow')}</p>
+      <h1 id="cart-title">{t('cart.title')}</h1>
+      {/* "All cities" has no prices to review yet: the city list next to the dishes asks first. */}
+      {!allCities && (
+        <p className="cart-page__description">
+          {t('cart.description', { country: placeName(country, city) })}
+        </p>
+      )}
 
-      {isLoading && <Loader label="Getting current cart prices" />}
       {error && (
         <div className="cart-page__error">
-          <ErrorMessage title="Could not update cart prices">
+          <ErrorMessage title={t('cart.pricesError')}>
             <p>{error.message}</p>
             {Object.entries(error.fields).length > 0 && (
               <ul>
                 {Object.entries(error.fields).map(([field, message]) => (
-                  <li key={field}>{FIELD_LABELS[field] ?? field}: {message}</li>
+                  <li key={field}>
+                    {field === 'country'
+                      ? t('cart.fieldCountry')
+                      : field === 'items'
+                        ? t('cart.fieldItems')
+                        : field}
+                    : {message}
+                  </li>
                 ))}
               </ul>
             )}
           </ErrorMessage>
           <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
-            Try again
+            {t('common.tryAgain')}
           </Button>
         </div>
       )}
 
-      <div className="cart-lines">
-        {items.map((item, index) => {
-          const itemKey = getCartItemKey(item.productId, item.modifierIds);
+      <div className="receipt-layout">
+        <div className="cart-lines">
+          {items.map((item, index) => {
+            const itemKey = getCartItemKey(item.productId, item.modifierIds);
 
-          return (
-            <CartLine
-              key={itemKey}
-              item={item}
-              quotedLine={currentQuote?.lines[index]}
-              currency={currentQuote?.currency}
-              quantityError={error?.quantityErrors[index]}
-              lineError={error?.lineErrors[index]}
-              headingRef={(node) => {
-                if (node) lineHeadings.current.set(itemKey, node);
-                else lineHeadings.current.delete(itemKey);
-              }}
-              onQuantityChange={(quantity) => {
-                setItemQuantity(item.productId, item.modifierIds, quantity);
-              }}
-              onRemove={() => {
-                focusAfterRemove.current = index;
-                removeItem(item.productId, item.modifierIds);
-              }}
-            />
-          );
-        })}
-      </div>
+            return (
+              <CartLine
+                key={itemKey}
+                item={item}
+                quotedLine={currentQuote?.lines[index]}
+                currency={currentQuote?.currency}
+                quantityError={error?.quantityErrors[index]}
+                lineError={error?.lineErrors[index]}
+                headingRef={(node) => {
+                  if (node) lineHeadings.current.set(itemKey, node);
+                  else lineHeadings.current.delete(itemKey);
+                }}
+                onQuantityChange={(quantity) => {
+                  setItemQuantity(item.productId, item.modifierIds, quantity);
+                }}
+                onRemove={() => {
+                  focusAfterRemove.current = index;
+                  removeItem(item.productId, item.modifierIds);
+                }}
+              />
+            );
+          })}
+        </div>
 
-      {currentQuote && (
-        <TotalsBlock quote={currentQuote} />
-      )}
-      <div className="cart-page__actions">
-        <Link className="button button--primary" to="/checkout">Checkout</Link>
-        <Link className="button button--outline" to="/menu">Continue shopping</Link>
+        <div className="receipt-layout__side">
+          {allCities && <ChooseCity compact />}
+          {isLoading && <Loader label={t('cart.loadingPrices')} />}
+          {currentQuote && <Receipt quote={currentQuote} />}
+          <div className="receipt-layout__actions">
+            {!allCities && (
+              <Link className="button button--primary button--large" to="/checkout">
+                {t('cart.checkout')}
+              </Link>
+            )}
+            <Link className="button button--outline" to="/menu">
+              {t('cart.continueShopping')}
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

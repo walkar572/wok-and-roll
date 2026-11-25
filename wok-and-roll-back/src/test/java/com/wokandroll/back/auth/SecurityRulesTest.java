@@ -37,6 +37,7 @@ class SecurityRulesTest {
       "/api/v1/categories",
       "/api/v1/products",
       "/api/v1/products/{id}",
+      "/api/v1/cafes",
       "/api/v1/delivery-zones",
       "/api/v1/time-slots",
       "/api/v1/me",
@@ -80,6 +81,7 @@ class SecurityRulesTest {
           "/api/v1/categories?country=UZB",
           "/api/v1/products?country=UZB",
           "/api/v1/products/5?country=UZB",
+          "/api/v1/cafes?country=UZB",
           "/api/v1/delivery-zones?country=UZB",
           "/api/v1/time-slots?cafeId=1&date=2026-11-20"
         }) {

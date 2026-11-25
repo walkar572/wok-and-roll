@@ -2,10 +2,13 @@ package com.wokandroll.back.catalog.detail;
 
 import com.wokandroll.back.catalog.detail.dto.ModifierResponse;
 import com.wokandroll.back.catalog.detail.dto.ProductDetailResponse;
+import com.wokandroll.back.catalog.dto.SetItemResponse;
+import com.wokandroll.back.catalog.service.DishFacts;
 import com.wokandroll.back.common.error.NotFoundException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /** Builds the product modal: the dish in the chosen country and its modifiers. */
@@ -32,17 +35,28 @@ public class ProductDetailService {
             .map(m -> new ModifierResponse(m.id(), m.type(), m.name(), money(m.priceDelta())))
             .toList();
 
+    List<SetItemResponse> setItems = repository.findSetItems(productId);
+    DishFacts.Facts facts =
+        DishFacts.of(repository.findDishTexts(), Map.of(productId, setItems)).get(productId);
+
     return new ProductDetailResponse(
         row.id(),
         row.categoryId(),
         row.name(),
         row.description(),
         row.imageUrl(),
+        row.pieces(),
+        row.weightGrams(),
+        row.volumeMl(),
         money(row.price()),
         row.currency(),
         row.inStock(),
         !modifiers.isEmpty(),
-        modifiers);
+        modifiers,
+        row.regularPrice() == null ? null : money(row.regularPrice()),
+        setItems,
+        facts != null && facts.vegetarian(),
+        facts != null && facts.spicy());
   }
 
   /** Money always has exactly 2 decimals in the JSON (api-contract.md section 1). */

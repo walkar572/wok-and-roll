@@ -26,9 +26,13 @@ class ProductDetailServiceTest {
         "Firecracker udon",
         "Udon noodles, chicken, chili, sesame.",
         "/images/udon.png",
+        null,
+        350,
+        null,
         new BigDecimal("48.00"),
         "UZS",
-        true);
+        true,
+        null);
   }
 
   @Test
@@ -52,6 +56,8 @@ class ProductDetailServiceTest {
     // money always has 2 decimals, even 0
     assertThat(result.modifiers().get(0).priceDelta().scale()).isEqualTo(2);
     assertThat(result.modifiers().get(0).priceDelta().toPlainString()).isEqualTo("0.00");
+    assertThat(result.regularPrice()).isNull();
+    assertThat(result.setItems()).isEmpty();
   }
 
   @Test

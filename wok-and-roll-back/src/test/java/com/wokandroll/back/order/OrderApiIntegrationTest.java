@@ -28,9 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * {@code POST /api/v1/orders} against the real database with the Flyway seed (#149, #150): the
  * saved rows, the slot places, idempotency, and the error codes. The seed has the café "Wok & Roll
- * Chilanzar" (5 orders per slot) and the zone "Tashkent: Center" (fee 20.00) in UZB. A Salmon
- * avocado roll is 62.00, so two of them are 124.00 + VAT 18.60 = 142.60, discount 3 % = 4.28, total
- * 138.32 for pickup and 158.32 for delivery.
+ * Chilanzar" (5 orders per slot) and the zone "Tashkent: Center" (fee 20,000.00) in UZB. A Salmon
+ * avocado roll is 79,000.00, so two of them are 158,000.00 + VAT 23,700.00 = 181,700.00, discount 3
+ * % = 5,451.00, total 176,249.00 for pickup and 196,249.00 for delivery.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -50,7 +50,7 @@ class OrderApiIntegrationTest {
   void pickupOrderIsSavedWithTheServerPrice() throws Exception {
     long before = orderCount();
 
-    place(pickup(tomorrow(), "12:30", "138.32"))
+    place(pickup(tomorrow(), "12:30", "176249.00"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.orderNumber").value(matchesPattern(NUMBER)))
         .andExpect(jsonPath("$.status").value("NEW"))
@@ -65,14 +65,14 @@ class OrderApiIntegrationTest {
         .andExpect(jsonPath("$.deliveryAddress").value(nullValue()))
         .andExpect(jsonPath("$.lines[0].name").value("Salmon avocado roll"))
         .andExpect(jsonPath("$.lines[0].quantity").value(2))
-        .andExpect(jsonPath("$.lines[0].lineTotal").value(124.00))
-        .andExpect(jsonPath("$.subtotal").value(124.00))
-        .andExpect(jsonPath("$.vat").value(18.60))
-        .andExpect(jsonPath("$.amountInclVat").value(142.60))
+        .andExpect(jsonPath("$.lines[0].lineTotal").value(158000.00))
+        .andExpect(jsonPath("$.subtotal").value(158000.00))
+        .andExpect(jsonPath("$.vat").value(23700.00))
+        .andExpect(jsonPath("$.amountInclVat").value(181700.00))
         .andExpect(jsonPath("$.discountRate").value(3.00))
-        .andExpect(jsonPath("$.discount").value(4.28))
+        .andExpect(jsonPath("$.discount").value(5451.00))
         .andExpect(jsonPath("$.deliveryFee").value(0.00))
-        .andExpect(jsonPath("$.total").value(138.32))
+        .andExpect(jsonPath("$.total").value(176249.00))
         // a guest: no Location
         .andExpect(header().doesNotExist("Location"))
         .andExpect(header().doesNotExist("Idempotent-Replayed"));
@@ -85,19 +85,26 @@ class OrderApiIntegrationTest {
                 .query(String.class)
                 .single())
         .isEqualTo("aziz@mail.uz");
-    assertThat(jdbc.sql("SELECT count(*) FROM order_item").query(Long.class).single()).isEqualTo(1);
+    // only the lines of this order: the sales history seed (#171) has its own lines
+    assertThat(
+            jdbc.sql(
+                    "SELECT count(*) FROM order_item"
+                        + " WHERE order_id = (SELECT max(id) FROM customer_order)")
+                .query(Long.class)
+                .single())
+        .isEqualTo(1);
   }
 
   @Test
   void deliveryOrderUsesTheCafeAndTheFeeOfTheZone() throws Exception {
-    place(delivery(tomorrow(), "13:00", "158.32"))
+    place(delivery(tomorrow(), "13:00", "196249.00"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.scenario").value("DELIVERY"))
         .andExpect(jsonPath("$.cafe.name").value("Wok & Roll Chilanzar"))
         .andExpect(jsonPath("$.deliveryZone.name").value("Tashkent: Center"))
         .andExpect(jsonPath("$.deliveryAddress").value("Amir Temur 15, apt 4"))
-        .andExpect(jsonPath("$.deliveryFee").value(20.00))
-        .andExpect(jsonPath("$.total").value(158.32));
+        .andExpect(jsonPath("$.deliveryFee").value(20000.00))
+        .andExpect(jsonPath("$.total").value(196249.00));
   }
 
   @Test
@@ -121,7 +128,7 @@ class OrderApiIntegrationTest {
     String number =
         JsonPath.read(
             place(
-                    pickup(tomorrow(), "14:00", "138.32"),
+                    pickup(tomorrow(), "14:00", "176249.00"),
                     request -> request.header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
                 .andExpect(
@@ -144,7 +151,7 @@ class OrderApiIntegrationTest {
     long before = orderCount();
 
     place(
-            pickup(tomorrow(), "12:30", "138.32"),
+            pickup(tomorrow(), "12:30", "176249.00"),
             request -> request.header("Authorization", "Bearer not-a-token"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
@@ -155,7 +162,7 @@ class OrderApiIntegrationTest {
   @Test
   void theSameKeyAndBodyReplaysTheFirstOrder() throws Exception {
     String key = UUID.randomUUID().toString();
-    String body = pickup(tomorrow(), "12:30", "138.32");
+    String body = pickup(tomorrow(), "12:30", "176249.00");
     long before = orderCount();
 
     String first =
@@ -181,10 +188,14 @@ class OrderApiIntegrationTest {
   @Test
   void theSameKeyWithAnotherBodyIs422() throws Exception {
     String key = UUID.randomUUID().toString();
-    place(pickup(tomorrow(), "12:30", "138.32"), request -> request.header("Idempotency-Key", key))
+    place(
+            pickup(tomorrow(), "12:30", "176249.00"),
+            request -> request.header("Idempotency-Key", key))
         .andExpect(status().isCreated());
 
-    place(pickup(tomorrow(), "13:00", "138.32"), request -> request.header("Idempotency-Key", key))
+    place(
+            pickup(tomorrow(), "13:00", "176249.00"),
+            request -> request.header("Idempotency-Key", key))
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.code").value("IDEMPOTENCY_KEY_REUSED"));
   }
@@ -192,7 +203,7 @@ class OrderApiIntegrationTest {
   @Test
   void aKeyThatIsNotAUuidIsA400() throws Exception {
     place(
-            pickup(tomorrow(), "12:30", "138.32"),
+            pickup(tomorrow(), "12:30", "176249.00"),
             request -> request.header("Idempotency-Key", "abc"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
@@ -215,8 +226,8 @@ class OrderApiIntegrationTest {
   void aFullSlotIs409() throws Exception {
     jdbc.sql("UPDATE cafe SET slot_capacity = 1 WHERE id = :id").param("id", cafeId()).update();
 
-    place(pickup(tomorrow(), "15:00", "138.32")).andExpect(status().isCreated());
-    place(pickup(tomorrow(), "15:00", "138.32"))
+    place(pickup(tomorrow(), "15:00", "176249.00")).andExpect(status().isCreated());
+    place(pickup(tomorrow(), "15:00", "176249.00"))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("SLOT_FULL"));
 
@@ -227,8 +238,8 @@ class OrderApiIntegrationTest {
   void anotherSlotOfTheSameCafeIsStillFree() throws Exception {
     jdbc.sql("UPDATE cafe SET slot_capacity = 1 WHERE id = :id").param("id", cafeId()).update();
 
-    place(pickup(tomorrow(), "15:00", "138.32")).andExpect(status().isCreated());
-    place(pickup(tomorrow(), "15:30", "138.32")).andExpect(status().isCreated());
+    place(pickup(tomorrow(), "15:00", "176249.00")).andExpect(status().isCreated());
+    place(pickup(tomorrow(), "15:30", "176249.00")).andExpect(status().isCreated());
   }
 
   @Test
@@ -257,14 +268,14 @@ class OrderApiIntegrationTest {
   @Test
   void unknownCafeUnknownZoneAndWrongSlotsHaveTheirOwnCodes() throws Exception {
     place(
-            pickup(tomorrow(), "12:30", "138.32")
+            pickup(tomorrow(), "12:30", "176249.00")
                 .replace("\"cafeId\": " + cafeId(), "\"cafeId\": 999999"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("UNKNOWN_CAFE"))
         .andExpect(jsonPath("$.fields.cafeId").exists());
 
     place(
-            delivery(tomorrow(), "12:30", "158.32")
+            delivery(tomorrow(), "12:30", "196249.00")
                 .replace("\"deliveryZoneId\": " + zoneId(), "\"deliveryZoneId\": 999999"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("UNKNOWN_DELIVERY_ZONE"))
@@ -272,7 +283,7 @@ class OrderApiIntegrationTest {
 
     // 12:15 is not on the 30-minute grid, 22:00 is the closing time, 09:30 is before opening
     for (String slot : new String[] {"12:15", "22:00", "09:30"}) {
-      place(pickup(tomorrow(), slot, "138.32"))
+      place(pickup(tomorrow(), slot, "176249.00"))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("INVALID_SLOT"))
           .andExpect(jsonPath("$.fields.slotStart").exists());
@@ -283,7 +294,7 @@ class OrderApiIntegrationTest {
   void aDateMoreThanSevenDaysAheadIsAValidationError() throws Exception {
     String farDate = clock.today("UZB").plusDays(8).toString();
 
-    place(pickup(farDate, "12:30", "138.32"))
+    place(pickup(farDate, "12:30", "176249.00"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
         .andExpect(jsonPath("$.fields.orderDate").exists());

@@ -13,7 +13,7 @@ import java.util.List;
 /** Request of {@code POST /api/v1/cart/quote}. There are no prices: the backend knows them. */
 @Schema(description = "Cart to price")
 public record CartQuoteRequest(
-    @Schema(description = "Country code: UZB, KAZ, GEO, UKR or CHN", example = "UZB")
+    @Schema(description = "Country code: UZB, KAZ, GEO, UKR, CHN, GBR or USA", example = "UZB")
         @NotBlank(message = "is required")
         String country,
     @Schema(

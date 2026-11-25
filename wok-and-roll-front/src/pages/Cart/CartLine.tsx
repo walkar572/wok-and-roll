@@ -1,9 +1,9 @@
 import { useEffect, useId, useState, type Ref } from 'react';
 import { Button } from '../../components/common';
+import { DishImage } from '../../components/common/DishImage';
 import { MAX_QUANTITY, MIN_QUANTITY, type CartItem } from '../../context/CartContext';
+import { modifierName, productName, useI18n } from '../../i18n';
 import { formatPrice, type CartQuoteLine } from '../../services/api';
-
-export const QUANTITY_RULE = `Enter a whole number from ${MIN_QUANTITY} to ${MAX_QUANTITY}.`;
 
 // Accepts only digits, so 0, -1, 1.5, 1e2, empty and text are all rejected.
 export function parseQuantity(value: string): number | undefined {
@@ -35,6 +35,7 @@ export function CartLine({
   onQuantityChange,
   onRemove,
 }: CartLineProps) {
+  const { t } = useI18n();
   const inputId = useId();
   const messageId = `${inputId}-message`;
   const { quantity } = item;
@@ -43,6 +44,7 @@ export function CartLine({
   const message = inputError ?? quantityError;
   const isInvalid = parseQuantity(draft) === undefined || Boolean(quantityError);
   const modifiers = quotedLine?.modifiers ?? item.modifiers;
+  const name = productName(quotedLine?.name ?? item.name);
 
   useEffect(() => {
     setDraft(String(quantity));
@@ -56,33 +58,38 @@ export function CartLine({
 
   return (
     <article className="cart-line">
-      {item.imageUrl ? (
-        <img className="cart-line__image" src={item.imageUrl} alt="" />
-      ) : (
-        <span className="cart-line__image cart-line__image--placeholder" aria-hidden="true">✳</span>
-      )}
+      <DishImage
+        src={item.imageUrl}
+        alt=""
+        className="cart-line__image"
+        placeholderClassName="cart-line__image--placeholder"
+      />
       <div className="cart-line__details">
-        <h2 ref={headingRef} tabIndex={-1}>{quotedLine?.name ?? item.name}</h2>
+        <h2 ref={headingRef} tabIndex={-1}>
+          {name}
+        </h2>
         {modifiers.length > 0 && (
           <ul className="cart-line__modifiers">
             {modifiers.map((modifier) => (
-              <li key={modifier.id}>{modifier.name}</li>
+              <li key={modifier.id}>{modifierName(modifier.name)}</li>
             ))}
           </ul>
         )}
         {quotedLine && currency && (
-          <p>{formatPrice(quotedLine.unitPrice, currency)} each</p>
+          <p>{t('cart.each', { price: formatPrice(quotedLine.unitPrice, currency) })}</p>
         )}
         {lineError && <p className="cart-line__error">{lineError}</p>}
       </div>
       <div className="cart-line__controls">
-        <label className="cart-line__quantity-label" htmlFor={inputId}>Quantity</label>
+        <label className="cart-line__quantity-label" htmlFor={inputId}>
+          {t('cart.quantity')}
+        </label>
         <div className="cart-line__actions">
           <div className="quantity-stepper">
             <button
               className="quantity-stepper__button"
               type="button"
-              aria-label={`Decrease quantity of ${item.name}`}
+              aria-label={t('cart.decrease', { name })}
               disabled={quantity <= MIN_QUANTITY}
               onClick={() => saveQuantity(quantity - 1)}
             >
@@ -91,7 +98,7 @@ export function CartLine({
             <input
               className="quantity-stepper__input"
               id={inputId}
-              aria-label={`Quantity for ${item.name}`}
+              aria-label={t('cart.quantityFor', { name })}
               aria-invalid={isInvalid || undefined}
               aria-describedby={message ? messageId : undefined}
               type="number"
@@ -106,7 +113,7 @@ export function CartLine({
 
                 const nextQuantity = parseQuantity(value);
                 if (nextQuantity === undefined) {
-                  setInputError(QUANTITY_RULE);
+                  setInputError(t('cart.quantityRule'));
                   return;
                 }
 
@@ -115,7 +122,7 @@ export function CartLine({
               }}
               onBlur={() => {
                 if (parseQuantity(draft) === undefined) {
-                  setInputError(`${QUANTITY_RULE} The quantity stays ${quantity}.`);
+                  setInputError(t('cart.quantityStays', { quantity }));
                 }
                 setDraft(String(quantity));
               }}
@@ -123,15 +130,21 @@ export function CartLine({
             <button
               className="quantity-stepper__button"
               type="button"
-              aria-label={`Increase quantity of ${item.name}`}
+              aria-label={t('cart.increase', { name })}
               disabled={quantity >= MAX_QUANTITY}
               onClick={() => saveQuantity(quantity + 1)}
             >
               +
             </button>
           </div>
-          <Button type="button" variant="ghost" size="small" onClick={onRemove}>
-            Remove
+          <Button
+            type="button"
+            variant="ghost"
+            size="small"
+            aria-label={t('cart.removeItem', { name })}
+            onClick={onRemove}
+          >
+            {t('cart.remove')}
           </Button>
         </div>
         <p className="cart-line__quantity-message" id={messageId} aria-live="polite">
@@ -139,9 +152,7 @@ export function CartLine({
         </p>
       </div>
       {quotedLine && currency && (
-        <strong className="cart-line__total">
-          {formatPrice(quotedLine.lineTotal, currency)}
-        </strong>
+        <strong className="cart-line__total">{formatPrice(quotedLine.lineTotal, currency)}</strong>
       )}
     </article>
   );

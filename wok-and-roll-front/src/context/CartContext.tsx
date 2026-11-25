@@ -1,10 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type PropsWithChildren,
-} from 'react';
+import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import { t } from '../i18n/runtime';
 import type { ProductDetail, ProductModifier } from '../services/api';
 
 export interface CartItem {
@@ -51,14 +46,14 @@ function isPositiveInteger(value: unknown): value is number {
 
 function parseStoredModifier(value: unknown): ProductModifier | null {
   if (
-    !isRecord(value)
-    || !isPositiveInteger(value.id)
-    || (value.type !== 'SIZE' && value.type !== 'EXTRA')
-    || typeof value.name !== 'string'
-    || !value.name.trim()
-    || typeof value.priceDelta !== 'number'
-    || !Number.isFinite(value.priceDelta)
-    || value.priceDelta < 0
+    !isRecord(value) ||
+    !isPositiveInteger(value.id) ||
+    (value.type !== 'SIZE' && value.type !== 'EXTRA') ||
+    typeof value.name !== 'string' ||
+    !value.name.trim() ||
+    typeof value.priceDelta !== 'number' ||
+    !Number.isFinite(value.priceDelta) ||
+    value.priceDelta < 0
   ) {
     return null;
   }
@@ -68,14 +63,14 @@ function parseStoredModifier(value: unknown): ProductModifier | null {
 
 function parseStoredItem(value: unknown): CartItem | null {
   if (
-    !isRecord(value)
-    || !isPositiveInteger(value.productId)
-    || typeof value.name !== 'string'
-    || !value.name.trim()
-    || (value.imageUrl !== null && typeof value.imageUrl !== 'string')
-    || !Array.isArray(value.modifiers)
-    || typeof value.quantity !== 'number'
-    || !isValidQuantity(value.quantity)
+    !isRecord(value) ||
+    !isPositiveInteger(value.productId) ||
+    typeof value.name !== 'string' ||
+    !value.name.trim() ||
+    (value.imageUrl !== null && typeof value.imageUrl !== 'string') ||
+    !Array.isArray(value.modifiers) ||
+    typeof value.quantity !== 'number' ||
+    !isValidQuantity(value.quantity)
   ) {
     return null;
   }
@@ -156,7 +151,7 @@ export function CartProvider({ children }: PropsWithChildren) {
 
   function addItem(product: ProductDetail, modifierIds: number[], quantity: number) {
     if (!isValidQuantity(quantity)) {
-      throw new Error('Quantity must be a whole number between 1 and 99.');
+      throw new Error(t('cart.quantityRule'));
     }
 
     const selectedModifiers = product.modifiers.filter(({ id }) => modifierIds.includes(id));
@@ -170,25 +165,25 @@ export function CartProvider({ children }: PropsWithChildren) {
     };
     const key = getCartItemKey(nextItem.productId, nextItem.modifierIds);
 
-    const existing = items.find((item) => (
-      getCartItemKey(item.productId, item.modifierIds) === key
-    ));
+    const existing = items.find((item) => getCartItemKey(item.productId, item.modifierIds) === key);
 
     if (existing) {
       const nextQuantity = existing.quantity + quantity;
       if (nextQuantity > MAX_QUANTITY) {
-        throw new Error('A cart line cannot have more than 99 items.');
+        throw new Error(t('cart.lineMax'));
       }
-      setItems(items.map((item) => (
-        getCartItemKey(item.productId, item.modifierIds) === key
-          ? { ...item, quantity: nextQuantity }
-          : item
-      )));
+      setItems(
+        items.map((item) =>
+          getCartItemKey(item.productId, item.modifierIds) === key
+            ? { ...item, quantity: nextQuantity }
+            : item,
+        ),
+      );
       return;
     }
 
     if (items.length >= MAX_LINES) {
-      throw new Error('A cart cannot have more than 50 lines.');
+      throw new Error(t('cart.linesMax'));
     }
 
     setItems([...items, nextItem]);
@@ -197,18 +192,18 @@ export function CartProvider({ children }: PropsWithChildren) {
   function setItemQuantity(productId: number, modifierIds: number[], quantity: number) {
     if (!isValidQuantity(quantity)) return;
     const key = getCartItemKey(productId, modifierIds);
-    setItems((currentItems) => currentItems.map((item) => (
-      getCartItemKey(item.productId, item.modifierIds) === key
-        ? { ...item, quantity }
-        : item
-    )));
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        getCartItemKey(item.productId, item.modifierIds) === key ? { ...item, quantity } : item,
+      ),
+    );
   }
 
   function removeItem(productId: number, modifierIds: number[]) {
     const key = getCartItemKey(productId, modifierIds);
-    setItems((currentItems) => currentItems.filter((item) => (
-      getCartItemKey(item.productId, item.modifierIds) !== key
-    )));
+    setItems((currentItems) =>
+      currentItems.filter((item) => getCartItemKey(item.productId, item.modifierIds) !== key),
+    );
   }
 
   function clearCart() {

@@ -17,6 +17,7 @@
   --color-bg-canvas: #f8f5ee;
   --color-bg-surface: #ffffff;
   --color-bg-subtle: #eeeae1;
+  --color-bg-card-hover: #fdf1ea;
   --color-bg-brand: #b43b2c;
   --color-bg-brand-hover: #963023;
   --color-bg-brand-disabled: #eeeae1;
@@ -66,8 +67,13 @@
   --size-header-mobile: 64px;
   --size-header-desktop: 88px;
   --size-viewport-mobile: 568px;
-  --font-family-display: "DM Serif Display";
-  --font-family-body: "Manrope";
+  /* Fallbacks per script: Cyrillic (kk, uk), Georgian and Chinese glyphs that the brand fonts do
+     not have. The browser takes each glyph from the first font that has it. */
+  --font-family-display:
+    'DM Serif Display', 'Playfair Display', 'Noto Serif Georgian', 'Noto Serif SC';
+  --font-family-body: 'Manrope', 'Noto Sans Georgian', 'Noto Sans SC';
+  /* The receipt print (cart, checkout, orders). */
+  --font-family-mono: 'IBM Plex Mono', 'Noto Sans Georgian', 'Noto Sans SC', monospace;
   --font-size-display-hero: 72px;
   --font-size-display-mobile: 40px;
   --font-size-heading-h1: 64px;

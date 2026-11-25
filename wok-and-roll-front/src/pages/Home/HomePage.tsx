@@ -1,13 +1,30 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader } from '../../components/common';
+import { DishImage } from '../../components/common/DishImage';
+import { DishMarks } from '../../components/common/DishMarks';
 import { Icon } from '../../components/common/Icon';
 import { useCountry } from '../../context/CountryContext';
+import { countryName, productDescription, productName, useI18n, portionText } from '../../i18n';
 import { formatPrice, guestErrorMessage, loadProducts, type Product } from '../../services/api';
+import { CafesSection } from './CafesSection';
+import { HeroCarousel, type HeroSlide } from './HeroCarousel';
+import { HeroLanterns } from './HeroLanterns';
+
+// Dishes of the hero slideshow, in this order (English API names; the photos are in /images).
+const HERO_DISHES = [
+  ['Salmon avocado roll', '/images/salmon-roll.png'],
+  ['Firecracker udon', '/images/udon.png'],
+  ['Wok & Roll set for two', '/images/set-for-two.png'],
+  ['Gyoza', '/images/gyoza.png'],
+  ['Miso mushroom rice', '/images/mushroom-rice.png'],
+  ['Yuzu lemonade', '/images/yuzu-lemonade.png'],
+] as const;
 
 export function HomePage() {
-  const { country } = useCountry();
-  const [favorites, setFavorites] = useState<Product[]>([]);
+  const { country, allCities } = useCountry();
+  const { t } = useI18n();
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [retryCount, setRetryCount] = useState(0);
@@ -19,11 +36,11 @@ export function HomePage() {
 
     loadProducts(country)
       .then((products) => {
-        if (active) setFavorites(products.filter(({ inStock }) => inStock).slice(0, 3));
+        if (active) setProducts(products);
       })
       .catch((requestError: unknown) => {
         if (!active) return;
-        setError(guestErrorMessage(requestError, 'We could not load our favorites. Please try again.'));
+        setError(guestErrorMessage(requestError, t('home.favoritesError')));
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -32,74 +49,104 @@ export function HomePage() {
     return () => {
       active = false;
     };
-  }, [country, retryCount]);
+  }, [country, retryCount, t]);
+
+  // Four: one row of four on a wide screen, two rows of two on a tablet, no empty place.
+  const favorites = products.filter(({ inStock }) => inStock).slice(0, 4);
+  // Before the menu is loaded (or when it cannot be) the photos show without a price; a dish that
+  // is not sold in the country is left out.
+  const slides: HeroSlide[] = HERO_DISHES.flatMap(([name, image]) => {
+    const product = products.find((item) => item.name === name);
+    if (products.length > 0 && !product) return [];
+    return [
+      {
+        key: name,
+        image: product?.imageUrl ?? image,
+        name: productName(name),
+        // no price for "All cities": a price belongs to one country
+        price: product && !allCities ? formatPrice(product.price, product.currency) : undefined,
+      },
+    ];
+  });
 
   return (
     <div className="home-page">
+      <HeroLanterns />
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero__copy">
-          <p className="eyebrow">Japanese soul. Wok-fired energy.</p>
-          <h1 id="home-title">Wok.<br />Roll. Repeat.</h1>
-          <p className="home-hero__description">
-            Sushi, sizzling noodles and a little something worth slowing down for.
-          </p>
+          <p className="eyebrow">{t('home.eyebrow')}</p>
+          <h1 id="home-title">
+            {/* "Wok. Roll." is the brand: the same in every language, only the rest is translated. */}
+            <span className="home-hero__brand" lang="en" translate="no">
+              Wok.
+            </span>
+            <br />
+            <span className="home-hero__brand" lang="en" translate="no">
+              Roll.
+            </span>{' '}
+            {t('home.titleRest')}
+          </h1>
+          <p className="home-hero__description">{t('home.description')}</p>
           <Link className="button button--primary" to="/menu">
-            Find your favorite <Icon name="arrow" />
+            {t('home.cta')} <Icon name="arrow" />
           </Link>
         </div>
-        <img
-          className="home-hero__image"
-          src="/images/salmon-roll.png"
-          alt="Salmon and avocado sushi rolls on a ceramic plate"
-          width="512"
-          height="512"
-        />
+        <HeroCarousel slides={slides} />
       </section>
+
+      <CafesSection />
 
       <section className="home-shortcuts" aria-labelledby="favorites-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">From our kitchen</p>
-            <h2 id="favorites-title">A few favorites</h2>
+            <p className="eyebrow">{t('home.favoritesEyebrow')}</p>
+            <h2 id="favorites-title">{t('home.favoritesTitle')}</h2>
           </div>
-          <Link to="/menu">
-            View the menu <Icon name="arrow" />
+          <Link className="pill-link" to="/menu">
+            {t('home.viewMenu')} <Icon name="arrow" />
           </Link>
         </div>
-        {isLoading && <Loader label="Loading favorites" />}
+        {isLoading && <Loader label={t('home.loadingFavorites')} />}
         {error && (
           <div className="home-shortcuts__error">
-            <ErrorMessage title="Favorites unavailable">{error}</ErrorMessage>
+            <ErrorMessage title={t('home.favoritesUnavailable')}>{error}</ErrorMessage>
             <Button variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
-              Try again
+              {t('common.tryAgain')}
             </Button>
           </div>
         )}
         {!isLoading && !error && favorites.length === 0 && (
-          <p>No featured dishes are available for {country}.</p>
+          <p>{t('home.noFavorites', { country: countryName(country) })}</p>
         )}
         {!isLoading && !error && favorites.length > 0 && (
           <div className="favorite-grid">
-            {favorites.map((item) => (
-              <Link className="favorite-card" to="/menu" key={item.id}>
-                {item.imageUrl ? (
-                  <img
+            {favorites.map((item) => {
+              const description = productDescription(item.name, item.description);
+              const portion = portionText(item);
+              return (
+                <Link className="favorite-card" to="/menu" key={item.id}>
+                  <DishImage
                     src={item.imageUrl}
-                    alt={item.name}
-                    width="512"
-                    height="512"
-                    loading="lazy"
+                    alt={productName(item.name)}
+                    className="favorite-card__image"
+                    placeholderClassName="favorite-card__image-placeholder"
+                    width={512}
+                    height={512}
                   />
-                ) : (
-                  <span className="favorite-card__image-placeholder" aria-hidden="true">✳</span>
-                )}
-                <div>
-                  <h3>{item.name}</h3>
-                  {item.description && <p>{item.description}</p>}
-                  <span>{formatPrice(item.price, item.currency)}</span>
-                </div>
-              </Link>
-            ))}
+                  <div>
+                    <h3>{productName(item.name)}</h3>
+                    {(description || portion || item.spicy || item.vegetarian) && (
+                      <div className="favorite-card__text">
+                        {description && <p>{description}</p>}
+                        {portion && <p className="dish-portion">{portion}</p>}
+                        <DishMarks product={item} />
+                      </div>
+                    )}
+                    {!allCities && <span>{formatPrice(item.price, item.currency)}</span>}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

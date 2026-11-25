@@ -37,9 +37,16 @@ class CatalogControllerTest {
         "Teriyaki chicken noodles",
         "Egg noodles, chicken, teriyaki sauce, vegetables.",
         null,
+        null,
+        350,
+        null,
         new BigDecimal("52.00"),
         "UZS",
         true,
+        false,
+        null,
+        List.of(),
+        false,
         false);
   }
 
@@ -66,6 +73,8 @@ class CatalogControllerTest {
         .andExpect(jsonPath("$[0].currency").value("UZS"))
         .andExpect(jsonPath("$[0].inStock").value(true))
         .andExpect(jsonPath("$[0].hasModifiers").value(false))
+        .andExpect(jsonPath("$[0].vegetarian").value(false))
+        .andExpect(jsonPath("$[0].spicy").value(false))
         .andExpect(content().string(containsString("\"imageUrl\":null")))
         .andExpect(content().string(containsString("\"price\":52.00")));
   }
@@ -82,10 +91,11 @@ class CatalogControllerTest {
 
   @Test
   void unknownCountryIsValidationError() throws Exception {
-    mvc.perform(get("/api/v1/products").param("country", "USA"))
+    mvc.perform(get("/api/v1/products").param("country", "FRA"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-        .andExpect(jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN"));
+        .andExpect(
+            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"));
     verifyNoInteractions(service);
   }
 

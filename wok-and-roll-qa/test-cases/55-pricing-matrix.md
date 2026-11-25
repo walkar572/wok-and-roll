@@ -17,7 +17,7 @@ The matrix checks every country at every discount range, for pickup and for deli
 - Seed prices for the carts come from `GET /api/v1/products?country=...` (dish without modifiers, Tuna nigiri is out of stock and not used).
 - How to build a cart: add the dishes in the "Cart" column with the quantities, open Cart, then Checkout. Choose Pickup, or Delivery with the zone with fee 20.00.
 - Firecracker udon and Miso mushroom rice must have a size. Use the first size, Regular (price +0.00). It is selected by default in the product window. In the quote API send `modifierIds` with it (udon `[1]`, miso rice `[5]`). Without it the API answers 400 `INVALID_MODIFIER`.
-- How to read the page: every amount has 2 decimals and the currency code of the country, for example `UZS 446.20`.
+- How to read the page: every amount has 2 decimals and the sign of the currency of the country, for example `2 190,00 ₸` in Kazakh (sum has no sign: `55 000,00 soʻm` in Uzbek).
 - If a number is different: write the actual numbers and the request id of the answer (`X-Request-Id` of the quote or the order, from Wednesday) in the Actual column, and open a bug under #55 (severity, steps, expected, actual, request id).
 
 ## Matrix: every country × range × pickup and delivery
@@ -139,7 +139,7 @@ The VAT rounding (for example UZB 10.30 → VAT 1.545 → 1.55) needs prices tha
 | TC-55-X02 | Change country with the same dishes | Fill a cart. Change the country in the header 5 times. | Prices, VAT rate, currency, discount and total are recalculated each time and match the matrix row of that country. No old number stays on the page. |
 | TC-55-X03 | Change scenario | Choose Pickup, then Delivery, then Pickup. | Only the Delivery fee line and the Total change by the fee. Subtotal, VAT, Amount incl. VAT and Discount stay the same. |
 | TC-55-X04 | Change quantity near a threshold | Take a TC-55-E row. Add one dish. | The discount goes up to the next range only when Amount incl. VAT reaches the threshold. The Total is requoted. |
-| TC-55-X05 | Format | Look at 5 rows of different countries. | Every amount has exactly 2 decimals and the currency code (`UZS 446.20`). No `NaN`, no 3 decimals, no sign problems. |
+| TC-55-X05 | Format | Look at 5 rows of different countries. | Every amount has exactly 2 decimals and the sign of the currency, never its code (`₸`, `₾`, `₴`, `¥`, `£`, `$`; sum as a word). No `NaN`, no 3 decimals, no sign problems. |
 | TC-55-X06 | Layout of the totals block | Open one row per country at 320, 768 and 1200 px. | The totals block is the same as in Figma. Amounts are not cut and do not wrap badly. No horizontal scroll. |
 
 ## Run log
