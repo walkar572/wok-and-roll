@@ -692,6 +692,8 @@ export const en = {
     addDish: 'Add: {name}',
     chooseCity: 'Choose a city to see the prices and order.',
     answered: 'Panko: {text}',
+    refused:
+      'Sorry, I can only help with Wok & Roll: our dishes, cafés, delivery and booking. What would you like to try?',
     suggestionsLabel: 'Question ideas',
     suggestions: {
       popular: 'What do guests like most?',

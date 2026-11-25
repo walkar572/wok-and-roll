@@ -692,6 +692,8 @@ export const uk: Messages = {
     addDish: 'Додати: {name}',
     chooseCity: 'Оберіть місто, щоб побачити ціни й замовити.',
     answered: 'Панко: {text}',
+    refused:
+      'Вибачте, я допомагаю лише з Wok & Roll: страви, кафе, доставка й бронювання. Що б ви хотіли скуштувати?',
     suggestionsLabel: 'Ідеї для запитання',
     suggestions: {
       popular: 'Що гості люблять найбільше?',

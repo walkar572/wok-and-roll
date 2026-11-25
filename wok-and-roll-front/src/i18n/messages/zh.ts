@@ -680,6 +680,7 @@ export const zh: Messages = {
     addDish: '添加：{name}',
     chooseCity: '请选择城市以查看价格并下单。',
     answered: 'Panko：{text}',
+    refused: '抱歉，我只能帮您解答 Wok & Roll 的问题：菜品、门店、外送和订座。您想尝尝什么？',
     suggestionsLabel: '提问灵感',
     suggestions: {
       popular: '客人最喜欢什么？',

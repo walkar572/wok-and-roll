@@ -111,6 +111,22 @@ test('too many questions: Panko asks for a break and can try again', async ({ pa
   await expect(chat.getByRole('button', { name: 'Qayta urinish' })).toBeVisible();
 });
 
+test('a question the AI declines without a word gets the own answer of Panko', async ({ page }) => {
+  await aiIs(page, true);
+  await page.route('**/api/v1/assistant/chat', (route) =>
+    route.fulfill({
+      contentType: 'text/event-stream',
+      body: sse([['done', { dishes: [], refused: true }]]),
+    }),
+  );
+
+  const chat = await openChat(page);
+  await chat.getByRole('button', { name: 'Mehmonlarga eng koʻp nima yoqadi?' }).click();
+  await expect(
+    chat.getByRole('log').getByText('faqat Wok & Roll boʻyicha yordam beraman'),
+  ).toBeVisible();
+});
+
 test('without the AI Panko shows the way to the menu and the booking', async ({ page }) => {
   await aiIs(page, false);
 

@@ -128,8 +128,9 @@ for `position()`, so `%` is not a wildcard). The overview money is the sales-by-
 the panel and the reports always agree. The panel has its own login; each role sees its sections
 (ADMIN all, STAFF café orders, VIEWER reports), a customer gets "no access".
 
-Panko's AI chat (`/assistant`, v1.14) is public and calls Claude through the official Anthropic
-Java SDK; the key is only in the server environment. The prompt holds the rules and the data of
+Panko's AI chat (`/assistant`, v1.14) is public and calls a language model behind one
+interface: Claude through the official Anthropic Java SDK, or Gemini through its REST API and the
+JDK HTTP client (one more try when it is busy); the key is only in the server environment. The prompt holds the rules and the data of
 the country (menu with ids, prices, stock, cafés, zones, VAT, discounts) as one cached system
 block, then the language, city and local time; the guest's text is only the conversation. The
 answer streams to the browser as server-sent events on a virtual thread; dish markers are taken

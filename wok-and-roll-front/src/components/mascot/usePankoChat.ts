@@ -154,7 +154,14 @@ export function usePankoChat(active: boolean) {
         controller.signal,
       )
         .then((answer) =>
-          update(answerId, (message) => ({ ...message, dishes: answer.dishes, state: 'done' })),
+          update(answerId, (message) => {
+            if (message.text.trim()) return { ...message, dishes: answer.dishes, state: 'done' };
+            // No words at all: a declined question gets his own kind "only Wok & Roll", anything
+            // else is an answer that did not come.
+            return answer.refused
+              ? { ...message, text: t('panko.refused'), state: 'done' }
+              : { ...message, state: 'error', error: t('panko.errors.failed') };
+          }),
         )
         .catch((error: unknown) => {
           if (controller.signal.aborted) {
@@ -173,7 +180,7 @@ export function usePankoChat(active: boolean) {
           if (abort.current === controller) abort.current = undefined;
         });
     },
-    [allCities, city, country, errorText, locale, update],
+    [allCities, city, country, errorText, locale, t, update],
   );
 
   const send = useCallback(

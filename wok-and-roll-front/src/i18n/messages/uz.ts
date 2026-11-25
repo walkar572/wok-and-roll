@@ -692,6 +692,8 @@ export const uz: Messages = {
     addDish: 'Qoʻshish: {name}',
     chooseCity: 'Narxlarni koʻrish va buyurtma berish uchun shaharni tanlang.',
     answered: 'Panko: {text}',
+    refused:
+      'Kechirasiz, men faqat Wok & Roll boʻyicha yordam beraman: taomlar, kafelar, yetkazib berish va bron qilish. Nimani tatib koʻrmoqchisiz?',
     suggestionsLabel: 'Savol gʻoyalari',
     suggestions: {
       popular: 'Mehmonlarga eng koʻp nima yoqadi?',
