@@ -36,7 +36,9 @@ npm run dev                         # http://localhost:5173, /api is proxied to 
 Port 5432 busy? `DB_PORT=5433 docker compose up --build`.
 Without a key everything works, and Panko shows the way to the menu and the booking instead of
 answering. With both keys Claude is used, unless `ASSISTANT_PROVIDER=gemini`. `ASSISTANT_MODEL`
-(default `claude-opus-5-5` or `gemini-3.5-flash`) and `ASSISTANT_EFFORT` (Claude effort, default
+(default `claude-opus-5-5`; for Gemini a list separated by commas, default
+`gemini-3.5-flash,gemini-3-flash-preview,gemini-3.5-flash-lite`: a free key gets about 20
+requests a day per model, so the next model answers while one is out of its quota) and `ASSISTANT_EFFORT` (Claude effort, default
 `low`; Gemini thinking level, default `minimal`) can be set in `.env` too.
 The database starts with the menu (real prices at the level of Tashkent, converted to every
 currency), cafés, delivery zones and about 3,400 orders from June to November 2026, so the

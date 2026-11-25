@@ -1,6 +1,7 @@
 package com.wokandroll.back.assistant;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -8,11 +9,13 @@ import java.util.Set;
  * dish it recommends; the guest sees the text without the marker and a card of dish 26 under it. A
  * marker can arrive split over several pieces, so text that may still become a marker is held back
  * until it is clear; anything that is not a marker is passed on unchanged. The spaces just before a
- * marker go with it, so "Dragon roll [[dish:3]], a classic" reads "Dragon roll, a classic".
+ * marker go with it, so "Dragon roll [[dish:3]], a classic" reads "Dragon roll, a classic". A
+ * weaker spare model sometimes writes {@code [[id:3]]} (the menu says {@code [id 3]}): that is a
+ * marker too.
  */
 final class MarkerFilter {
 
-  private static final String OPEN = "[[dish:";
+  private static final List<String> OPENS = List.of("[[dish:", "[[id:");
   private static final int MAX_DIGITS = 6;
 
   /** Spaces that are shown only if no marker follows them. */
@@ -60,7 +63,7 @@ final class MarkerFilter {
     pending.append(c);
     State state = state(pending);
     if (state == State.COMPLETE) {
-      String digits = pending.substring(OPEN.length(), pending.length() - 2);
+      String digits = pending.substring(pending.indexOf(":") + 1, pending.length() - 2);
       ids.add(Long.parseLong(digits));
       pending.setLength(0);
       spaces.setLength(0);
@@ -83,17 +86,26 @@ final class MarkerFilter {
   }
 
   private static State state(CharSequence text) {
+    for (String open : OPENS) {
+      State state = state(text, open);
+      if (state != State.NOT_A_MARKER) {
+        return state;
+      }
+    }
+    return State.NOT_A_MARKER;
+  }
+
+  private static State state(CharSequence text, String open) {
     int n = text.length();
-    int open = Math.min(n, OPEN.length());
-    for (int i = 0; i < open; i++) {
-      if (text.charAt(i) != OPEN.charAt(i)) {
+    for (int i = 0; i < Math.min(n, open.length()); i++) {
+      if (text.charAt(i) != open.charAt(i)) {
         return State.NOT_A_MARKER;
       }
     }
-    if (n <= OPEN.length()) {
+    if (n <= open.length()) {
       return State.PREFIX;
     }
-    int i = OPEN.length();
+    int i = open.length();
     int digits = 0;
     while (i < n && Character.isDigit(text.charAt(i))) {
       digits++;

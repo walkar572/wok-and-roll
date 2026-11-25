@@ -95,4 +95,15 @@ class MarkerFilterTest {
 
     assertThat(filter.ids()).containsExactly(8L, 2L);
   }
+
+  @Test
+  void alsoTakesTheIdFormOfASpareModel() {
+    MarkerFilter filter = new MarkerFilter();
+
+    String shown =
+        run(filter, "Shrimp rolls [[i", "d:13]] for 269 ₴, or [[dish:5]]; [[idea]] [[id:]]");
+
+    assertThat(shown).isEqualTo("Shrimp rolls for 269 ₴, or; [[idea]] [[id:]]");
+    assertThat(filter.ids()).containsExactly(13L, 5L);
+  }
 }

@@ -61,7 +61,7 @@ All endpoints, with requests, responses, errors, roles, owners and sprints, are 
 - **Dev proxy:** Vite proxies `/api` to `http://localhost:8080`, so no CORS setup is needed for local work.
 - **One API client:** `src/services/api.ts` (split it into `src/services/api/` when it grows). Until an endpoint exists, use mock JSON copied from the examples in `api-contract.md`.
 - **Country:** chosen in the header, saved in the browser, sent as `?country=` with every request.
-- **Money on screen:** `Intl.NumberFormat` with 2 decimals and the currency code from the API.
+- **Money on screen:** 2 decimals and the sign of the currency, never its code: `Intl.NumberFormat` with `currencyDisplay: 'narrowSymbol'` (`₴259.00`, not `UAH 259.00`); Uzbek, Kazakh and Georgian have their own rules (`2 190,00 ₸`), and sum, which has no sign, is a word (`55 000,00 soʻm`). One function: `formatMoney` in `src/i18n/format.ts`.
 - **Components:** use the Figma tokens. For complex components (Select, Date picker, Toast, dialogs) use a ready accessible library (Radix UI Primitives, react-day-picker) and style it with our tokens. Charts: Chart.js (Project Plan v2). Do not write these from scratch.
 - **Auth:** the token is in `localStorage` (`wr.auth`) and goes into `Authorization: Bearer`. Drop it when `exp` has passed; on any `401` drop it and go to Log in, keeping the cart.
 - **Checkout and booking:** one `Idempotency-Key` per attempt (`crypto.randomUUID()`, or a `crypto.getRandomValues()` UUID where `randomUUID` is unavailable, such as plain http by IP); the button is disabled while the request runs.

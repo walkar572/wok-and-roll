@@ -93,6 +93,7 @@ class AssistantPromptTest {
     assertThat(text)
         .contains("You are Panko")
         .contains("# Menu of Uzbekistan, prices in UZS before VAT")
+        .contains("with the word for sum in the guest's language")
         .contains("## Rolls")
         .contains(
             "- [id 1] Philadelphia: 65000 UZS; 8 pcs, 250 g; Salmon, cream cheese.; options:"
@@ -116,6 +117,17 @@ class AssistantPromptTest {
         .contains("- Tashkent: Center: fee 15000 UZS, about 45 min")
         .contains("- VAT 12% is added at checkout.")
         .contains("from 300000 UZS 5%");
+  }
+
+  @Test
+  void pricesToTheGuestCarryTheSignOfTheCurrencyNotItsCode() {
+    assertThat(AssistantPrompt.currencyRule("UAH"))
+        .contains("with the sign ₴ instead of the code UAH")
+        .contains("259 ₴ or ₴259");
+    assertThat(AssistantPrompt.currencyRule("GEL")).contains("sign ₾");
+    assertThat(AssistantPrompt.currencyRule("UZS")).contains("sum has no sign");
+    assertThat(AssistantPrompt.currencyRule("EUR"))
+        .isEqualTo("Write prices to the guest with the code EUR.");
   }
 
   @Test

@@ -46,7 +46,9 @@ test('an admin logs in to the panel and sees the overview, every order and one o
   await page.getByLabel('Country').selectOption('GEO');
   const table = page.getByRole('table', { name: 'Orders, newest first' });
   await expect(table.getByRole('row').nth(1)).toContainText('Georgia');
-  await expect(table.getByRole('row').nth(1)).toContainText('GEL');
+  // the total in lari, with the sign of the currency, never its code
+  await expect(table.getByRole('row').nth(1)).toContainText(/₾\d+\.\d{2}/);
+  await expect(table.getByRole('row').nth(1)).not.toContainText('GEL');
 
   // one order: its details and its receipt
   const number = (await table.getByRole('row').nth(1).getByRole('link').textContent()).trim();

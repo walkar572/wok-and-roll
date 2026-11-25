@@ -138,6 +138,13 @@ const SYMBOLS: Record<string, string> = {
   GBP: '£',
   USD: '$',
 };
+/** Sum has no symbol in Intl either ("UZS 55,000.00"): these languages write its name after the sum. */
+const SUM_NAME: Partial<Record<Locale, string>> = {
+  uk: 'сум',
+  zh: '苏姆',
+  'en-GB': 'soʻm',
+  'en-US': 'soʻm',
+};
 const NBSP = ' ';
 
 /** 55000 -> "55 000,00" (no-break space between thousands, decimal comma). */
@@ -147,18 +154,27 @@ function groupedNumber(value: number, decimals: number): string {
   return `${value < 0 ? '−' : ''}${grouped}${fraction ? `,${fraction}` : ''}`;
 }
 
-/** Money with exactly 2 decimals: "55 000,00 soʻm", "2 190,00 ₸", "179,00 ₴", "¥31.00". */
+/**
+ * Money with exactly 2 decimals and the sign of the currency, never its code: "55 000,00 soʻm",
+ * "2 190,00 ₸", "179,00 ₴", "₴259.00", "¥31.00", "55,000.00 soʻm".
+ */
 export function formatMoney(amount: number, currency: string, locale: Locale): string {
   const own = OWN[locale];
   if (own) {
     const symbol = currency === 'UZS' ? own.sum : (SYMBOLS[currency] ?? currency);
     return `${groupedNumber(amount, 2)}${NBSP}${symbol}`;
   }
+  const decimals = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  const sum = currency === 'UZS' ? SUM_NAME[locale] : undefined;
+  if (sum) {
+    return `${new Intl.NumberFormat(INTL_LOCALE[locale], decimals).format(amount)}${NBSP}${sum}`;
+  }
+  // The narrow symbol: "₴259.00", not "UAH 259.00"; "$" and "¥", not "US$" and "CN¥".
   return new Intl.NumberFormat(INTL_LOCALE[locale], {
     style: 'currency',
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    currencyDisplay: 'narrowSymbol',
+    ...decimals,
   }).format(amount);
 }
 

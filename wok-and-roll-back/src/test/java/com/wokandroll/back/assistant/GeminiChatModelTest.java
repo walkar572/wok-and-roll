@@ -14,7 +14,11 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -54,15 +58,58 @@ class GeminiChatModelTest {
           }
         });
     server.start();
-    model =
-        new GeminiChatModel(
-            HttpClient.newHttpClient(),
-            json,
-            "http://127.0.0.1:" + server.getAddress().getPort() + "/v1beta",
-            "test-key",
-            "gemini-3.5-flash",
-            "minimal",
-            Duration.ZERO);
+    model = model("gemini-3.5-flash");
+  }
+
+  private GeminiChatModel model(String... names) {
+    return new GeminiChatModel(
+        HttpClient.newHttpClient(),
+        json,
+        "http://127.0.0.1:" + server.getAddress().getPort() + "/v1beta",
+        "test-key",
+        List.of(names),
+        "minimal",
+        Duration.ZERO,
+        clock);
+  }
+
+  /** A clock the test moves by hand. */
+  private static final class TestClock extends Clock {
+    private Instant now = Instant.parse("2026-11-25T16:00:00Z");
+
+    void advance(Duration duration) {
+      now = now.plus(duration);
+    }
+
+    @Override
+    public Instant instant() {
+      return now;
+    }
+
+    @Override
+    public ZoneId getZone() {
+      return ZoneOffset.UTC;
+    }
+
+    @Override
+    public Clock withZone(ZoneId zone) {
+      return this;
+    }
+  }
+
+  private final TestClock clock = new TestClock();
+
+  /** The 429 of a model out of its quota, with the time to wait. */
+  private static String quotaExhausted(String retryDelay) {
+    return "{\"error\":{\"code\":429,\"status\":\"RESOURCE_EXHAUSTED\",\"message\":\"quota\","
+        + "\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.QuotaFailure\"},"
+        + "{\"@type\":\"type.googleapis.com/google.rpc.RetryInfo\",\"retryDelay\":\""
+        + retryDelay
+        + "\"}]}}";
+  }
+
+  private static String modelOf(String path) {
+    return path.substring("/v1beta/models/".length(), path.indexOf(':'));
   }
 
   @AfterEach
@@ -185,6 +232,119 @@ class GeminiChatModelTest {
               assertThat(e.getMessage()).contains("400").contains("bad level");
             });
     assertThat(paths).hasSize(3);
+  }
+
+  @Test
+  void aModelOutOfItsQuotaRestsWhileTheNextAnswers() {
+    model = model("main", "spare");
+    replies.add(new Reply(429, quotaExhausted("3600s")));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"From the spare\"}"))));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Spare again\"}"))));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Main is back\"}"))));
+
+    StringBuilder first = new StringBuilder();
+    ask(first);
+    StringBuilder second = new StringBuilder();
+    ask(second);
+    clock.advance(Duration.ofSeconds(3601));
+    StringBuilder third = new StringBuilder();
+    ask(third);
+
+    assertThat(first.toString()).isEqualTo("From the spare");
+    assertThat(second.toString()).isEqualTo("Spare again");
+    assertThat(third.toString()).isEqualTo("Main is back");
+    // No request is spent on the main model while it rests.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
+        .containsExactly("main", "spare", "spare", "main");
+    assertThat(model.model()).isEqualTo("main");
+  }
+
+  @Test
+  void whenEveryModelRestsTheGuestHearsBusyWithoutARequest() {
+    model = model("main", "spare");
+    replies.add(new Reply(429, quotaExhausted("57748s")));
+    replies.add(new Reply(429, quotaExhausted("20.5s")));
+
+    assertThatThrownBy(() -> ask(new StringBuilder()))
+        .isInstanceOfSatisfying(
+            Failure.class,
+            e -> {
+              assertThat(e.code()).isEqualTo(Failure.BUSY);
+              assertThat(e.getMessage()).contains("main answered 429", "spare answered 429");
+            });
+    assertThatThrownBy(() -> ask(new StringBuilder()))
+        .isInstanceOfSatisfying(Failure.class, e -> assertThat(e.code()).isEqualTo(Failure.BUSY));
+    assertThat(paths).hasSize(2);
+
+    // The quota per minute of the spare is back after 21 seconds.
+    clock.advance(Duration.ofSeconds(21));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Back\"}"))));
+    StringBuilder shown = new StringBuilder();
+    ask(shown);
+    assertThat(shown.toString()).isEqualTo("Back");
+    assertThat(modelOf(paths.get(2))).isEqualTo("spare");
+  }
+
+  @Test
+  void anErrorOfOneModelGoesToTheNextAndIsNotTriedAgain() {
+    model = model("main", "spare");
+    replies.add(new Reply(404, "{\"error\":{\"status\":\"NOT_FOUND\",\"message\":\"no model\"}}"));
+    replies.add(new Reply(503, "{\"error\":{\"status\":\"UNAVAILABLE\",\"message\":\"busy\"}}"));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Here\"}"))));
+    StringBuilder shown = new StringBuilder();
+
+    ask(shown);
+
+    assertThat(shown.toString()).isEqualTo("Here");
+    // main (404), spare (503), then only spare once more after the pause.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
+        .containsExactly("main", "spare", "spare");
+  }
+
+  @Test
+  void anAnswerCutOffOrBrokenOffIsBusy() {
+    replies.add(new Reply(200, sse(parts(null, "{\"text\":\"- Crunchy\"}"))));
+    replies.add(
+        new Reply(
+            200,
+            sse(
+                parts(null, "{\"text\":\"Hi\"}"),
+                "{\"error\":{\"code\":503,\"status\":\"UNAVAILABLE\",\"message\":\"overloaded\"}}")));
+
+    assertThatThrownBy(() -> ask(new StringBuilder()))
+        .isInstanceOfSatisfying(
+            Failure.class,
+            e -> {
+              assertThat(e.code()).isEqualTo(Failure.BUSY);
+              assertThat(e.getMessage()).contains("stopped before the end");
+            });
+    assertThatThrownBy(() -> ask(new StringBuilder()))
+        .isInstanceOfSatisfying(
+            Failure.class,
+            e -> {
+              assertThat(e.code()).isEqualTo(Failure.BUSY);
+              assertThat(e.getMessage()).contains("broke off with 503", "overloaded");
+            });
+  }
+
+  @Test
+  void theTimeToWaitComesFromTheRetryInfoOfTheError() {
+    assertThat(model.retryDelay(quotaExhausted("57748s"))).isEqualTo(Duration.ofSeconds(57748));
+    assertThat(model.retryDelay(quotaExhausted("0.5s"))).isEqualTo(Duration.ofMillis(500));
+    assertThat(model.retryDelay(quotaExhausted("soon"))).isNull();
+    assertThat(model.retryDelay("{\"error\":{\"status\":\"RESOURCE_EXHAUSTED\"}}")).isNull();
+    assertThat(model.retryDelay("not json")).isNull();
+  }
+
+  @Test
+  void theModelsAreAListSeparatedByCommasElseTheDefaults() {
+    List<String> defaults = GeminiChatModel.DEFAULT_MODELS;
+    assertThat(AssistantConfig.models(" a , b,,", defaults)).containsExactly("a", "b");
+    assertThat(AssistantConfig.models("gemini-3.8-flash", defaults))
+        .containsExactly("gemini-3.8-flash");
+    assertThat(AssistantConfig.models(" ", defaults)).isEqualTo(defaults);
+    assertThat(AssistantConfig.models(null, defaults)).isEqualTo(defaults);
+    assertThat(defaults.get(0)).isEqualTo("gemini-3.5-flash");
   }
 
   @Test

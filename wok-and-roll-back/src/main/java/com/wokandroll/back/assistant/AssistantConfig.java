@@ -3,6 +3,8 @@ package com.wokandroll.back.assistant;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,7 +22,9 @@ import org.springframework.context.annotation.Configuration;
  *   <li>{@code ANTHROPIC_API_KEY} or {@code GEMINI_API_KEY}: the key of the provider. With both,
  *       Claude is used unless {@code ASSISTANT_PROVIDER} says otherwise.
  *   <li>{@code ASSISTANT_PROVIDER}: {@code anthropic} or {@code gemini} (optional).
- *   <li>{@code ASSISTANT_MODEL}: default {@code claude-opus-5-5} or {@code gemini-3.5-flash}.
+ *   <li>{@code ASSISTANT_MODEL}: default {@code claude-opus-5-5}. For Gemini a list separated by
+ *       commas, the first answers while it has quota left; default {@code
+ *       gemini-3.5-flash,gemini-3-flash-preview,gemini-3.5-flash-lite}.
  *   <li>{@code ASSISTANT_EFFORT}: how much the model thinks before it answers. Claude: effort,
  *       default {@code low}; Gemini: thinking level, default {@code minimal}. Short answers, fast
  *       and cheap.
@@ -62,10 +66,10 @@ class AssistantConfig {
         if (geminiKey.isBlank()) {
           return off("ASSISTANT_PROVIDER is gemini but there is no GEMINI_API_KEY");
         }
-        String name = orDefault(model, GeminiChatModel.DEFAULT_MODEL);
+        List<String> names = models(model, GeminiChatModel.DEFAULT_MODELS);
         String level = orDefault(effort, GeminiChatModel.DEFAULT_THINKING);
-        log.info("Assistant: AI chat on, Gemini {}, thinking {}", name, level);
-        return GeminiChatModel.create(json, geminiKey, name, level);
+        log.info("Assistant: AI chat on, Gemini {}, thinking {}", String.join(" > ", names), level);
+        return GeminiChatModel.create(json, geminiKey, names, level);
       }
       case "none" -> {
         return off("no ANTHROPIC_API_KEY or GEMINI_API_KEY");
@@ -88,6 +92,18 @@ class AssistantConfig {
       return "gemini";
     }
     return "none";
+  }
+
+  /** A list of models separated by commas, in the order to try them; the defaults when empty. */
+  static List<String> models(String setting, List<String> defaults) {
+    List<String> names =
+        setting == null
+            ? List.of()
+            : Arrays.stream(setting.split(","))
+                .map(String::strip)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    return names.isEmpty() ? defaults : names;
   }
 
   private static ChatModel off(String why) {

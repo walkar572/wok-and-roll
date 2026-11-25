@@ -10,22 +10,38 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Panko on Google Gemini, through the REST API of the Gemini API ({@code streamGenerateContent}
  * with server-sent events) and the HTTP client of the JDK: no extra library. The rules and the menu
  * are the first part of the system instruction, the same for every guest of a country, so the
  * implicit cache of the API can reuse them.
+ *
+ * <p>Panko has more than one model. A free key gets a small quota per model and per day (20
+ * requests in November 2026), and every model has its own: a model that answers 429 with a time to
+ * wait rests until then, and the next model of the list answers in the meantime.
  */
 final class GeminiChatModel implements ChatModel {
 
-  static final String DEFAULT_MODEL = "gemini-3.5-flash";
+  private static final Logger log = LoggerFactory.getLogger(GeminiChatModel.class);
+
+  /** The first answers best; the others take over, in this order, while it is out of quota. */
+  static final List<String> DEFAULT_MODELS =
+      List.of("gemini-3.5-flash", "gemini-3-flash-preview", "gemini-3.5-flash-lite");
+
   static final String DEFAULT_THINKING = "minimal";
   static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -49,36 +65,47 @@ final class GeminiChatModel implements ChatModel {
   private final ObjectMapper json;
   private final String baseUrl;
   private final String apiKey;
-  private final String model;
+  private final List<String> models;
   private final String thinkingLevel;
   private final Duration retryAfter;
+  private final Clock clock;
+
+  /** The models out of their quota, and until when. */
+  private final Map<String, Instant> resting = new ConcurrentHashMap<>();
 
   GeminiChatModel(
       HttpClient http,
       ObjectMapper json,
       String baseUrl,
       String apiKey,
-      String model,
+      List<String> models,
       String thinkingLevel,
-      Duration retryAfter) {
+      Duration retryAfter,
+      Clock clock) {
+    if (models.isEmpty()) {
+      throw new IllegalArgumentException("No Gemini model");
+    }
     this.http = http;
     this.json = json;
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
-    this.model = model;
+    this.models = List.copyOf(models);
     this.thinkingLevel = thinkingLevel;
     this.retryAfter = retryAfter;
+    this.clock = clock;
   }
 
-  static GeminiChatModel create(ObjectMapper json, String apiKey, String model, String thinking) {
+  static GeminiChatModel create(
+      ObjectMapper json, String apiKey, List<String> models, String thinking) {
     return new GeminiChatModel(
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build(),
         json,
         BASE_URL,
         apiKey,
-        model,
+        models,
         thinking,
-        Duration.ofSeconds(1));
+        Duration.ofSeconds(1),
+        Clock.systemUTC());
   }
 
   @Override
@@ -86,41 +113,79 @@ final class GeminiChatModel implements ChatModel {
     return true;
   }
 
+  /** The first model of the list: the one Panko uses whenever it has quota left. */
   @Override
   public String model() {
-    return model;
+    return models.get(0);
   }
 
   @Override
   public Outcome stream(
       String instructions, String context, List<Turn> turns, Consumer<String> onText) {
-    HttpRequest request =
-        HttpRequest.newBuilder(
-                URI.create(baseUrl + "/models/" + model + ":streamGenerateContent?alt=sse"))
-            .timeout(Duration.ofSeconds(60))
-            .header("Content-Type", "application/json")
-            .header("x-goog-api-key", apiKey)
-            .POST(HttpRequest.BodyPublishers.ofString(body(instructions, context, turns)))
-            .build();
-
-    HttpResponse<Stream<String>> response = send(request);
+    String body = body(instructions, context, turns);
+    List<String> errors = new ArrayList<>();
+    boolean busy = false;
+    List<String> tries = models.stream().filter(model -> !isResting(model)).toList();
     // A model that is busy for a moment gets one more try before the guest sees anything.
-    if (isBusy(response.statusCode())) {
-      response.body().close();
-      pause();
-      response = send(request);
-    }
-    if (response.statusCode() != 200) {
-      String error;
-      try (Stream<String> lines = response.body()) {
-        error = lines.collect(Collectors.joining("\n"));
+    for (int round = 0; round < 2 && !tries.isEmpty(); round++) {
+      if (round > 0) {
+        pause();
       }
-      throw new Failure(
-          isBusy(response.statusCode()) ? Failure.BUSY : Failure.ERROR,
-          "Gemini API answered " + response.statusCode() + " " + errorOf(error),
-          null);
+      List<String> busyForAMoment = new ArrayList<>();
+      for (String model : tries) {
+        HttpResponse<Stream<String>> response = send(request(model, body));
+        int status = response.statusCode();
+        if (status == 200) {
+          return read(model, response, onText);
+        }
+        String error;
+        try (Stream<String> lines = response.body()) {
+          error = lines.collect(Collectors.joining("\n"));
+        }
+        errors.add(model + " answered " + status + " " + errorOf(error));
+        busy |= isBusy(status);
+        Duration wait = status == 429 ? retryDelay(error) : null;
+        if (wait != null) {
+          Instant until = clock.instant().plus(wait);
+          resting.put(model, until);
+          log.warn("Assistant: Gemini {} is out of its quota until {}", model, until);
+        } else if (isBusy(status)) {
+          busyForAMoment.add(model);
+        }
+      }
+      tries = busyForAMoment;
     }
+    if (errors.isEmpty()) {
+      throw new Failure(Failure.BUSY, "Every Gemini model is out of its quota", null);
+    }
+    throw new Failure(
+        busy ? Failure.BUSY : Failure.ERROR, "Gemini API: " + String.join("; ", errors), null);
+  }
 
+  private boolean isResting(String model) {
+    Instant until = resting.get(model);
+    if (until == null) {
+      return false;
+    }
+    if (clock.instant().isBefore(until)) {
+      return true;
+    }
+    resting.remove(model, until);
+    return false;
+  }
+
+  private HttpRequest request(String model, String body) {
+    return HttpRequest.newBuilder(
+            URI.create(baseUrl + "/models/" + model + ":streamGenerateContent?alt=sse"))
+        .timeout(Duration.ofSeconds(60))
+        .header("Content-Type", "application/json")
+        .header("x-goog-api-key", apiKey)
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+  }
+
+  private Outcome read(
+      String model, HttpResponse<Stream<String>> response, Consumer<String> onText) {
     String finish = null;
     boolean blocked = false;
     try (Stream<String> lines = response.body()) {
@@ -128,7 +193,16 @@ final class GeminiChatModel implements ChatModel {
         if (!line.startsWith("data:")) {
           continue;
         }
-        JsonNode chunk = json.readTree(line.substring("data:".length()));
+        String data = line.substring("data:".length());
+        JsonNode chunk = json.readTree(data);
+        // An error in the middle of the answer (the model got overloaded while it wrote).
+        if (chunk.has("error")) {
+          int code = chunk.path("error").path("code").asInt(0);
+          throw new Failure(
+              isBusy(code) ? Failure.BUSY : Failure.ERROR,
+              "Gemini " + model + " broke off with " + code + " " + errorOf(data),
+              null);
+        }
         if (chunk.path("promptFeedback").hasNonNull("blockReason")) {
           blocked = true;
         }
@@ -143,9 +217,16 @@ final class GeminiChatModel implements ChatModel {
         }
       }
     } catch (IOException | UncheckedIOException e) {
-      throw new Failure(Failure.BUSY, "Gemini API stream broke", e);
+      throw new Failure(Failure.BUSY, "Gemini " + model + " stream broke", e);
     }
-    return new Outcome(blocked || BLOCKED.contains(finish), blocked ? "BLOCKED" : finish);
+    if (blocked) {
+      return new Outcome(true, "BLOCKED");
+    }
+    // Every complete answer ends with a reason: without one the answer was cut off.
+    if (finish == null) {
+      throw new Failure(Failure.BUSY, "Gemini " + model + " stopped before the end", null);
+    }
+    return new Outcome(BLOCKED.contains(finish), finish);
   }
 
   /** The request: the two parts of the system instruction, the conversation, the limits. */
@@ -194,6 +275,25 @@ final class GeminiChatModel implements ChatModel {
 
   private static boolean isBusy(int status) {
     return status == 429 || status == 500 || status == 503 || status == 504;
+  }
+
+  /**
+   * How long a model out of its quota waits: the {@code RetryInfo} of a 429 ({@code "57748s"} at
+   * the end of a free day, a few seconds for the quota per minute); null when the body has none.
+   */
+  Duration retryDelay(String body) {
+    try {
+      for (JsonNode detail : json.readTree(body).path("error").path("details")) {
+        String delay = detail.path("retryDelay").asText("");
+        if (detail.path("@type").asText("").endsWith("RetryInfo") && delay.endsWith("s")) {
+          double seconds = Double.parseDouble(delay.substring(0, delay.length() - 1));
+          return seconds > 0 ? Duration.ofMillis(Math.round(seconds * 1000)) : null;
+        }
+      }
+    } catch (IOException | NumberFormatException e) {
+      return null;
+    }
+    return null;
   }
 
   /** The status and the message of an error body of the API, for the log. */
