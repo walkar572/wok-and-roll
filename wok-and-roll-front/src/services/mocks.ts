@@ -1,16 +1,13 @@
-// Temporary contract fixtures (API contract §3.5) for local work without a backend.
-// Enabled only with VITE_API_MOCKS=true in .env.local. Delete this file when the APIs are merged.
+// Temporary contract fixtures (API contract §3.5) for local work without a backend: the cart
+// quote and the order. Enabled only with VITE_API_MOCKS=true in .env.local. Cafés, delivery zones
+// and time slots always come from the API (on dev since 23 Nov). Delete this file when the APIs are
+// merged.
 import {
   ApiRequestError,
-  type Cafe,
   type CartQuote,
   type CartQuoteRequest,
-  type CountryCode,
-  type DeliveryZone,
   type OrderRequest,
   type OrderResponse,
-  type TimeSlot,
-  type TimeSlots,
 } from './api';
 
 export function mockQuoteCart(request: CartQuoteRequest): CartQuote {
@@ -66,59 +63,6 @@ export function mockQuoteCart(request: CartQuoteRequest): CartQuote {
     deliveryFee: request.scenario === 'PICKUP' ? 0 : 20,
     total: request.scenario === 'PICKUP' ? 189.63 : 209.63,
   };
-}
-
-export function mockLoadCafes(country: CountryCode): Cafe[] {
-  if (country !== 'UZB') {
-    throw new Error('The café mock only supports the API contract example country, UZB.');
-  }
-
-  return [
-    {
-      id: 1,
-      country: 'UZB',
-      name: 'Wok & Roll Chilanzar',
-      city: 'Tashkent',
-      address: '12 Bunyodkor Ave, Tashkent',
-      phone: '+998712000001',
-      opensAt: '10:00',
-      closesAt: '22:00',
-      timeZone: 'Asia/Tashkent',
-      location: { latitude: 41.272187, longitude: 69.203167 },
-    },
-  ];
-}
-
-export function mockLoadDeliveryZones(country: CountryCode): DeliveryZone[] {
-  if (country !== 'UZB') {
-    throw new Error('The delivery-zone mock only supports the API contract example country, UZB.');
-  }
-
-  return [
-    {
-      id: 1,
-      country: 'UZB',
-      name: 'Tashkent: Center',
-      cafeId: 1,
-      fee: 20,
-      currency: 'UZS',
-      deliveryMinutes: 45,
-    },
-  ];
-}
-
-export function mockLoadTimeSlots(cafeId: number, date: string): TimeSlots {
-  if (cafeId !== 1) {
-    throw new Error('The time-slot mock only supports the API contract example café, id 1.');
-  }
-
-  const slots: TimeSlot[] = [
-    { start: '09:00', end: '09:30', capacity: 5, remaining: 5, available: false, reason: 'PAST' },
-    { start: '10:00', end: '10:30', capacity: 5, remaining: 5, available: true, reason: null },
-    { start: '10:30', end: '11:00', capacity: 5, remaining: 0, available: false, reason: 'FULL' },
-    { start: '21:30', end: '22:00', capacity: 5, remaining: 4, available: true, reason: null },
-  ];
-  return { cafeId, date, timeZone: 'Asia/Tashkent', slots };
 }
 
 export function mockPlaceOrder(request: OrderRequest): OrderResponse {

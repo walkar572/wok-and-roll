@@ -229,6 +229,11 @@ export function BookingPage() {
       );
       setBooking(result);
     } catch (requestError) {
+      // Nothing was booked: the next attempt is a new booking with a new key, with or without
+      // field errors in the answer.
+      if (requestError instanceof ApiRequestError && requestError.code === 'NO_TABLE_AVAILABLE') {
+        idempotencyKey.current = undefined;
+      }
       if (requestError instanceof ApiRequestError && Object.keys(requestError.fields).length > 0) {
         const fieldErrors: Partial<Record<Field, string>> = {};
         const other: string[] = [];
@@ -239,14 +244,13 @@ export function BookingPage() {
         }
         setErrors(fieldErrors);
         setFocusError(true);
-        if (requestError.code === 'NO_TABLE_AVAILABLE') idempotencyKey.current = undefined;
-        setFormError(
-          other.length > 0
-            ? other.join(' ')
-            : requestError.code === 'NO_TABLE_AVAILABLE'
-              ? (apiCodeMessage(requestError.code) ?? requestError.message)
-              : undefined,
-        );
+        // A message that sits next to its field (and in the list of details to check) is not
+        // repeated at the top; only what belongs to no field of the form goes there.
+        const unplaced =
+          Object.keys(fieldErrors).length === 0 && requestError.code === 'NO_TABLE_AVAILABLE'
+            ? (apiCodeMessage(requestError.code) ?? requestError.message)
+            : undefined;
+        setFormError(other.length > 0 ? other.join(' ') : unplaced);
       } else {
         setFormError(guestErrorMessage(requestError, t('booking.bookFallback')));
       }

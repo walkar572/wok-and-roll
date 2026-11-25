@@ -48,6 +48,22 @@ type Scenario = 'PICKUP' | 'DELIVERY';
 type ContactField = 'contactName' | 'contactPhone' | 'contactEmail' | 'comment' | 'deliveryAddress';
 type CheckoutErrorField = ContactField | 'orderDate' | 'slotStart' | 'cafeId' | 'deliveryZoneId';
 
+/**
+ * The fields in the order of the screen. The list of errors at the top follows it, so its first line
+ * is the field that gets the focus (the first invalid field of the form).
+ */
+const FIELD_ORDER: CheckoutErrorField[] = [
+  'deliveryZoneId',
+  'cafeId',
+  'deliveryAddress',
+  'orderDate',
+  'slotStart',
+  'contactName',
+  'contactPhone',
+  'contactEmail',
+  'comment',
+];
+
 interface ContactDetails {
   contactName: string;
   contactPhone: string;
@@ -521,9 +537,10 @@ export function CheckoutPage() {
     );
   }
 
-  const fieldErrorMessages = Object.entries(fieldErrors).filter(
-    (entry): entry is [string, string] => Boolean(entry[1]),
-  );
+  const fieldErrorMessages = FIELD_ORDER.flatMap((field) => {
+    const message = fieldErrors[field];
+    return message ? [[field, message] as [string, string]] : [];
+  });
 
   return (
     <section className="checkout-page" aria-labelledby="checkout-title">

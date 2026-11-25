@@ -870,11 +870,6 @@ export async function quoteCart(request: CartQuoteRequest): Promise<CartQuote> {
 }
 
 export async function loadCafes(country: CountryCode): Promise<Cafe[]> {
-  if (USE_API_MOCKS) {
-    const { mockLoadCafes } = await import('./mocks');
-    return mockLoadCafes(country);
-  }
-
   const query = new URLSearchParams({ country });
   const response = await requestJson(`/api/v1/cafes?${query}`);
   if (!isRecord(response) || !Array.isArray(response.items)) {
@@ -884,11 +879,6 @@ export async function loadCafes(country: CountryCode): Promise<Cafe[]> {
 }
 
 export async function loadDeliveryZones(country: CountryCode): Promise<DeliveryZone[]> {
-  if (USE_API_MOCKS) {
-    const { mockLoadDeliveryZones } = await import('./mocks');
-    return mockLoadDeliveryZones(country);
-  }
-
   const query = new URLSearchParams({ country });
   const response = await requestJson(`/api/v1/delivery-zones?${query}`);
   if (!isRecord(response) || !Array.isArray(response.items)) {
@@ -898,11 +888,6 @@ export async function loadDeliveryZones(country: CountryCode): Promise<DeliveryZ
 }
 
 export async function loadTimeSlots(cafeId: number, date: string): Promise<TimeSlots> {
-  if (USE_API_MOCKS) {
-    const { mockLoadTimeSlots } = await import('./mocks');
-    return mockLoadTimeSlots(cafeId, date);
-  }
-
   const query = new URLSearchParams({ cafeId: String(cafeId), date });
   return parseTimeSlots(await requestJson(`/api/v1/time-slots?${query}`));
 }
