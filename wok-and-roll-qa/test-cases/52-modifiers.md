@@ -18,7 +18,7 @@ Covers the points from #115: SIZE one, EXTRA many, price on the button, prices p
 | ID | Area | Title | Steps | Expected result |
 |---|---|---|---|---|
 | TC-52-01 | General | Product window opens | 1. Open Menu. 2. Click a product with modifiers. | The window shows the name, photo, description, base price and the modifier groups. The data is the same as in the product API. |
-| TC-52-02 | General | Modifier prices are shown | Look at every modifier option. | Every option shows its price with a plus sign, as in Figma (example for Firecracker udon in UZB: Regular `+UZS 0.00`, Large `+UZS 12.00`), with 2 decimals and the currency code of the country. Today the app shows `UZS 12.00` without the plus sign: bug #200. |
+| TC-52-02 | General | Modifier prices are shown | Look at every modifier option. | Every option shows its price with a plus sign, as in Figma (example for Firecracker udon in UZB: Regular `+UZS 0.00`, Large `+UZS 12.00`), with 2 decimals and the sign of the currency of the country (sum: the word, `soʻm` in Uzbek). Today the app shows `UZS 12.00` without the plus sign: bug #200. |
 | TC-52-03 | SIZE one | Only one SIZE | 1. Choose one SIZE. 2. Choose another SIZE. | Only one SIZE is selected at a time. The first one is not selected any more. |
 | TC-52-04 | SIZE one | First size is pre-selected | Open the window and do not choose anything. | The first size is selected (Regular for Firecracker udon, 400 ml for Yuzu lemonade). The button shows the price with this size. A product without SIZE is never added. |
 | TC-52-05 | EXTRA many | Several EXTRA | 1. Choose two EXTRA options. 2. Remove one. | Several EXTRA can be selected together. An option can be removed again. |

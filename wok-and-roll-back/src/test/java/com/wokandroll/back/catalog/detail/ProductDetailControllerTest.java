@@ -1,5 +1,6 @@
 package com.wokandroll.back.catalog.detail;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -39,28 +40,41 @@ class ProductDetailControllerTest {
                 "Firecracker udon",
                 "Udon noodles, chicken, chili, sesame.",
                 "/images/udon.png",
+                null,
+                350,
+                null,
                 new BigDecimal("48.00"),
                 "UZS",
                 true,
                 true,
-                List.of(new ModifierResponse(2, "SIZE", "Large", new BigDecimal("12.00")))));
+                List.of(new ModifierResponse(2, "SIZE", "Large", new BigDecimal("12.00"))),
+                null,
+                List.of(),
+                false,
+                true));
 
     mvc.perform(get("/api/v1/products/5").param("country", "UZB"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(5))
+        .andExpect(jsonPath("$.pieces").value(nullValue()))
+        .andExpect(jsonPath("$.weightGrams").value(350))
+        .andExpect(jsonPath("$.volumeMl").value(nullValue()))
         .andExpect(jsonPath("$.price").value(48.00))
         .andExpect(jsonPath("$.currency").value("UZS"))
         .andExpect(jsonPath("$.hasModifiers").value(true))
+        .andExpect(jsonPath("$.vegetarian").value(false))
+        .andExpect(jsonPath("$.spicy").value(true))
         .andExpect(jsonPath("$.modifiers[0].type").value("SIZE"))
         .andExpect(jsonPath("$.modifiers[0].priceDelta").value(12.00));
   }
 
   @Test
   void unknownCountryIsValidationError() throws Exception {
-    mvc.perform(get("/api/v1/products/5").param("country", "USA"))
+    mvc.perform(get("/api/v1/products/5").param("country", "FRA"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-        .andExpect(jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN"));
+        .andExpect(
+            jsonPath("$.fields.country").value("must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"));
     verifyNoInteractions(service);
   }
 

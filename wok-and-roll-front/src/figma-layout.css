@@ -53,9 +53,31 @@ input:focus-visible {
   outline-offset: 3px;
 }
 
+/* The header stays at the top while the page scrolls, so the menu and the basket are always one
+   tap away. A focused element of the page is kept out from under it (WCAG 2.4.11) with a scroll
+   margin on the page, not a scroll padding on <html>: with the padding, opening the country list
+   (rendered at the end of <body>) scrolled the whole page up. */
+.app-main,
+.app-main *,
+.site-footer * {
+  scroll-margin-top: calc(var(--size-header-desktop) + 16px);
+}
+
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   border-color: var(--color-border-default);
   background: var(--color-bg-canvas);
+  transition: box-shadow 240ms ease;
+}
+
+.site-header.is-scrolled {
+  box-shadow: 0 8px 24px rgb(38 30 20 / 8%);
+}
+
+.skip-link {
+  z-index: 60;
 }
 
 .site-header__inner {
@@ -78,16 +100,20 @@ input:focus-visible {
 }
 
 .main-nav {
-  gap: 16px;
+  gap: 4px;
 }
 
+/* A soft pill appears behind the link on hover. */
 .main-nav__link {
   min-height: var(--size-control);
-  border-radius: 0;
-  padding: 0 8px;
+  border-radius: var(--radius-full);
+  padding: 0 16px;
   color: var(--color-text-primary);
   font-size: 14px;
   font-weight: 400;
+  transition:
+    background-color 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .main-nav__link.is-active {
@@ -95,8 +121,9 @@ input:focus-visible {
   background: transparent;
 }
 
-.main-nav__link:hover {
-  background: var(--color-bg-subtle);
+.main-nav__link:hover,
+.main-nav__link.is-active:hover {
+  background: rgb(32 31 27 / 7%);
 }
 
 .header-tools {
@@ -112,23 +139,155 @@ input:focus-visible {
   align-items: center;
 }
 
-.country-control select {
-  width: 100px;
+/* The country switcher: a pill like the other header controls, and a menu in the style of the
+   cards (white, rounded, soft shadow). */
+.country-trigger {
+  display: inline-flex;
+  min-width: 88px;
   min-height: var(--size-control);
-  appearance: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-full);
-  padding: 0 28px 0 16px;
+  padding: 0 12px 0 14px;
   color: var(--color-text-primary);
   background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
 }
 
-.country-control svg {
-  position: absolute;
-  right: 12px;
-  width: var(--size-icon-sm);
-  pointer-events: none;
+.country-trigger:hover,
+.country-trigger[data-state='open'] {
+  border-color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+}
+
+.country-trigger__globe {
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-secondary);
+}
+
+.country-trigger__chevron {
+  display: grid;
+  transition: transform 160ms ease;
+}
+
+.country-trigger[data-state='open'] .country-trigger__chevron {
+  transform: rotate(180deg);
+}
+
+.country-trigger__chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.country-menu {
+  z-index: 100;
+  width: min(300px, calc(100vw - 24px));
+  max-height: var(--radix-select-content-available-height);
+  overflow: hidden;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: 0 18px 44px rgb(38 30 20 / 16%);
+  font-family: var(--font-family-body);
+  transform-origin: var(--radix-select-content-transform-origin);
+  animation: country-menu-in 160ms ease-out;
+}
+
+.country-menu__list {
+  padding: 6px;
+}
+
+.country-menu__title {
+  padding: 10px 12px 8px;
+  color: var(--color-text-brand);
+  font-size: 12px;
+}
+
+.country-option {
+  display: grid;
+  min-height: 52px;
+  grid-template-columns: 48px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 12px;
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+/* Mouse and keyboard: the same visible highlight, with a brand bar on the left. */
+.country-option[data-highlighted] {
+  background: var(--color-bg-card-hover);
+  box-shadow: inset 3px 0 0 var(--color-bg-brand);
+}
+
+.country-option__code {
+  display: grid;
+  height: 28px;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.country-option[data-state='checked'] .country-option__code {
+  color: var(--color-text-on-brand);
+  background: var(--color-bg-brand);
+}
+
+.country-option__text {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.country-option__name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.country-option__meta {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.country-option__check {
+  display: grid;
+  color: var(--color-text-brand);
+}
+
+.country-option__check svg {
+  width: 18px;
+  height: 18px;
+}
+
+@keyframes country-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .country-control__status {
@@ -146,9 +305,25 @@ input:focus-visible {
   min-height: var(--size-control);
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
+  border-radius: var(--radius-full);
+  padding: 0 14px;
+  color: var(--color-text-primary);
   font-size: 14px;
   text-decoration: none;
+  transition: background-color 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.header-cart svg {
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.header-cart:hover {
+  background: rgb(32 31 27 / 7%);
+}
+
+.header-cart:hover svg {
+  transform: translateY(-1px) rotate(-6deg);
 }
 
 .menu-toggle,
@@ -235,14 +410,171 @@ input:focus-visible {
   height: var(--size-icon-sm);
 }
 
-.home-hero__image {
-  display: block;
-  align-self: center;
+/* Hero slideshow: photos from the menu. A dish name and price on top, the controls at the bottom
+   on a dark glass bar, so they stay readable on every photo. */
+.hero-carousel {
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  height: auto;
   aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.hero-carousel__slides {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-carousel__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.03);
+  transition:
+    opacity 600ms ease,
+    transform 900ms ease;
+}
+
+.hero-carousel__slide.is-active {
+  opacity: 1;
+  transform: none;
+}
+
+.hero-carousel__slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-carousel__caption {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: grid;
+  max-width: calc(100% - 32px);
+  gap: 2px;
   border-radius: var(--radius-md);
-  object-fit: contain;
+  padding: 10px 14px;
+  color: var(--color-text-primary);
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 6px 18px rgb(38 30 20 / 10%);
+  text-decoration: none;
+}
+
+.hero-carousel__name {
+  font-family: var(--font-family-display), Georgia, serif;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.hero-carousel__price {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-carousel__caption:hover .hero-carousel__name {
+  color: var(--color-text-brand);
+}
+
+.hero-carousel__controls {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-full);
+  padding: 4px;
+  background: rgb(28 24 20 / 72%);
+  backdrop-filter: blur(8px);
+}
+
+.hero-carousel__button {
+  display: grid;
+  width: var(--size-control);
+  height: var(--size-control);
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 50%;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.hero-carousel__button:hover {
+  border-color: #fff;
+  background: rgb(255 255 255 / 14%);
+}
+
+.hero-carousel__button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.hero-carousel__button--toggle {
+  border-color: transparent;
+}
+
+.hero-carousel__button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hero-carousel__dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.hero-carousel__dot {
+  position: relative;
+  overflow: hidden;
+  width: 16px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 35%);
+  transition: width 300ms ease;
+}
+
+.hero-carousel__dot.is-active {
+  width: 34px;
+}
+
+/* The active dot fills up while the slide is shown (5 s, the same as INTERVAL_MS); paused, it is
+   full. */
+.hero-carousel__dot.is-active::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #fff;
+  content: '';
+  transform-origin: left center;
+}
+
+.hero-carousel__dot.is-running::after {
+  animation: hero-progress 5s linear both;
+}
+
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .home-shortcuts {
@@ -273,15 +605,375 @@ input:focus-visible {
   height: var(--size-icon-sm);
 }
 
+/* "View the menu": an outlined pill next to a section title. It goes to another page, like the
+   black "Find your favourite" pill of the hero, and lights up a little on hover the same way. */
+a.pill-link {
+  display: inline-flex;
+  min-height: var(--size-control);
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-action-default);
+  border-radius: var(--radius-full);
+  padding: 10px 24px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+a.pill-link:hover {
+  background: var(--color-bg-card-hover);
+  box-shadow: 0 6px 16px rgb(38 30 20 / 10%);
+}
+
+a.pill-link:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+a.pill-link svg {
+  transition: transform 160ms ease;
+}
+
+a.pill-link:hover svg {
+  transform: translateX(3px);
+}
+
+/* Our cafés: the map and the cards side by side; the cards alone when no café is on the map. */
+.home-cafes {
+  padding-top: 80px;
+}
+
+.home-cafes__description {
+  max-width: 520px;
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.cafes-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: stretch;
+  gap: 24px;
+}
+
+.cafes-layout--list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cafes-layout--list .cafe-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cafe-map {
+  position: relative;
+  min-height: 440px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+
+/* Over the position: relative of .maplibregl-map, which loads later with the map. */
+.cafe-map .cafe-map__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.cafe-map__fallback {
+  display: flex;
+  min-height: inherit;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 24px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.cafe-map__fallback svg {
+  flex: none;
+}
+
+/* The MapLibre controls in the style of the site. */
+.cafe-map .maplibregl-ctrl-group {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgb(38 30 20 / 14%);
+}
+
+.cafe-map .maplibregl-ctrl-group button {
+  width: 36px;
+  height: 36px;
+}
+
+.cafe-map .maplibregl-ctrl button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--color-border-focus);
+}
+
+.cafe-map .maplibregl-cooperative-gesture-screen {
+  font-family: var(--font-family-body);
+}
+
+.cafe-marker {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  filter: drop-shadow(0 4px 6px rgb(38 30 20 / 30%));
+}
+
+.cafe-marker::after {
+  width: 0;
+  height: 0;
+  margin-top: -2px;
+  border-top: 10px solid var(--color-bg-brand);
+  border-right: 7px solid transparent;
+  border-left: 7px solid transparent;
+  content: '';
+}
+
+.cafe-marker__pin {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--color-bg-brand);
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+
+.cafe-marker__pin svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cafe-marker__label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  font-family: var(--font-family-body);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.cafe-marker:hover .cafe-marker__pin {
+  transform: scale(1.08);
+}
+
+.cafe-marker.is-active .cafe-marker__pin {
+  background: var(--color-action-default);
+  transform: scale(1.12);
+}
+
+.cafe-marker.is-active::after {
+  border-top-color: var(--color-action-default);
+}
+
+.cafe-marker.is-active .cafe-marker__label,
+.cafe-marker:hover .cafe-marker__label,
+.cafe-marker:focus-visible .cafe-marker__label {
+  display: block;
+}
+
+.cafe-marker:focus-visible {
+  outline: none;
+}
+
+.cafe-marker:focus-visible .cafe-marker__pin {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.cafe-list {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cafe-card {
+  display: grid;
+  height: 100%;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  background: var(--color-bg-surface);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+/* The café chosen on the map: a brand frame (not only a colour: the pin button is pressed too). */
+.cafe-card.is-active {
+  border-color: var(--color-bg-brand);
+  box-shadow: 0 0 0 1px var(--color-bg-brand);
+}
+
+.cafe-card__head {
+  display: grid;
+  gap: 6px;
+}
+
+.cafe-card h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.cafe-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.cafe-status__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cafe-status.is-open {
+  color: var(--color-feedback-success);
+}
+
+.cafe-card__facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+  list-style: none;
+}
+
+.cafe-card__facts li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cafe-card__facts svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.cafe-card__facts a {
+  color: var(--color-text-primary);
+  text-underline-offset: 3px;
+}
+
+.cafe-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cafe-card__locate {
+  display: grid;
+  width: var(--size-control);
+  height: var(--size-control);
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  padding: 0;
+  color: var(--color-text-brand);
+  background: var(--color-bg-surface);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.cafe-card__locate:hover {
+  border-color: var(--color-text-brand);
+  background: var(--color-bg-card-hover);
+}
+
+.cafe-card__locate[aria-pressed='true'] {
+  border-color: var(--color-bg-brand);
+  color: var(--color-text-on-brand);
+  background: var(--color-bg-brand);
+}
+
+.cafe-card__locate:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+a.cafe-card__book {
+  min-height: var(--size-control);
+  flex: 1;
+  border-radius: var(--radius-full);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.pill-link,
+  a.pill-link svg,
+  .cafe-marker__pin,
+  .cafe-card,
+  .cafe-card__locate {
+    transition: none;
+  }
+
+  a.pill-link:hover svg {
+    transform: none;
+  }
+}
+
 .favorite-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
 }
 
 .favorite-card {
   display: block;
   min-width: 0;
+  /* room for the hover background, without moving the card */
+  margin: -12px;
+  border-radius: var(--radius-lg);
+  padding: 12px;
   color: inherit;
   text-decoration: none;
 }
@@ -300,8 +992,14 @@ input:focus-visible {
   font-size: var(--font-size-heading-h4);
 }
 
-.favorite-card p {
+.favorite-card__text {
+  display: grid;
+  gap: 4px;
   margin: 0 0 16px;
+}
+
+.favorite-card p {
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-meta-small);
   line-height: 1.5;
@@ -386,6 +1084,39 @@ input:focus-visible {
   background: var(--color-bg-surface);
 }
 
+/* Hover: the dish card grows a little and its background lights up. Only with a mouse; the
+   keyboard focus gets the same background without the movement. */
+.menu-card,
+.favorite-card {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.menu-card:focus-within,
+.favorite-card:focus-visible {
+  background: var(--color-bg-card-hover);
+}
+
+@media (hover: hover) {
+  .menu-card:hover,
+  .favorite-card:hover {
+    position: relative;
+    z-index: 1;
+    background: var(--color-bg-card-hover);
+    box-shadow: 0 14px 32px rgb(38 30 20 / 12%);
+    transform: scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-card:hover,
+  .favorite-card:hover {
+    transform: none;
+  }
+}
+
 .menu-card__image {
   width: 100%;
   aspect-ratio: 1;
@@ -425,11 +1156,31 @@ input:focus-visible {
   font-size: var(--font-size-meta-small);
 }
 
-.menu-card__content > p {
+.menu-card__text {
+  display: grid;
+  gap: 6px;
   margin: 10px 0 18px;
+}
+
+.menu-card__text p {
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-body-small);
   line-height: 1.5;
+}
+
+/* The portion under the ingredients: "8 dona · 250 g". */
+.menu-card__text .dish-portion,
+.favorite-card__text .dish-portion,
+.dish-portion {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-meta-small);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.product-modal__portion {
+  margin-top: 4px !important;
 }
 
 .menu-card__footer {
@@ -594,21 +1345,32 @@ input:focus-visible {
   border-top: 1px solid var(--color-border-default);
 }
 
+/* The total sits next to the name and the controls under them, so the line fits the column
+   beside the receipt. */
 .cart-line {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 20px;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'image details total'
+    'image controls controls';
+  align-items: baseline;
+  gap: 12px 20px;
   border-bottom: 1px solid var(--color-border-default);
   padding: 20px 0;
 }
 
 .cart-line__image {
+  grid-area: image;
+  align-self: start;
   width: 88px;
   aspect-ratio: 1;
   border-radius: var(--radius-md);
   object-fit: cover;
   background: var(--color-bg-subtle);
+}
+
+.cart-line__details {
+  grid-area: details;
 }
 
 .cart-line__details h2 {
@@ -640,6 +1402,7 @@ input:focus-visible {
 
 .cart-line__controls {
   display: grid;
+  grid-area: controls;
   gap: 4px;
   color: var(--color-text-secondary);
   font-size: var(--font-size-meta-small);
@@ -703,7 +1466,7 @@ input:focus-visible {
   appearance: none;
 }
 
-.quantity-stepper__input[aria-invalid="true"] {
+.quantity-stepper__input[aria-invalid='true'] {
   border-color: var(--color-border-error);
   box-shadow: inset 0 0 0 1px var(--color-border-error);
 }
@@ -718,8 +1481,9 @@ input:focus-visible {
 }
 
 .cart-line__total {
-  min-width: 112px;
+  grid-area: total;
   text-align: right;
+  white-space: nowrap;
 }
 
 .cart-page__error {
@@ -735,46 +1499,175 @@ input:focus-visible {
   margin: 4px 0 0;
 }
 
-.cart-summary {
-  width: min(100%, 400px);
-  margin: 24px 0 0 auto;
-}
-
-.cart-summary dl {
+/* Cart, success and order pages: the dishes or the details on the left, the receipt on the right
+   (one column from 900px down, the receipt under them). */
+.receipt-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  align-items: start;
+  gap: 48px;
+}
+
+.receipt-layout__side,
+.receipt-layout__actions {
+  display: grid;
+  gap: 20px;
+}
+
+.receipt-layout__actions {
   gap: 12px;
-  margin: 0;
 }
 
-.cart-summary dl > div {
-  display: flex;
-  justify-content: space-between;
+.receipt-layout__actions .button {
+  text-decoration: none;
+}
+
+/* The receipt: white paper with torn (zigzag) top and bottom edges, printed in a monospace font,
+   dashed rules between its parts. The mask cuts the teeth and the drop shadow follows them. */
+.receipt {
+  filter: drop-shadow(0 1px 1px rgb(32 31 27 / 0.12)) drop-shadow(0 10px 20px rgb(32 31 27 / 0.08));
+}
+
+.receipt__paper {
+  --receipt-edge:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 12px 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 51%
+      repeat-x;
+
+  display: grid;
   gap: 16px;
+  padding: 34px 24px 36px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-body-small);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-mask: var(--receipt-edge);
+  mask: var(--receipt-edge);
 }
 
-.cart-summary dt,
-.cart-summary dd {
+.receipt__head {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.receipt__head p {
   margin: 0;
 }
 
-.cart-summary dt {
+.receipt__head .receipt__brand {
+  margin-bottom: 6px;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-display), Georgia, serif;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.receipt__brand span {
+  color: var(--color-text-brand);
+}
+
+.receipt__lines,
+.receipt__totals,
+.receipt__foot {
+  margin: 0;
+  border-top: 1px dashed var(--rice-400);
+  padding: 16px 0 0;
+}
+
+.receipt__lines,
+.receipt__totals {
+  display: grid;
+}
+
+.receipt__lines {
+  gap: 12px;
+  list-style: none;
+}
+
+.receipt__totals {
+  gap: 6px;
+}
+
+/* A name and its amount share a row while they fit; on a narrow slip the amount goes to its own
+   line on the right instead of breaking the name word by word. */
+.receipt__lines li,
+.receipt__totals > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+}
+
+.receipt__totals dt,
+.receipt__totals dd {
+  margin: 0;
+}
+
+.receipt__dish,
+.receipt__totals dt {
   flex: 1 1 auto;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.cart-summary dd {
-  flex: 0 0 auto;
+.receipt__dish {
+  font-weight: 600;
+}
+
+.receipt__amount,
+.receipt__totals dd {
   margin-left: auto;
   text-align: right;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
-.cart-summary__total {
-  border-top: 1px solid var(--color-border-default);
-  padding-top: 12px;
+.receipt__note {
+  flex-basis: 100%;
+  color: var(--color-text-secondary);
+}
+
+.receipt__totals .receipt__total {
+  margin-top: 8px;
+  border-top: 3px double var(--color-text-primary);
+  padding-top: 10px;
   font-size: var(--font-size-body-large);
-  font-weight: 700;
+  font-weight: 600;
+}
+
+.receipt__foot {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-label-small);
+  letter-spacing: 0.08em;
+}
+
+/* Two stripe patterns of 13 and 23 px: together they repeat only after 299 px, like a real code. */
+.receipt__barcode {
+  width: min(100%, 220px);
+  height: 40px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--color-text-primary) 0 2px,
+      #0000 2px 5px,
+      var(--color-text-primary) 5px 6px,
+      #0000 6px 9px,
+      var(--color-text-primary) 9px 12px,
+      #0000 12px 13px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      #0000 0 17px,
+      var(--color-text-primary) 17px 18px,
+      #0000 18px 23px
+    );
 }
 
 .cart-page__actions {
@@ -845,7 +1738,7 @@ input:focus-visible {
   font-size: 14px;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1199px) {
   .site-header__inner,
   .app-main,
   .site-footer {
@@ -857,11 +1750,16 @@ input:focus-visible {
   }
 
   .main-nav {
-    gap: 4px;
+    gap: 2px;
   }
 
   .main-nav__link {
+    padding: 0 12px;
     font-size: 12px;
+  }
+
+  .header-cart {
+    padding: 0 10px;
   }
 
   .brand {
@@ -872,8 +1770,8 @@ input:focus-visible {
     gap: 8px;
   }
 
-  .country-control select {
-    width: 80px;
+  .country-trigger {
+    min-width: 80px;
     padding-left: 12px;
   }
 
@@ -902,7 +1800,7 @@ input:focus-visible {
   }
 }
 
-@media (min-width: 601px) and (max-width: 700px) {
+@media (min-width: 768px) and (max-width: 820px) {
   .home-hero {
     display: flex;
     flex-direction: column;
@@ -910,13 +1808,12 @@ input:focus-visible {
     gap: 16px;
   }
 
-  .home-hero__image {
-    align-self: flex-end;
-    width: 220px;
+  .hero-carousel {
+    aspect-ratio: 16 / 10;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 767px) {
   body {
     min-width: 0;
   }
@@ -946,20 +1843,31 @@ input:focus-visible {
     gap: 4px;
   }
 
-  .country-control select {
-    width: 65px;
-    padding-right: 23px;
-    padding-left: 8px;
+  .country-trigger {
+    min-width: 0;
+    gap: 4px;
+    padding: 0 8px 0 10px;
     font-size: 12px;
   }
 
-  .country-control svg {
-    right: 8px;
+  .country-trigger__globe {
+    display: none;
+  }
+
+  .country-trigger__chevron svg {
     width: 14px;
+    height: 14px;
+  }
+
+  .app-main,
+  .app-main *,
+  .site-footer * {
+    scroll-margin-top: calc(var(--size-header-mobile) + 16px);
   }
 
   .header-cart {
     min-width: var(--size-control);
+    padding: 0 8px;
     font-size: 12px;
   }
 
@@ -973,12 +1881,35 @@ input:focus-visible {
     color: var(--color-text-on-brand);
     background: var(--color-action-default);
     cursor: pointer;
+    transition:
+      background-color 200ms ease,
+      transform 200ms ease;
   }
 
+  .menu-toggle:hover {
+    background: var(--color-action-hover);
+  }
+
+  .menu-toggle[aria-expanded='true'] {
+    transform: rotate(90deg);
+  }
+
+  /* The menu: a black card under the black button. It grows out of the button as a circle
+     (the button centre is 40 px above the card: half the 64 px header and an 8 px gap). */
   .mobile-navigation {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 16px;
     display: block;
-    border-top: 1px solid var(--color-border-default);
-    padding: 8px 16px 16px;
+    width: min(320px, calc(100vw - 32px));
+    max-height: calc(100dvh - var(--size-header-mobile) - 24px);
+    overflow-y: auto;
+    border-radius: 24px;
+    padding: 12px;
+    color: #fff;
+    background: var(--color-action-default);
+    box-shadow: 0 24px 48px rgb(20 16 12 / 28%);
+    animation: mobile-menu-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   .mobile-navigation .main-nav {
@@ -986,18 +1917,74 @@ input:focus-visible {
     width: 100%;
     flex-direction: column;
     align-items: stretch;
+    gap: 2px;
     overflow: visible;
     padding: 0;
   }
 
-  .mobile-navigation .main-nav__link {
-    font-size: 14px;
+  .mobile-navigation .main-nav__link,
+  .mobile-navigation .mobile-navigation__session .main-nav__link {
+    min-height: 48px;
+    justify-content: flex-start;
+    border-radius: 16px;
+    padding: 0 16px;
+    color: rgb(255 255 255 / 86%);
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-navigation .main-nav__link:hover,
+  .mobile-navigation .mobile-navigation__session .main-nav__link:hover {
+    color: #fff;
+    background: rgb(255 255 255 / 10%);
+  }
+
+  /* The page you are on: white, bold, on a light pill with a gold dot (not colour alone). */
+  .mobile-navigation .main-nav__link.is-active {
+    color: #fff;
+    background: rgb(255 255 255 / 14%);
+    font-weight: 600;
+  }
+
+  .mobile-navigation .main-nav__link.is-active::before {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    margin-right: 10px;
+    border-radius: 50%;
+    background: var(--color-bg-accent);
+    content: '';
+  }
+
+  .mobile-navigation :focus-visible {
+    outline-color: #fff;
+    outline-offset: -2px;
+  }
+
+  .mobile-navigation__session {
+    margin-top: 8px;
+    border-top: 1px solid rgb(255 255 255 / 14%);
+    padding-top: 8px;
+  }
+
+  .mobile-navigation .mobile-navigation__session .main-nav__link {
+    line-height: 1.3;
   }
 
   .mobile-navigation p {
-    margin: 8px;
-    color: var(--color-text-secondary);
+    margin: 8px 16px 4px;
+    color: rgb(255 255 255 / 64%);
     font-size: 12px;
+  }
+
+  @keyframes mobile-menu-in {
+    from {
+      clip-path: circle(22px at calc(100% - 22px) -40px);
+    }
+
+    to {
+      clip-path: circle(900px at calc(100% - 22px) -40px);
+    }
   }
 
   .home-page {
@@ -1031,9 +2018,40 @@ input:focus-visible {
     line-height: 1.45;
   }
 
-  .home-hero__image {
-    align-self: flex-end;
-    width: 140px;
+  .hero-carousel {
+    aspect-ratio: 1;
+  }
+
+  .hero-carousel__caption {
+    top: 12px;
+    left: 12px;
+    padding: 6px 10px;
+  }
+
+  .hero-carousel__name {
+    font-size: 15px;
+  }
+
+  .hero-carousel__price {
+    font-size: 12px;
+  }
+
+  .hero-carousel__controls {
+    bottom: 12px;
+    left: 12px;
+    gap: 4px;
+  }
+
+  .hero-carousel__dots {
+    gap: 4px;
+  }
+
+  .hero-carousel__dot {
+    width: 10px;
+  }
+
+  .hero-carousel__dot.is-active {
+    width: 22px;
   }
 
   .home-shortcuts {
@@ -1105,8 +2123,12 @@ input:focus-visible {
     font-size: var(--font-size-body-large);
   }
 
-  .menu-card__content > p {
+  .menu-card__text {
+    gap: 2px;
     margin: 4px 0 8px;
+  }
+
+  .menu-card__text p {
     font-size: var(--font-size-card-mobile);
   }
 
@@ -1140,7 +2162,11 @@ input:focus-visible {
 
   .cart-line {
     grid-template-columns: 64px minmax(0, 1fr);
-    gap: 12px;
+    grid-template-areas:
+      'image details'
+      'image total'
+      'image controls';
+    gap: 8px 12px;
     padding: 16px 0;
   }
 
@@ -1152,13 +2178,12 @@ input:focus-visible {
     font-size: var(--font-size-body-medium);
   }
 
-  .cart-line__controls {
-    grid-column: 2;
+  .cart-line__total {
+    text-align: left;
   }
 
-  .cart-line__total {
-    grid-column: 2;
-    text-align: left;
+  .receipt__paper {
+    padding-inline: 16px;
   }
 
   .cart-page__error {
@@ -1175,6 +2200,7 @@ input:focus-visible {
     grid-template-columns: 80px minmax(0, 1fr);
     align-items: center;
     gap: 12px;
+    margin: 0;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-md);
     padding: 8px;
@@ -1191,7 +2217,8 @@ input:focus-visible {
     line-height: 1.15;
   }
 
-  .favorite-card p {
+  .favorite-card__text {
+    gap: 2px;
     margin: 0 0 8px;
   }
 
@@ -1221,9 +2248,9 @@ input:focus-visible {
   *::before,
   *::after {
     scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -1292,7 +2319,7 @@ input:focus-visible {
   cursor: pointer;
 }
 
-.checkout-scenario:has([data-state="checked"]) {
+.checkout-scenario:has([data-state='checked']) {
   border-color: var(--color-action-default);
   box-shadow: inset 0 0 0 1px var(--color-action-default);
 }
@@ -1313,7 +2340,7 @@ input:focus-visible {
   outline-offset: 3px;
 }
 
-.checkout-scenario__control[data-state="checked"] {
+.checkout-scenario__control[data-state='checked'] {
   border-color: var(--color-action-default);
 }
 
@@ -1337,7 +2364,7 @@ input:focus-visible {
   text-align: left;
 }
 
-.checkout-date__trigger[aria-expanded="true"] {
+.checkout-date__trigger[aria-expanded='true'] {
   border-color: var(--color-action-default);
 }
 
@@ -1379,15 +2406,18 @@ input:focus-visible {
   overflow-wrap: anywhere;
 }
 
+/* Sticky under the sticky header; a long receipt scrolls inside, so Place order stays reachable.
+   The padding keeps the receipt shadow inside the scroll box. */
 .checkout-form__summary {
   position: sticky;
-  top: 24px;
+  top: calc(var(--size-header-desktop) + 16px);
   display: grid;
+  max-height: calc(100vh - var(--size-header-desktop) - 32px);
   gap: 20px;
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  background: var(--color-bg-surface);
+  margin: -8px -12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 12px;
 }
 
 .checkout-line-errors {
@@ -1419,11 +2449,6 @@ input:focus-visible {
 
 .checkout-line-errors ul {
   padding-left: 20px;
-}
-
-.checkout-form__summary .cart-summary {
-  width: 100%;
-  margin: 0;
 }
 
 .checkout-form__summary > .button {
@@ -1459,7 +2484,7 @@ input:focus-visible {
 
 .checkout-success__details > div {
   display: grid;
-  grid-template-columns: minmax(120px, .7fr) 1.3fr;
+  grid-template-columns: minmax(120px, 0.7fr) 1.3fr;
   gap: 16px;
 }
 
@@ -1471,8 +2496,16 @@ input:focus-visible {
   margin: 0;
 }
 
-.checkout-success .cart-summary {
-  margin: 0 0 24px;
+@media (max-width: 900px) {
+  .receipt-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .receipt-layout__side {
+    justify-self: center;
+    width: min(100%, 440px);
+  }
 }
 
 @media (max-width: 900px) {
@@ -1483,11 +2516,14 @@ input:focus-visible {
 
   .checkout-form__summary {
     position: static;
-    width: 100%;
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+    padding: 0;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 767px) {
   .checkout-page,
   .checkout-success {
     padding-top: 28px;
@@ -1507,10 +2543,6 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .checkout-form__summary {
-    padding: 16px;
-  }
-
   .checkout-success__details > div {
     grid-template-columns: 1fr;
     gap: 4px;
@@ -1518,6 +2550,17 @@ input:focus-visible {
 }
 
 @media (max-width: 360px) {
+  /* A long price ("189 000,00 soʻm") and the 44 px button must fit in the narrow card. */
+  .menu-card__footer {
+    gap: 8px;
+  }
+
+  .menu-card__footer strong {
+    min-width: 0;
+    font-size: var(--font-size-body-small);
+    white-space: nowrap;
+  }
+
   .checkout-form__fields,
   .checkout-section,
   .checkout-date {
@@ -1529,7 +2572,7 @@ input:focus-visible {
     --rdp-day-height: 32px;
     --rdp-day_button-width: 24px;
     --rdp-day_button-height: 30px;
-    --rdp-weekday-padding: .25rem 0;
+    --rdp-weekday-padding: 0.25rem 0;
     width: 100%;
     padding: 8px;
   }
@@ -1544,4 +2587,325 @@ input:focus-visible {
   .checkout-date .rdp-month_grid {
     table-layout: fixed;
   }
+}
+
+/* Our cafés on smaller screens: the map above the cards. */
+@media (max-width: 900px) {
+  .cafes-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cafe-map {
+    min-height: 360px;
+  }
+
+  .cafe-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .home-cafes {
+    padding-top: 32px;
+  }
+
+  .home-cafes__description {
+    font-size: 14px;
+  }
+
+  .cafes-layout {
+    gap: 16px;
+  }
+
+  .cafe-map {
+    min-height: 280px;
+  }
+
+  .cafe-list,
+  .cafes-layout--list .cafe-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .cafe-card {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .cafe-card h3 {
+    font-size: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .main-nav__link,
+  .header-cart,
+  .header-cart svg,
+  .menu-toggle {
+    transition: none;
+  }
+
+  .header-cart:hover svg,
+  .menu-toggle[aria-expanded='true'] {
+    transform: none;
+  }
+
+  .mobile-navigation {
+    animation: none;
+  }
+}
+
+/* ---- City and language (contract v1.9) ---------------------------------------------------------
+   The city switcher uses the pill and the menu of the language switcher. The city gives the
+   prices, the cafés and the delivery; the language only the texts. */
+.city-trigger {
+  min-width: 0;
+  max-width: 220px;
+}
+
+.country-trigger {
+  white-space: nowrap;
+}
+
+.city-trigger__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-option {
+  grid-template-columns: minmax(0, 1fr) 20px;
+  padding-left: 14px;
+}
+
+.language-control .country-trigger {
+  min-width: 0;
+}
+
+/* Above the cafés of the home page: a bigger pill with its label. */
+.home-cafes .section-heading {
+  flex-wrap: wrap;
+}
+
+.city-control--section,
+.city-control--menu {
+  gap: 10px;
+}
+
+.city-control__label {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.city-control--section .country-trigger {
+  min-height: var(--size-control);
+  gap: 8px;
+  border-color: var(--color-text-primary);
+  padding: 0 14px 0 16px;
+  background: var(--color-bg-surface);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.city-control--section .country-trigger__globe {
+  color: var(--color-text-brand);
+}
+
+.city-control--section .country-trigger:hover,
+.city-control--section .country-trigger[data-state='open'] {
+  background: var(--color-bg-card-hover);
+  box-shadow: 0 8px 20px rgb(38 30 20 / 10%);
+}
+
+/* In the black mobile menu: white on black, the whole width. */
+.city-control--menu {
+  margin: 8px 4px 2px;
+  border-top: 1px solid rgb(255 255 255 / 14%);
+  padding-top: 12px;
+}
+
+.city-control--menu .city-control__label {
+  color: rgb(255 255 255 / 64%);
+  font-size: 12px;
+}
+
+.city-control--menu .country-trigger {
+  flex: 1;
+  max-width: none;
+  min-height: 44px;
+  justify-content: flex-start;
+  border-color: rgb(255 255 255 / 32%);
+  color: #fff;
+  font-size: 15px;
+}
+
+.city-control--menu .country-trigger__globe {
+  color: var(--color-bg-accent);
+}
+
+.city-control--menu .country-trigger__chevron {
+  margin-left: auto;
+}
+
+.city-control--menu .country-trigger:hover,
+.city-control--menu .country-trigger[data-state='open'] {
+  border-color: #fff;
+  background: rgb(255 255 255 / 10%);
+}
+
+@media (max-width: 767px) {
+  /* No room in the bar: the phone chooses the city in the menu and above the cafés. */
+  .city-control--header {
+    display: none;
+  }
+
+  .city-control--section .country-trigger__globe,
+  .city-control--menu .country-trigger__globe {
+    display: block;
+  }
+
+  .city-control--section {
+    width: 100%;
+  }
+
+  .city-control--section .country-trigger {
+    flex: 1;
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .city-control--section .country-trigger__chevron {
+    margin-left: auto;
+  }
+}
+
+/* ---- Sets (contract v1.10): the saving on the photo, the dishes one by one struck through ------ */
+.menu-card {
+  position: relative;
+}
+
+.saving-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border-radius: var(--radius-full);
+  padding: 2px 12px;
+  color: var(--color-text-on-brand);
+  background: var(--color-bg-brand);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.menu-card__saving {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+  box-shadow: 0 6px 16px rgb(38 30 20 / 22%);
+}
+
+.dish-price {
+  display: inline-flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+}
+
+.dish-price__regular {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-meta-small);
+  font-variant-numeric: tabular-nums;
+  text-decoration-thickness: 1px;
+}
+
+.product-modal__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-modal__set {
+  margin-top: 4px;
+}
+
+.product-modal__set-title {
+  margin: 0 0 6px;
+  color: var(--color-text-brand);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.product-modal__set ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-small);
+}
+
+/* Tablets: the navigation, the brand and both switchers share one bar. The language keeps its
+   code (no globe), the city its pin and a short name. */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .language-control .country-trigger__globe {
+    display: none;
+  }
+
+  .language-control .country-trigger,
+  .city-control--header .country-trigger {
+    gap: 4px;
+    padding: 0 10px 0 12px;
+  }
+
+  .city-control--header .city-trigger__name {
+    max-width: 96px;
+  }
+}
+
+/* The marks under a dish (contract v1.16): spicy in red with a chili, vegetarian in green with a
+   leaf, read from the ingredients on the server. */
+.dish-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dish-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-size-meta-small);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.dish-mark svg {
+  flex: none;
+}
+
+.dish-mark--spicy {
+  color: var(--color-text-brand);
+}
+
+.dish-mark--vegetarian {
+  color: var(--color-feedback-success);
+}
+
+.product-modal__marks {
+  margin-top: 6px;
+}
+
+/* Inside the text of a card the grid gap already sets the marks apart. */
+.menu-card__text .dish-marks,
+.favorite-card__text .dish-marks {
+  margin-top: 2px;
 }

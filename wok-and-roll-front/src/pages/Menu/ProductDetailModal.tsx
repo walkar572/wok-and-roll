@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader, Modal } from '../../components/common';
+import { DishMarks } from '../../components/common/DishMarks';
 import {
   ApiRequestError,
   formatPrice,
@@ -8,6 +9,16 @@ import {
   type CountryCode,
   type ProductDetail,
 } from '../../services/api';
+import {
+  countryName,
+  modifierName,
+  productDescription,
+  productName,
+  useI18n,
+  portionText,
+} from '../../i18n';
+import { DishImage } from '../../components/common/DishImage';
+import { DishPrice, SavingBadge, setSaving } from './sets';
 
 interface ProductDetailModalProps {
   productId: number | null;
@@ -34,6 +45,7 @@ export function ProductDetailModal({
   const [selectedExtraIds, setSelectedExtraIds] = useState<number[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [addError, setAddError] = useState<string>();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (productId === null) {
@@ -60,8 +72,8 @@ export function ProductDetailModal({
         if (!active) return;
         setError(
           requestError instanceof ApiRequestError && requestError.status === 404
-            ? `This dish is not available in ${country}.`
-            : guestErrorMessage(requestError, 'We could not load this dish. Please try again.'),
+            ? t('product.notAvailable', { country: countryName(country) })
+            : guestErrorMessage(requestError, t('product.loadError')),
         );
       })
       .finally(() => {
@@ -71,7 +83,7 @@ export function ProductDetailModal({
     return () => {
       active = false;
     };
-  }, [productId, country, retryCount]);
+  }, [productId, country, retryCount, t]);
 
   const sizes = product?.modifiers.filter(({ type }) => type === 'SIZE') ?? [];
   const extras = product?.modifiers.filter(({ type }) => type === 'EXTRA') ?? [];
@@ -79,12 +91,12 @@ export function ProductDetailModal({
     ...(selectedSizeId === undefined ? [] : [selectedSizeId]),
     ...selectedExtraIds,
   ];
-  const modifierTotal = product?.modifiers
-    .filter(({ id }) => modifierIds.includes(id))
-    .reduce((total, modifier) => total + toMinorUnits(modifier.priceDelta), 0) ?? 0;
-  const addTotal = product
-    ? (toMinorUnits(product.price) + modifierTotal) * quantity
-    : 0;
+  const modifierTotal =
+    product?.modifiers
+      .filter(({ id }) => modifierIds.includes(id))
+      .reduce((total, modifier) => total + toMinorUnits(modifier.priceDelta), 0) ?? 0;
+  const addTotal = product ? (toMinorUnits(product.price) + modifierTotal) * quantity : 0;
+  const saving = product ? setSaving(product) : null;
 
   function addProduct() {
     if (!product || !product.inStock || (sizes.length > 0 && selectedSizeId === undefined)) return;
@@ -93,7 +105,7 @@ export function ProductDetailModal({
       onClose();
     } catch (addRequestError: unknown) {
       setAddError(
-        addRequestError instanceof Error ? addRequestError.message : 'Could not add this dish.',
+        addRequestError instanceof Error ? addRequestError.message : t('product.couldNotAdd'),
       );
     }
   }
@@ -101,65 +113,97 @@ export function ProductDetailModal({
   return (
     <Modal
       open={productId !== null}
-      title={product?.name ?? 'Dish details'}
+      title={product ? productName(product.name) : t('product.dishDetails')}
       onClose={onClose}
-      footer={product ? (
-        <div className="product-modal__footer">
-          <label className="product-modal__quantity">
-            <span>Quantity</span>
-            <input
-              aria-label="Quantity"
-              type="number"
-              min="1"
-              max="99"
-              step="1"
-              value={quantity}
-              onChange={(event) => {
-                const nextQuantity = Number(event.target.value);
-                if (Number.isInteger(nextQuantity) && nextQuantity >= 1 && nextQuantity <= 99) {
-                  setQuantity(nextQuantity);
-                }
-              }}
-            />
-          </label>
-          <Button
-            onClick={addProduct}
-            disabled={!product.inStock || (sizes.length > 0 && selectedSizeId === undefined)}
-          >
-            Add · {formatPrice(addTotal / 100, product.currency)}
-          </Button>
-        </div>
-      ) : undefined}
+      footer={
+        product ? (
+          <div className="product-modal__footer">
+            <label className="product-modal__quantity">
+              <span>{t('product.quantity')}</span>
+              <input
+                aria-label={t('product.quantity')}
+                type="number"
+                min="1"
+                max="99"
+                step="1"
+                value={quantity}
+                onChange={(event) => {
+                  const nextQuantity = Number(event.target.value);
+                  if (Number.isInteger(nextQuantity) && nextQuantity >= 1 && nextQuantity <= 99) {
+                    setQuantity(nextQuantity);
+                  }
+                }}
+              />
+            </label>
+            <Button
+              onClick={addProduct}
+              disabled={!product.inStock || (sizes.length > 0 && selectedSizeId === undefined)}
+            >
+              {t('product.add', { price: formatPrice(addTotal / 100, product.currency) })}
+            </Button>
+          </div>
+        ) : undefined
+      }
     >
-      {isLoading && <Loader label="Loading dish details" />}
+      {isLoading && <Loader label={t('product.loading')} />}
       {error && (
         <div className="product-modal__error">
-          <ErrorMessage title="Could not load this dish">{error}</ErrorMessage>
+          <ErrorMessage title={t('product.couldNotLoad')}>{error}</ErrorMessage>
           <button
             className="button button--outline"
             type="button"
             onClick={() => setRetryCount((count) => count + 1)}
           >
-            Try again
+            {t('common.tryAgain')}
           </button>
         </div>
       )}
       {product && (
         <div className="product-modal">
           {product.imageUrl && (
-            <img className="product-modal__image" src={product.imageUrl} alt={product.name} />
+            <DishImage
+              src={product.imageUrl}
+              alt={productName(product.name)}
+              className="product-modal__image"
+              placeholderClassName="product-modal__image--placeholder"
+              loading="eager"
+            />
           )}
-          {product.description && <p>{product.description}</p>}
-          <p className="product-modal__price">{formatPrice(product.price, product.currency)}</p>
+          {product.setItems.length > 0 ? (
+            <div className="product-modal__set">
+              <p className="product-modal__set-title">{t('menu.setOf')}</p>
+              <ul>
+                {product.setItems.map((item) => (
+                  <li key={item.productId}>
+                    {item.quantity > 1
+                      ? t('menu.setItem', { count: item.quantity, name: productName(item.name) })
+                      : productName(item.name)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            productDescription(product.name, product.description) && (
+              <p>{productDescription(product.name, product.description)}</p>
+            )
+          )}
+          {portionText(product) && (
+            <p className="dish-portion product-modal__portion">{portionText(product)}</p>
+          )}
+          <DishMarks product={product} className="product-modal__marks" />
+          <p className="product-modal__price">
+            <DishPrice product={product} />
+            {saving !== null && <SavingBadge percent={saving} />}
+          </p>
           {!product.inStock && (
             <ErrorMessage variant="warning">
-              This dish is currently out of stock in {country}.
+              {t('product.outOfStockIn', { country: countryName(country) })}
             </ErrorMessage>
           )}
-          {addError && <ErrorMessage title="Could not add this dish">{addError}</ErrorMessage>}
+          {addError && <ErrorMessage title={t('product.couldNotAdd')}>{addError}</ErrorMessage>}
           {sizes.length > 0 && (
             <fieldset className="product-modal__options">
-              <legend>Choose a size</legend>
+              <legend>{t('product.chooseSize')}</legend>
               {sizes.map((modifier) => (
                 <label key={modifier.id}>
                   <input
@@ -169,7 +213,7 @@ export function ProductDetailModal({
                     checked={selectedSizeId === modifier.id}
                     onChange={() => setSelectedSizeId(modifier.id)}
                   />
-                  <span>{modifier.name}</span>
+                  <span>{modifierName(modifier.name)}</span>
                   <span>+{formatPrice(modifier.priceDelta, product.currency)}</span>
                 </label>
               ))}
@@ -177,7 +221,7 @@ export function ProductDetailModal({
           )}
           {extras.length > 0 && (
             <fieldset className="product-modal__options">
-              <legend>Extras</legend>
+              <legend>{t('product.extras')}</legend>
               {extras.map((modifier) => {
                 const checked = selectedExtraIds.includes(modifier.id);
                 return (
@@ -186,14 +230,14 @@ export function ProductDetailModal({
                       type="checkbox"
                       checked={checked}
                       onChange={() => {
-                        setSelectedExtraIds((selected) => (
+                        setSelectedExtraIds((selected) =>
                           checked
                             ? selected.filter((id) => id !== modifier.id)
-                            : [...selected, modifier.id]
-                        ));
+                            : [...selected, modifier.id],
+                        );
                       }}
                     />
-                    <span>{modifier.name}</span>
+                    <span>{modifierName(modifier.name)}</span>
                     <span>+{formatPrice(modifier.priceDelta, product.currency)}</span>
                   </label>
                 );

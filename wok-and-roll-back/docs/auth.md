@@ -33,7 +33,7 @@ One role per user. Register always gives CUSTOMER. ADMIN, STAFF and VIEWER users
 |---|---|
 | `/api/v1/auth/**` | public |
 | `/api/health`, `/swagger-ui/**`, `/swagger-ui.html`, `/v3/api-docs/**` | public |
-| Guest flow: `GET /api/v1/countries`, `/categories`, `/products/**`, `/pickup-points`, `/delivery-zones`, `/time-slots`, `POST /api/v1/cart/quote`, `POST /api/v1/orders`, `POST /api/v1/bookings` | public |
+| Guest flow: `GET /api/v1/countries`, `/categories`, `/products/**`, `/cafes`, `/delivery-zones`, `/time-slots`, `POST /api/v1/cart/quote`, `POST /api/v1/orders`, `POST /api/v1/bookings` | public |
 | `/api/v1/me/**` | any logged-in user |
 | `/api/v1/reports/**` | ADMIN or VIEWER |
 | `/api/v1/admin/**` | ADMIN |

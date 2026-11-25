@@ -1,5 +1,6 @@
 package com.wokandroll.back.catalog.detail;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,7 +32,9 @@ class ProductDetailApiIntegrationTest {
     mvc.perform(get("/api/v1/products/5").param("country", "UZB"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.name").value("Firecracker udon"))
-        .andExpect(jsonPath("$.price").value(48.00))
+        .andExpect(jsonPath("$.pieces").value(nullValue()))
+        .andExpect(jsonPath("$.weightGrams").value(350))
+        .andExpect(jsonPath("$.price").value(55000.00))
         .andExpect(jsonPath("$.currency").value("UZS"))
         .andExpect(jsonPath("$.hasModifiers").value(true))
         .andExpect(jsonPath("$.modifiers.length()").value(4))
@@ -39,7 +42,7 @@ class ProductDetailApiIntegrationTest {
         .andExpect(jsonPath("$.modifiers[0].type").value("SIZE"))
         .andExpect(jsonPath("$.modifiers[0].priceDelta").value(0.00))
         .andExpect(jsonPath("$.modifiers[1].name").value("Large"))
-        .andExpect(jsonPath("$.modifiers[1].priceDelta").value(12.00))
+        .andExpect(jsonPath("$.modifiers[1].priceDelta").value(15000.00))
         .andExpect(jsonPath("$.modifiers[2].type").value("EXTRA"))
         .andExpect(jsonPath("$.modifiers[2].name").value("Extra chicken"))
         .andExpect(jsonPath("$.modifiers[3].name").value("Fried egg"));
@@ -51,7 +54,7 @@ class ProductDetailApiIntegrationTest {
     mvc.perform(get("/api/v1/products/6").param("country", "CHN"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.modifiers.length()").value(2))
-        .andExpect(jsonPath("$.modifiers[1].priceDelta").value(11.50));
+        .andExpect(jsonPath("$.modifiers[1].priceDelta").value(7.00));
   }
 
   @Test

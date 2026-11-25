@@ -1,6 +1,6 @@
-# API contract: Wok & Roll MVP (v1.2)
+# API contract: Wok & Roll MVP (v1.3)
 
-Refs #123, #142 · Owner: Maksudbek (Team Lead) · Version 1.2 · Status: **for agreement** at Sprint 3 planning, Mon 16 Nov (agreed when merged into `dev`)
+Refs #123, #142 · Owner: Maksudbek (Team Lead) · Version 1.3 · Status: **for agreement** at Sprint 3 planning, Mon 16 Nov (agreed when merged into `dev`)
 
 Stories #50–#69 · General rules: [`architecture.md`](architecture.md) §2 · Error code in the backend: `common.error` (#31) · Plan and dates: [`mvp-plan.md`](mvp-plan.md)
 
@@ -22,6 +22,20 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.0 | 10 Nov | Stage 2: countries, categories, products, product details, cart quote (#123) |
 | 1.1 | 14 Nov | Stages 3–5 and bonus: totals in the quote, orders, cafés, delivery zones, time slots, bookings, auth and account, staff, admin, reports with PDF and CSV. New rules for time zones, idempotency, paging, request id and roles. Every change to v1.0 is additive (#142). |
 | 1.2 | 20 Nov | 406 NOT_ACCEPTABLE error row (#155) |
+| 1.3 | 23 Nov | Every endpoint of §2 is built. Additive details found while building: `GET /staff/bookings` returns `{ "items": [...] }` like the other new lists; `POST` and `PATCH /admin/products` take an optional `?country=` (default `UZB`) for the price fields of the response; new `GET /admin/categories` (all categories with `version`). Sales history seed Jun–Nov 2026 (#171). |
+| 1.4 | 24 Nov | Real price levels (§5): prices, discount thresholds and delivery fees in each currency at the level of Tashkent, converted at November 2026 rates. The interface language follows the country; the API stays English. |
+| 1.5 | 24 Nov | Portion of a dish (additive): `pieces`, `weightGrams`, `volumeMl` in §3.3, §3.4 and the admin API §3.15. The description now holds only the ingredients; the card shows the portion on its own line ("8 pcs · 250 g"). |
+| 1.6 | 24 Nov | Sixth country (additive): `GBR`, United Kingdom, `GBP`, VAT 20 %, `Europe/London`, with prices, thresholds and zone fees converted like the others (§5), 2 cafés in London and a sales history. The interface is British English for GBR. |
+| 1.7 | 24 Nov | Place of a café on the map (additive): `latitude` and `longitude` in §3.6. The home page shows the cafés of the country on a map next to their list. |
+| 1.8 | 24 Nov | Bigger menu (data only, no new fields): 24 dishes in 5 categories. New categories `Desserts` and `Drinks` (the lemonade moves there); 15 new dishes, priced and in stock in all six countries; extras "Soft egg" (ramen) and "Oat milk" (matcha latte). Edamame is hidden (`visible = false`) and replaced by chili garlic peanuts; past orders keep the name they were ordered with. |
+| 1.9 | 24 Nov | Seventh country and the city (additive): `USA`, United States, `USD`, tax 7 % (Massachusetts meals tax 6.25 % + Boston 0.75 %), `America/New_York`, 2 cafés in Boston, prices and fees converted like the others (§5). `city` of a café (§3.6) and `cities` of a country (§3.1). The interface lets the guest choose the city (it gives the country) and the language apart; American English is the 7th language. |
+| 1.12 | 24 Nov | Web only, no API change: the city switcher offers "All cities" first. The home page then shows the cafés of every country (§3.6, one call per country) on one map, city by city; the menu, the cart, checkout and booking ask for a city before any price, so an order always has one country. |
+| 1.11 | 24 Nov | Admin panel (additive): §3.20, six read-only `GET /api/v1/admin/…` endpoints for ADMIN (overview of a period, every order with one order in full, every booking, every account, every café with its day), and a booking history seed for the demo. The web app has an admin panel at `/admin` with its own login (`/admin/login`); café orders and reports moved into it. |
+| 1.13 | 24 Nov | Web only, no API change: Panko, the mascot, in the corner of every page of the shop, with a button that tucks him away. |
+| 1.16 | 26 Nov | Dish marks (additive): `vegetarian` and `spicy` in §3.3 and §3.4, read on the server from the name and the ingredients (a set from its dishes); the web shows them under the dish in red (spicy) and green (vegetarian), and Panko's menu uses the same reading. Web only: the tab titles use a hyphen, "Menu - Wok & Roll". |
+| 1.15 | 25 Nov | No API change: prices on the web with the sign of the currency (`₴259.00`, not `UAH 259.00`; sum, which has no sign, as a word), and Panko writes them the same way. Gemini has spare models for a model out of its daily quota or overloaded (§3.21), the first is `gemini-3.1-flash-lite`, and Panko's answers are shorter and simpler. Only fast Flash-Lite models by default: when a model has no first word after 1.5 s the next is asked too and the first that speaks answers, and the guest waits 6 s at most. The menu in the prompt marks every dish vegetarian, with meat or with fish, and spicy, and has the dish marker after each name, so no id reaches the guest. |
+| 1.14 | 25 Nov | Panko, the AI chat (additive): §3.21, `GET /api/v1/assistant` and `POST /api/v1/assistant/chat` (public, server-sent events), codes `TOO_MANY_MESSAGES` and `ASSISTANT_UNAVAILABLE`. A click on Panko opens the chat. |
+| 1.10 | 24 Nov | Roll sets (additive): category `Sets` with 7 sets, each 15–19 % under its dishes bought one by one. `regularPrice` and `setItems` in §3.3 and §3.4; a set is ordered and priced like any dish (§5 does not change). |
 
 ---
 
@@ -31,16 +45,16 @@ This file is the single source of truth for the API. Backend builds it, frontend
 |---|---|
 | Base URL | `/api/v1`. The frontend always calls relative paths (`/api/v1/countries`); Vite proxies `/api` to `http://localhost:8080` (`API_PROXY_TARGET`). Never hard-code the port. |
 | Format | JSON, UTF-8, `Content-Type: application/json`. Field names in camelCase. |
-| Country | 3-letter code: `UZB`, `KAZ`, `GEO`, `UKR`, `CHN`. In GET requests it is the `country` query parameter; in the cart quote it is a body field. |
+| Country | 3-letter code: `UZB`, `KAZ`, `GEO`, `UKR`, `CHN`, `GBR` (v1.6), `USA` (v1.9). In GET requests it is the `country` query parameter; in the cart quote it is a body field. |
 | Money | JSON number with exactly 2 decimals (`62.00`), always together with `currency` (ISO 4217: `UZS`, `KZT`, `GEL`, `UAH`, `CNY`). Prices are in local currency, **before VAT**. |
 | Rates | Percent number: `"vatRate": 15.00` means 15 %. |
 | IDs | Positive integers from the database. |
-| Lists | Stage 2 lists stay plain JSON arrays without paging (small, fixed data). New lists that can grow (`me/orders`, `staff/*`, `admin/products`) use paging (§1.1). Other new endpoints return an object, so fields can be added later without breaking clients. |
+| Lists | Stage 2 lists stay plain JSON arrays without paging (small, fixed data). New lists that can grow (`me/orders`, `staff/*`, `admin/products`, the admin panel lists of §3.20) use paging (§1.1). Other new endpoints return an object, so fields can be added later without breaking clients. |
 | Auth | Public: the guest flow (menu, cart quote, cafés, zones, slots, orders, bookings) and `auth/register`, `auth/login`. Everything else needs `Authorization: Bearer <token>` (§3.11, §8). |
-| Language | English only (Decision Log, 5 Nov). |
+| Language | The API is English (codes, names, messages). The web interface has 7 languages: Uzbek, Kazakh, Georgian, Ukrainian, Chinese, British English, American English. Since v1.9 the guest chooses the language and the city apart: the city gives the country (prices, currency, cafés), the language only the texts; the first visit is in the language of the country of the city. Error messages are translated by `code` and field; only the brand name stays as it is (v1.4). |
 | Health check | `GET /api/health` → `{"status":"UP"}` (outside `/api/v1`, already on `dev`). |
 | Dates and times | A date is `YYYY-MM-DD` (`orderDate`). A clock time is `HH:mm`, 24 h (`slotStart: "12:30"`). Both are **local to the café's country** (next row). A moment is ISO 8601 in UTC with `Z` (`createdAt: "2026-11-18T09:15:00Z"`) and is stored as `timestamptz`. |
-| Time zones | Each country has an IANA time zone: UZB `Asia/Tashkent`, KAZ `Asia/Almaty`, GEO `Asia/Tbilisi`, UKR `Europe/Kyiv`, CHN `Asia/Shanghai`. "Today" and "now" for orders, slots and bookings are taken in that zone with one helper, `CountryClock`; never `LocalDate.now()` without a zone. Needs tz data 2024a or newer (JDK 21.0.3+), where all of Kazakhstan is UTC+5. |
+| Time zones | Each country has an IANA time zone: UZB `Asia/Tashkent`, KAZ `Asia/Almaty`, GEO `Asia/Tbilisi`, UKR `Europe/Kyiv`, CHN `Asia/Shanghai`, GBR `Europe/London`, USA `America/New_York`. "Today" and "now" for orders, slots and bookings are taken in that zone with one helper, `CountryClock`; never `LocalDate.now()` without a zone. Needs tz data 2024a or newer (JDK 21.0.3+), where all of Kazakhstan is UTC+5. |
 | Enums | Strings in UPPER_SNAKE_CASE (`PICKUP`, `DELIVERY`, `CONFIRMED`). A client shows an unknown value as text and does not crash. |
 | Unknown fields | The server ignores unknown request fields; clients ignore unknown response fields. This is what makes additive changes safe (§9). |
 | Request id | Every response has `X-Request-Id`. A client may send its own (`[A-Za-z0-9-]`, at most 64 characters); otherwise the server creates a UUID. The same id is in the server log and in every error body as `requestId`. QA adds it to bug reports. |
@@ -77,6 +91,8 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 3.17 | `GET /api/v1/reports/sales-by-month?country=&year=` | VIEWER, ADMIN | Sales by month | Nodir | #67 | S3 |
 | 3.18 | `GET /api/v1/reports/sales.pdf?from=&to=&country=&year=` | VIEWER, ADMIN | PDF of the reports page | Nodir | #68 | S3–S4 |
 | 3.19 | `GET /api/v1/reports/sales-by-region.csv?from=&to=` · `GET /api/v1/reports/sales-by-month.csv?country=&year=` | VIEWER, ADMIN | CSV of each report | Timur | #69 | S4 |
+| 3.20 | `GET /api/v1/admin/overview` · `/admin/orders` · `/admin/orders/{orderNumber}` · `/admin/bookings` · `/admin/users` · `/admin/cafes` | ADMIN | Admin panel, read only (v1.11) | — | — | S4 |
+| 3.21 | `GET /api/v1/assistant` · `POST /api/v1/assistant/chat` | public | Panko, the AI chat (v1.14) | — | — | S4 |
 
 The examples use the real seed data on `dev` (#33). Café, zone, order and report values are examples until their migrations are merged.
 
@@ -86,7 +102,7 @@ The examples use the real seed data on `dev` (#33). Café, zone, order and repor
 
 ### 3.1 `GET /api/v1/countries`
 
-No parameters. Returns all 5 countries, ordered as in the seed (UZB first; the frontend uses UZB on the first visit).
+No parameters. Returns all 7 countries, ordered as in the seed (UZB first; the frontend uses UZB on the first visit).
 
 ```json
 [
@@ -94,13 +110,15 @@ No parameters. Returns all 5 countries, ordered as in the seed (UZB first; the f
   { "code": "KAZ", "name": "Kazakhstan", "currency": "KZT", "vatRate": 20.00 },
   { "code": "GEO", "name": "Georgia",    "currency": "GEL", "vatRate": 12.00 },
   { "code": "UKR", "name": "Ukraine",    "currency": "UAH", "vatRate": 8.00 },
-  { "code": "CHN", "name": "China",      "currency": "CNY", "vatRate": 18.00 }
+  { "code": "CHN", "name": "China",      "currency": "CNY", "vatRate": 18.00 },
+  { "code": "GBR", "name": "United Kingdom", "currency": "GBP", "vatRate": 20.00 },
+  { "code": "USA", "name": "United States", "currency": "USD", "vatRate": 7.00 }
 ]
 ```
 
 | Field | Type | Notes |
 |---|---|---|
-| `code` | string | `UZB` … `CHN` |
+| `code` | string | `UZB` … `USA` |
 | `name` | string | Shown in the switcher |
 | `currency` | string | ISO 4217, used by `Intl.NumberFormat` |
 | `vatRate` | number | Percent, from `vat_rate` |
@@ -109,11 +127,13 @@ Responses: `200`.
 
 **v1.1 (Sprint 3, #143):** every country also has `timeZone`, the IANA name of its time zone (§1), for example `{ "code": "UZB", "name": "Uzbekistan", "currency": "UZS", "vatRate": 15.00, "timeZone": "Asia/Tashkent" }`. The date picker uses it for "today".
 
+**v1.9:** every country also has `cities`, the cities of its active cafés, A to Z (`["Tashkent"]`; empty while a country has no café). The city switcher of the interface lists them with their country and currency.
+
 ### 3.2 `GET /api/v1/categories?country=UZB`
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 
 Returns visible categories that have at least one visible dish with a price in this country, ordered by `sort_order`.
 
@@ -131,7 +151,7 @@ Responses: `200` · `400` (missing or unknown `country`, see §4).
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `categoryId` | no | Positive integer. Without it, all categories. An unknown id returns `[]`. |
 
 Returns visible dishes that **have a price in this country**; a dish with no `regional_price` row for the country is not returned (#51). Out-of-stock dishes **are** returned with `inStock: false`, so the UI can show the label and disable Add. Order: category `sort_order`, then dish `id`. The example is shortened to 2 of the 3 wok dishes.
@@ -144,6 +164,9 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
     "name": "Firecracker udon",
     "description": "Udon noodles, chicken, chili, sesame.",
     "imageUrl": "/images/udon.png",
+    "pieces": null,
+    "weightGrams": 350,
+    "volumeMl": null,
     "price": 48.00,
     "currency": "UZS",
     "inStock": true,
@@ -154,7 +177,10 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
     "categoryId": 2,
     "name": "Teriyaki chicken noodles",
     "description": "Egg noodles, chicken, teriyaki sauce, vegetables.",
-    "imageUrl": null,
+    "imageUrl": "/images/teriyaki-noodles.png",
+    "pieces": null,
+    "weightGrams": 350,
+    "volumeMl": null,
     "price": 52.00,
     "currency": "UZS",
     "inStock": true,
@@ -167,18 +193,27 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
 |---|---|---|
 | `id`, `categoryId` | integer | |
 | `name` | string | |
-| `description` | string or `null` | |
+| `description` | string or `null` | The ingredients only (v1.5); the portion has its own fields |
 | `imageUrl` | string or `null` | Path served by the frontend (`/images/...`). `null` = show the placeholder. |
+| `pieces` | integer or `null` | Pieces in a portion (rolls, nigiri, gyoza, sets); `null` when not counted (v1.5) |
+| `weightGrams` | integer or `null` | Weight of a portion in grams (v1.5) |
+| `volumeMl` | integer or `null` | Volume of a drink in millilitres (v1.5). The card shows the three as "8 pcs · 250 g" in the language of the interface |
 | `price` | number | Base price in local currency, before VAT |
 | `currency` | string | Same as the country's currency |
 | `inStock` | boolean | Per country (`regional_price.in_stock`) |
 | `hasModifiers` | boolean | `true` if the dish has at least one modifier priced in this country. The card opens the modal for these dishes. |
+| `regularPrice` | number or `null` | v1.10, sets only: what the dishes of the set cost one by one in this country (sum of quantity × price, before VAT). `null` for a dish, and for a set when one of its dishes has no price here (no saving is shown from a part of the set). |
+| `setItems` | array | v1.10: the dishes of a set in their order, `{ "productId": 11, "name": "Philadelphia roll", "quantity": 2 }`; empty for a dish. A dish of a set may be hidden or out of stock on its own; the set has its own price and stock. |
+| `vegetarian` | boolean | v1.16: no meat, fish or seafood, read from the English name and ingredients (`description`); a set is vegetarian when all its dishes are. `false` when the ingredients are not known (no `description`). |
+| `spicy` | boolean | v1.16: has chili, a spicy sauce or kimchi, read the same way; a set is spicy when one of its dishes is. |
 
 Responses: `200` · `400` (missing or unknown `country`, `categoryId` not a number).
 
+**v1.10: sets.** A set is a product (category `Sets`) made of other products (`product_set_item`). Its `price` is its own regional price; `regularPrice` is the sum of its dishes, so the card can show the saving (Philadelphia set in UZB: `199000.00` against `239000.00`, −17 %). The cart, the quote and the order treat a set like any dish: one line, its own price.
+
 ### 3.4 `GET /api/v1/products/{id}?country=UZB`
 
-The product modal (#52, #114). All fields of §3.3, plus `modifiers`.
+The product modal (#52, #114). All fields of §3.3 (also `regularPrice` and `setItems`, v1.10, `vegetarian` and `spicy`, v1.16), plus `modifiers`.
 
 ```json
 {
@@ -187,6 +222,9 @@ The product modal (#52, #114). All fields of §3.3, plus `modifiers`.
   "name": "Firecracker udon",
   "description": "Udon noodles, chicken, chili, sesame.",
   "imageUrl": "/images/udon.png",
+  "pieces": null,
+  "weightGrams": 350,
+  "volumeMl": null,
   "price": 48.00,
   "currency": "UZS",
   "inStock": true,
@@ -228,7 +266,7 @@ Prices the cart on the server. The cart page shows **only** these numbers (#53, 
 
 | Field | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `items` | yes | 1–50 lines |
 | `items[i].productId` | yes | Exists, visible, has a price in this country, `inStock` is `true` |
 | `items[i].quantity` | yes | JSON number, whole, **1–99**. `0` or `1.5` is rejected with `VALIDATION_ERROR` (see §4) |
@@ -314,18 +352,22 @@ Cafés of the chain. Every café takes pickup orders and table bookings, and is 
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 
 ```json
 {
   "items": [
-    { "id": 1, "country": "UZB", "name": "Wok & Roll Chilanzar", "address": "12 Bunyodkor Ave, Tashkent",
-      "phone": "+998712000001", "opensAt": "10:00", "closesAt": "22:00", "timeZone": "Asia/Tashkent" }
+    { "id": 1, "country": "UZB", "name": "Wok & Roll Chilanzar", "city": "Tashkent", "address": "12 Bunyodkor Ave, Tashkent",
+      "phone": "+998712000001", "opensAt": "10:00", "closesAt": "22:00", "timeZone": "Asia/Tashkent",
+      "latitude": 41.272187, "longitude": 69.203167 }
   ]
 }
 ```
 
 Active cafés of the country, ordered by name. Seed: 2 cafés per country. Responses: `200` · `400` (missing or unknown `country`).
+
+- v1.7: `latitude` and `longitude` are WGS 84 degrees with 6 decimals. Both are numbers or both are `null` (the database refuses one without the other): a café without a place is still offered for pickup and booking, only not on the map. The seed places are the street addresses, found with OpenStreetMap Nominatim.
+- v1.9: `city` is the city of the café in English, as in its address (never empty). The home page shows the cafés of the city the guest chose.
 
 ### 3.7 `GET /api/v1/delivery-zones?country=UZB`
 
@@ -340,7 +382,7 @@ Active cafés of the country, ordered by name. Seed: 2 cafés per country. Respo
 
 - `fee` is fixed per zone, in local currency, `0.00` or more. It is added last, outside VAT and discount, and never changes the threshold (Decision Log, 5 Nov).
 - `cafeId` is the café that cooks and delivers for this zone. Delivery orders use the time slots of that café.
-- Every country has at least one zone with fee `20.00`, so the golden delivery examples (`pricing-examples.json`) can be checked through the API.
+- Every country has three zones: near, center and far (v1.4: real fees in each currency, see §5). The JSON examples in this file keep the small demo numbers of v1.0 to show the shape; the real numbers are in §5.
 - Active zones, ordered by name. Responses: `200` · `400`.
 
 ### 3.8 `GET /api/v1/time-slots?cafeId=1&date=2026-11-20`
@@ -412,7 +454,7 @@ Places an order. Headers: `Idempotency-Key` (optional, UUID); `Authorization` (o
 
 | Field | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `orderDate` | yes | `YYYY-MM-DD`, from today to 7 days ahead in the country's time zone. Before today → `PAST_DATE`; later than 7 days → `VALIDATION_ERROR` |
 | `scenario` | yes | `PICKUP` or `DELIVERY` |
 | `cafeId` | `PICKUP` | A café of this country (`UNKNOWN_CAFE`). Must be empty for `DELIVERY` (the zone's café is used) |
@@ -593,15 +635,15 @@ Staff see all cafés (the MVP has no link between a user and a café). Responses
 
 | Endpoint | Body | Result |
 |---|---|---|
-| `GET /api/v1/admin/products?country=UZB` | — | Paging (§1.1). All products, hidden ones too: `id`, `categoryId`, `categoryName`, `name`, `description`, `imageUrl`, `visible`, `version`, and for this country `price`, `currency`, `inStock`, `priceVersion` (`null` when the dish is not sold there) |
-| `POST /api/v1/admin/products` | `{ categoryId, name, description, imageUrl, visible }` | `201` with the product and `Location` |
-| `PATCH /api/v1/admin/products/{id}` | Any of `name`, `description`, `imageUrl`, `categoryId`, `visible`, plus `version` (required) | `200` with the product. Only the sent fields change |
+| `GET /api/v1/admin/products?country=UZB` | — | Paging (§1.1). All products, hidden ones too: `id`, `categoryId`, `categoryName`, `name`, `description`, `imageUrl`, `pieces`, `weightGrams`, `volumeMl`, `visible`, `version`, and for this country `price`, `currency`, `inStock`, `priceVersion` (`null` when the dish is not sold there) |
+| `POST /api/v1/admin/products` | `{ categoryId, name, description, imageUrl, pieces, weightGrams, volumeMl, visible }` | `201` with the product and `Location` |
+| `PATCH /api/v1/admin/products/{id}` | Any of `name`, `description`, `imageUrl`, `pieces`, `weightGrams`, `volumeMl`, `categoryId`, `visible`, plus `version` (required) | `200` with the product. Only the sent fields change; `0` removes a portion field |
 | `PUT /api/v1/admin/products/{id}/prices/{country}` | `{ price, inStock, version }` | `200` with `{ productId, country, price, currency, inStock, version }`. Creates the regional price when it is missing (`version` is then ignored) |
 | `POST /api/v1/admin/categories` | `{ name, sortOrder, visible }` | `201` |
 | `PATCH /api/v1/admin/categories/{id}` | Any of `name`, `sortOrder`, `visible`, plus `version` | `200` |
 
 - **Optimistic locking:** `UPDATE … SET …, version = version + 1 WHERE id = :id AND version = :version`. No row updated → `409 VERSION_CONFLICT` ("Changed by someone else, reload"). Two admins can never overwrite each other silently.
-- `price` is `0.00`–`9999999999.99` with at most 2 decimals; more decimals → `VALIDATION_ERROR` (no silent rounding). `imageUrl` must start with `/images/`.
+- `price` is `0.00`–`9999999999.99` with at most 2 decimals; more decimals → `VALIDATION_ERROR` (no silent rounding). `imageUrl` must start with `/images/`. `pieces` is 1–999, `weightGrams` and `volumeMl` are 1–9999 (on PATCH `0` removes the value).
 - There is no DELETE: hiding (`visible: false`) keeps old orders and reports correct (erd.md, "Why", point 6).
 - The public menu shows changes at once (no cache).
 
@@ -628,7 +670,7 @@ Responses: `200` · `201` · `400` · `401` · `403` · `404` · `409`.
 ```
 
 - **Which orders:** `order_date` in the period and `status` not `CANCELLED` (`NEW`, `CONFIRMED` and `DONE` are sales; a new order shows at once).
-- `regions` always has **all 5 countries** in the order of `GET /countries`, with zeros when a country has no orders.
+- `regions` always has **all 7 countries** in the order of `GET /countries`, with zeros when a country has no orders.
 - Sums of the **saved** order values; old orders are never priced again (erd.md, "Why", point 3).
 - Each country is in its own currency, no conversion (mentor, 2 Nov). There is **no sum across countries** except `totalOrders`.
 - `averageCheck = total / orders`, HALF_UP to 2 decimals; `0.00` when there are no orders.
@@ -654,7 +696,7 @@ Responses: `200` · `400` · `401` · `403`.
 
 | Parameter | Required | Rule |
 |---|---|---|
-| `country` | yes | One of the 5 codes |
+| `country` | yes | One of the 7 codes |
 | `year` | yes | From 2024 to next year |
 
 ```json
@@ -708,6 +750,64 @@ month,orders,subtotal,vat,discount,deliveryFee,total,averageCheck
 
 **Downloads in the frontend** (§3.18, §3.19): call with `fetch` and the `Authorization` header, read the Blob, then open it (`URL.createObjectURL`) for Generate PDF, or save it with `<a download>` and the file name from `Content-Disposition`. Never put the token in a URL.
 
+### 3.20 Admin panel API (ADMIN, read only)
+
+Everything the shop knows, for the admin panel of the web app (`/admin`, v1.11). Read only: the order status changes through the staff API (§3.14), the menu through the admin catalog API (§3.15). The lists use paging (§1.1); every filter is optional, and an empty search is no search.
+
+| Endpoint | Filters | Items (or body) |
+|---|---|---|
+| `GET /api/v1/admin/overview?from=&to=` | both required, the period rule of §3.16 (at most 366 days, `from` not after `to`) | `orders` { `total` (cancelled too), `byStatus` (`NEW`, `CONFIRMED`, `DONE`, `CANCELLED`, in this order, zeros too), `pickup`, `delivery` } · `bookings` { `total`, `cancelled`, `guests` of the confirmed ones } · `accounts` { `total`, `newInPeriod` (UTC dates), `byRole` } · `regions` (every country: `country`, `currency`, `orders`, `revenue`, `averageCheck`: the numbers of §3.16) · `days` (every day of the period: `date`, `orders` without cancelled) · `topDishes` (5: `productId`, `name`, `quantity`, without cancelled) |
+| `GET /api/v1/admin/orders` | `country`, `cafeId`, `status`, `from`, `to` (order date), `q` | Newest day first (`orderDate` desc, then `slotStart` desc, then id): `orderNumber`, `createdAt`, `orderDate`, `slotStart`, `slotEnd`, `country`, `currency`, `cafe` { `id`, `name` }, `scenario`, `status`, `contactName`, `contactPhone`, `account` (`null` for a guest, else { `email`, `fullName` }), `itemCount`, `total` |
+| `GET /api/v1/admin/orders/{orderNumber}` | — | { `order`: the body of §3.9, `contactEmail`, `comment`, `account`, `updatedAt` }. Unknown number → `404 NOT_FOUND` |
+| `GET /api/v1/admin/bookings` | `country`, `cafeId`, `status` (`CONFIRMED`, `CANCELLED`), `from`, `to` (booking date), `q` | Newest day first: `bookingNumber`, `createdAt`, `date`, `time`, `endTime`, `country`, `cafe`, `guests`, `tableSeats`, `status`, `contactName`, `contactPhone`, `contactEmail`, `comment`, `account` |
+| `GET /api/v1/admin/users` | `role`, `q` | Newest account first: `id`, `email`, `fullName`, `phone`, `role`, `createdAt`, `orders`, `lastOrderAt`. Never the password hash |
+| `GET /api/v1/admin/cafes` | — | `{ "items": [...] }`, every café, closed ones too, in the order of the countries: `id`, `country`, `city`, `name`, `address`, `phone`, `opensAt`, `closesAt`, `timeZone`, `active`, `tables`, `seats`, `slotCapacity`, `today` (in the café's time zone), `todayOrders` (without cancelled), `todayBookings` (confirmed) |
+
+- `q` is at most 100 characters and is looked for, without case, in the number, the contact name, phone and email, and the account email (users: email, name, phone). It is plain text: `%` and `_` are not wildcards.
+- A wrong `country`, `status` or `role`, `from` after `to`, or a too long `q` → `400 VALIDATION_ERROR` with the field; a date that is not a date → `400 BAD_REQUEST`.
+- The overview money comes from the sales-by-region report (§3.16), so the panel and the reports page always show the same revenue.
+- Demo data: the booking history of 26 Oct – 23 Nov 2026 (`V2026_11_24_1600`), 1–4 bookings a café a day, deterministic like the sales history; all dates are in the past, so the booking tests are not affected.
+
+Responses: `200` · `400` · `401` · `403` · `404`.
+
+### 3.21 Panko, the AI chat (public, v1.14)
+
+Panko, the mascot of the shop, answers guests' questions about the menu, the cafés, delivery, discounts and booking. The answers come from a language model, Claude (Anthropic API) or Gemini (Google Gemini API), whichever has a key on the server, and are based only on the data of the chosen country, which the server puts into the prompt: every dish on the menu with its id, price before VAT, portion, ingredients, options and stock, the sets with their dishes, the cafés with hours, the delivery zones with fees and times, VAT and the discount thresholds. Panko can recommend at most 4 dishes; they come as menu cards, which open the dish dialog of the menu. He cannot order, pay or book.
+
+| Endpoint | Body | Answer |
+|---|---|---|
+| `GET /api/v1/assistant` | — | `{ "enabled": true, "model": "gemini-3.1-flash-lite" }`. `enabled` is `false` (and `model` `null`) when the server has no `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`; the web app then shows Panko without the AI: links to the menu and the booking. |
+| `POST /api/v1/assistant/chat` | `{ "country": "UZB", "city": "Tashkent", "language": "en-GB", "messages": [{ "role": "user", "text": "Something spicy for two?" }] }` | `200 text/event-stream` (below) |
+
+**Body.** `country`: one of the 7 codes. `city`: optional, at most 80 characters; it goes into the prompt only when it is a city of the country (§3.1), otherwise it is left out. `language`: `uz`, `kk`, `ka`, `uk`, `zh`, `en-GB`, `en-US`, the language of the answer. `messages`: 1–20, the whole conversation every time (the server keeps nothing), oldest first; `role` is `user` or `assistant`, `text` 1–2000 characters, and a question of the guest (`user`) at most 500. The last message must be the guest's. A greeting of the assistant before the first question is dropped, and messages of the same side in a row are joined.
+
+**Answer: server-sent events** (`Content-Type: text/event-stream`, each `data` is JSON):
+
+```text
+event:delta
+data:{"text":"Try the Firecracker udon"}
+
+event:delta
+data:{"text":", hot and quick to love."}
+
+event:done
+data:{"dishes":[{ ...a product of §3.3... }],"refused":false}
+```
+
+- `delta` { `text` }: the next piece of the answer, plain text (a short list with "- " is possible). The model marks a recommended dish with `[[dish:ID]]` (the menu in the prompt has the marker after every dish name, so the model copies it); the server takes the markers out of the text (also when a marker comes in several pieces, and also the forms a small model may write instead, such as `[[id 6]]`, `[[dish 6]]` or `[[dish: 6]]`) and turns them into `dishes`. The guest never sees an id. Every dish of the menu in the prompt says whether it is vegetarian, has meat or has fish or seafood, and whether it is spicy, read on the server from its name and ingredients (a set from its dishes), so the model follows a word instead of judging the ingredients; a guest's budget is a rule of the prompt too.
+- `done` { `dishes`, `refused` }: the last event. `dishes` are the products of the markers in their order, in the shape of §3.3, only those on the menu of the country and in stock, at most 4. `refused` is `true` when the model declined (the text says why).
+- `error` { `code`, `message` }: instead of `done` when the model fails in the middle: `ASSISTANT_BUSY` (rate limit or overload at the provider, a network problem: try again in a moment; Gemini first tries the next model of its list, and once more a model that is busy for a moment) or `ASSISTANT_ERROR`. The text that came before stays. A `done` with `refused: true` and no text gets the web app's own "I can only help with Wok & Roll".
+
+The stream closes after `done` or `error`, and at the latest after 120 seconds. When the guest closes the stream, the server stops asking the model.
+
+**Errors before the stream** (JSON, §4): `400 VALIDATION_ERROR` (with the field: `country`, `language`, `messages`, `messages[i].role`, `messages[i].text`); `429 TOO_MANY_MESSAGES` after 20 questions from one IP in 10 minutes, with `Retry-After: <seconds>`; `503 ASSISTANT_UNAVAILABLE` when the server has no API key.
+
+**Model and cost.** The provider is the one with a key (`ANTHROPIC_API_KEY` first, then `GEMINI_API_KEY`), or `ASSISTANT_PROVIDER` (`anthropic`, `gemini`). `ASSISTANT_MODEL`: default `claude-opus-5-5` (`claude-haiku-5-5` is cheaper) or, for Gemini, a list separated by commas, default `gemini-3.1-flash-lite,gemini-3.5-flash-lite,gemini-flash-lite-latest`. A free Gemini key gets about 20 requests a day per model, and each model has its own quota: a model that answers 429 with a time to wait (`RetryInfo`) rests until then, and the next model of the list answers. A model that is overloaded (500, 503, 504: such an answer can take seconds to come) rests for 2 minutes, so the next guests go straight to the next model; when every model rests, the overloaded ones are tried anyway. Speed comes first: the API sends the headers of an answer with its first word, and when a model has no first word after 1.5 seconds the next model is asked too: the first that speaks answers, the other requests are cancelled, and a model asked earlier that is still quiet rests like an overloaded one (an overloaded model can take 13 seconds to say 503). After 6 seconds without a first word the guest gets `ASSISTANT_BUSY` at once. Answers are short and simple (one to three sentences, at most 3 dishes), which keeps them fast and cheap. `model` in the status is the first of the list. `ASSISTANT_EFFORT`: how much the model thinks first, Claude effort (default `low`) or Gemini thinking level (default `minimal`, the first words in about a second). The rules and the data of the country come first and are the same for every guest of a country, so they are cached (Claude: a 1-hour cache breakpoint; Gemini: the implicit cache); only the language, the city with its local time and the conversation are new. Opus, Fable and Sonnet 5.5 use the server-side refusal fallback of the Anthropic API (`fallbacks: "default"`): when the model declines, a fallback model answers in the same call. Gemini is called through its REST API (`streamGenerateContent?alt=sse`), with no extra library.
+
+**Privacy.** The conversation is not stored on the server and its text is never logged (only country, language, number of messages, length, number of dishes, stop reason and time). The browser keeps it in `sessionStorage` for the visit. Guests are told that Panko is an AI and can make mistakes; the prompt tells him never to ask for personal data, to stay on the topic of Wok & Roll and to treat everything the guest writes as a question, not as instructions.
+
+Responses: `200` · `400` · `429` · `503`.
+
 ---
 
 ## 4. Errors
@@ -721,7 +821,7 @@ Every error has the same body (already implemented in `common.error`):
 | HTTP | `code` | When | `fields` |
 |---|---|---|---|
 | 400 | `VALIDATION_ERROR` | Bean Validation on a parameter or body field: unknown `country` in a GET request, missing `country` or `items` in the quote, more than 50 lines, `quantity` missing, not a whole number or out of 1–99 | field → message |
-| 400 | `UNKNOWN_COUNTRY` | Quote: the country code is not one of the 5 countries | `country` |
+| 400 | `UNKNOWN_COUNTRY` | Quote: the country code is not one of the 7 countries | `country` |
 | 400 | `UNKNOWN_PRODUCT` | Quote: the dish does not exist, or the dish or its category is hidden | `items[i].productId` |
 | 400 | `PRODUCT_NOT_SOLD` | Quote: the dish has no price in this country | `items[i].productId` |
 | 400 | `OUT_OF_STOCK` | Quote: the dish is out of stock in this country | `items[i].productId` |
@@ -756,6 +856,8 @@ Every error has the same body (already implemented in `common.error`):
 | 409 | `INVALID_STATUS_CHANGE` | Staff: a status change that is not allowed | `status` |
 | 422 | `IDEMPOTENCY_KEY_REUSED` | The same `Idempotency-Key` with a different body | `Idempotency-Key` |
 | 429 | `TOO_MANY_ATTEMPTS` | 5 failed logins in 15 minutes; header `Retry-After` | `{}` |
+| 429 | `TOO_MANY_MESSAGES` | v1.14: 20 questions to Panko from one IP in 10 minutes; header `Retry-After` | `{}` |
+| 503 | `ASSISTANT_UNAVAILABLE` | v1.14: the AI chat is off (no API key on the server) | `{}` |
 
 `400 VALIDATION_ERROR` also covers the shape rules of every new field in §3.6–3.19 (lengths, formats, ranges, paging).
 
@@ -775,7 +877,7 @@ Every error has the same body (already implemented in `common.error`):
 
 | Request problem | Status and body |
 |---|---|
-| `GET /api/v1/products?country=USA` | `400 {"code":"VALIDATION_ERROR","message":"Request validation failed","fields":{"country":"must be one of UZB, KAZ, GEO, UKR, CHN"}}` |
+| `GET /api/v1/products?country=FRA` | `400 {"code":"VALIDATION_ERROR","message":"Request validation failed","fields":{"country":"must be one of UZB, KAZ, GEO, UKR, CHN, GBR, USA"}}` |
 | `GET /api/v1/products` (no country) | `400 {"code":"BAD_REQUEST","message":"Required parameter is missing","fields":{"country":"Required parameter is missing"}}` |
 | `GET /api/v1/products/99?country=UZB` | `404 {"code":"NOT_FOUND","message":"Product 99 is not sold in UZB","fields":{}}` |
 | Quote with `"quantity": 0` in line 0 | `400 {"code":"VALIDATION_ERROR","message":"Request validation failed","fields":{"items[0].quantity":"must be a whole number from 1 to 99"}}` |
@@ -806,7 +908,7 @@ Calculated only in the backend `pricing` package (architecture.md §1), with `Bi
 | Subtotal | `Σ lineTotal` | 2 |
 | VAT | `round(subtotal × vatRate / 100)` | 2 |
 | Amount incl. VAT | `subtotal + vat` | 2 |
-| Discount rate | Rate of the highest threshold `≤ amountInclVat` for this country (100 / 500 / 700 / 1000 / 5000 → 3 / 5 / 7 / 10 / 15 %, local currency); below 100 → 0 | 3 |
+| Discount rate | Rate of the highest threshold `≤ amountInclVat` for this country (table below, local currency; the rates are 3 / 5 / 7 / 10 / 15 % everywhere); below the first threshold → 0 | 3 |
 | Discount | `round(amountInclVat × discountRate / 100)` | 3 |
 | Delivery fee | Zone fee for `DELIVERY`, `0.00` for `PICKUP`; added last, does not change the threshold | 3 |
 | Total | `amountInclVat − discount + deliveryFee` | 3 |
@@ -814,6 +916,24 @@ Calculated only in the backend `pricing` package (architecture.md §1), with `Bi
 Worked example (the quote from §3.5, Stage 3 pickup): 170.00 → VAT 25.50 → 195.50 → 3 % discount 5.865 → **5.87** (half-up) → total **189.63**.
 
 Worked example with delivery (the quote above, zone fee 20.00): 170.00 → VAT 25.50 → 195.50 → discount 5.87 → plus delivery fee 20.00 → total **209.63**. The fee is outside VAT and discount.
+
+The two worked examples and `pricing-examples.json` use the demo scale of the project plan (thresholds 100 / 500 / 700 / 1000 / 5000); the backend unit tests check the formula with them.
+
+**v1.4: real prices.** The seed now has prices at the level of a Tashkent sushi bar (a roll 69,000–79,000 UZS), converted to the other currencies (1 USD ≈ 12,700 UZS · 510 KZT · 2.70 GEL · 41.5 UAH · 7.15 CNY · 0.79 GBP; the US prices are rounded to 5 cents) and rounded to café prices. Thresholds and zone fees are converted the same way:
+
+| Country | Currency | 3 % from | 5 % from | 7 % from | 10 % from | 15 % from | Delivery zones |
+|---|---|---|---|---|---|---|---|
+| UZB | UZS | 100,000 | 500,000 | 700,000 | 1,000,000 | 5,000,000 | 15,000 / 20,000 / 30,000 |
+| KAZ | KZT | 4,000 | 20,000 | 28,000 | 40,000 | 200,000 | 600 / 800 / 1,200 |
+| GEO | GEL | 20 | 100 | 150 | 200 | 1,000 | 3.50 / 4.50 / 6.50 |
+| UKR | UAH | 300 | 1,600 | 2,300 | 3,300 | 16,000 | 50 / 65 / 100 |
+| CHN | CNY | 55 | 280 | 400 | 550 | 2,800 | 8 / 11 / 17 |
+| GBR | GBP | 6 | 30 | 45 | 60 | 300 | 0.95 / 1.25 / 1.85 |
+| USA | USD | 8 | 40 | 55 | 80 | 400 | 1.20 / 1.55 / 2.35 |
+
+In the US the menu prices are before tax too, as US menus are; the 7 % is added in the cart like VAT elsewhere.
+
+Example on the seed (UZB, pickup): 2 × Salmon avocado roll 79,000 = 158,000.00 → VAT 15 % = 23,700.00 → 181,700.00 → 3 % = 5,451.00 → total **176,249.00 UZS**; with the Tashkent: Center zone (20,000.00) **196,249.00 UZS**.
 
 Reports (§3.16–3.19) add up the saved, already rounded order values; only `averageCheck` is rounded again (HALF_UP, 2 decimals). PDF and CSV print the same `BigDecimal` values with exactly 2 decimals, never through `double`.
 
@@ -826,15 +946,22 @@ The shared expected numbers for unit tests, API tests and manual tests are in [`
 **TypeScript** (frontend `src/services/api/types.ts`, also for QA):
 
 ```ts
-export type CountryCode = 'UZB' | 'KAZ' | 'GEO' | 'UKR' | 'CHN';
+export type CountryCode = 'UZB' | 'KAZ' | 'GEO' | 'UKR' | 'CHN' | 'GBR' | 'USA';
 
-export interface Country { code: CountryCode; name: string; currency: string; vatRate: number }
+export interface Country {
+  code: CountryCode; name: string; currency: string; vatRate: number;
+  timeZone: string; cities: string[]; // v1.1, v1.9
+}
 export interface Category { id: number; name: string }
 
 export interface Product {
   id: number; categoryId: number; name: string; description: string | null;
-  imageUrl: string | null; price: number; currency: string; inStock: boolean; hasModifiers: boolean;
+  imageUrl: string | null; pieces: number | null; weightGrams: number | null; volumeMl: number | null;
+  price: number; currency: string; inStock: boolean; hasModifiers: boolean;
+  regularPrice: number | null; setItems: SetItem[]; // v1.10
+  vegetarian: boolean; spicy: boolean; // v1.16
 }
+export interface SetItem { productId: number; name: string; quantity: number }
 
 export type ModifierType = 'SIZE' | 'EXTRA';
 export interface Modifier { id: number; type: ModifierType; name: string; priceDelta: number }
@@ -973,17 +1100,17 @@ Backend notes:
 | API1 Broken object level authorization | `/me/**` reads the user id only from the token; another user's order → 404 |
 | API2 Broken authentication | BCrypt (cost 10); JWT HS256 only, with `exp`, `iss` and `aud` checked; `JWT_SECRET` is random and at least 32 bytes (`openssl rand -base64 48`), never a word (RFC 8725); 429 after 5 failed logins; one message for a wrong email or password |
 | API3 Broken object property level authorization | DTO records list every field: no `password_hash` in any response; register cannot set `role`; admin PATCH accepts only the listed fields |
-| API4 Unrestricted resource consumption | At most 50 lines × 99; maximum length for every string; `pageSize` ≤ 100; report period ≤ 366 days |
+| API4 Unrestricted resource consumption | At most 50 lines × 99; maximum length for every string; `pageSize` ≤ 100; report period ≤ 366 days; the AI chat: 20 questions per IP in 10 minutes, 500 characters a question, 20 messages, a short answer (§3.21) |
 | API5 Broken function level authorization | URL rules per role group, deny by default, a test per role |
 | API6 Unrestricted access to sensitive business flows | Slot and table capacity checked in the database (atomic upsert, exclusion constraint); `Idempotency-Key` against double orders; random order numbers |
 | API7 Server side request forgery | The API never loads a URL from input; `imageUrl` is only a `/images/…` path shown by the frontend |
 | API8 Security misconfiguration | No stack traces in responses; Spring Security default headers and `Cache-Control: no-store`; CORS only for the frontend origin, never `*`; Swagger off or protected in a deployed demo |
 | API9 Improper inventory management | This file and Swagger list every endpoint with an owner (§2); no undocumented endpoints |
-| API10 Unsafe consumption of APIs | No third-party APIs in the MVP |
+| API10 Unsafe consumption of APIs | One third-party API for the AI chat (§3.21): Anthropic or Google Gemini. The key is only in the server environment; the answer is shown as plain text (never HTML), its dish ids are checked against the menu, and only the data of the menu goes to the model, never personal data |
 
 **Token in the frontend.** `localStorage` key `wr.auth`, dropped when `exp` has passed. This is readable by scripts if we ever have an XSS bug, so: React escapes output, we never use `dangerouslySetInnerHTML`, and the token is never put in a URL (downloads use `fetch` and a Blob). A `httpOnly` cookie is the v2 option.
 
-**Personal data.** Orders and bookings keep name, phone, optional email and address, because the café needs them. They are shown only to the owner (`/me`), staff and admins, and are never written to logs (log the order number, not the phone). Seed and demo data use invented names and `.test` emails.
+**Personal data.** Orders and bookings keep name, phone, optional email and address, because the café needs them. They are shown only to the owner (`/me`), staff and admins (the admin panel, §3.20, is ADMIN only; a viewer sees only report sums), and are never written to logs (log the order number, not the phone). Seed and demo data use invented names and `.test` emails.
 
 ## 9. Changing this contract
 
@@ -1004,6 +1131,7 @@ Backend notes:
 | An invalid line fails the whole quote, with its field path | The UI marks the exact line, and the server never shows totals for a cart it cannot price. |
 | `hasModifiers` in the product list | The card knows whether to open the modal without an extra request per dish. |
 | Shape errors use `VALIDATION_ERROR`; cart business errors have their own codes (`UNKNOWN_PRODUCT`, `PRODUCT_NOT_SOLD`, `OUT_OF_STOCK`, `INVALID_MODIFIER`, `UNKNOWN_COUNTRY`) | Matches #116 / #119 and `pricing.md`. The UI can show a precise message (for example "out of stock"), and still handles every `400` with `fields` the same way. |
+| The map of the home page uses `latitude` and `longitude` of `/cafes` (v1.7), not a separate endpoint, and OpenStreetMap tiles from OpenFreeMap | The list and the map show the same cafés from one request. OpenFreeMap needs no key and has no request limit, so there is no secret in the frontend and no bill. |
 | One café resource for pickup and table booking (`/cafes`, not `/pickup-points`) | One list and one set of opening hours. The UI still says "pickup point" in checkout. The public list in `SecurityConfig` (#134) changes from `pickup-points` to `cafes`. |
 | Time slots are calculated from opening hours; only the reservations are stored | No daily job to create slot rows; capacity is enforced by one atomic SQL statement (§3.8). |
 | "Today" is the date in the country's time zone | A guest in Kyiv at 23:30 must still be able to order for today; one Tashkent date was wrong for GEO, UKR and CHN. Replaces "Tashkent date" from the Decision Log, 5 Nov. |
@@ -1028,6 +1156,7 @@ This file now covers the whole MVP. Changes after the agreement on Mon 16 Nov ar
 | 1.0 | Sprint 2 · Stage 2 | §3.1–3.5 | built |
 | 1.1 | Sprint 3 (16–22 Nov) | §3.1 `timeZone`, §3.5 totals, §3.6–3.9, §3.11 changes, §3.16, §3.17, first part of §3.18 | agreed Mon 16 Nov |
 | 1.1 | Sprint 4 (23–29 Nov) | §3.10, §3.13–3.15, the rest of §3.18, §3.19 | feature freeze Thu 26 Nov 20:00 |
+| 1.11 | Sprint 4 (23–29 Nov) | §3.20 admin panel | built |
 
 ## 12. References
 

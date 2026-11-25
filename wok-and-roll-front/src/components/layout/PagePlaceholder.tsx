@@ -24,13 +24,19 @@ export function PagePlaceholder({
   return (
     <section className="placeholder-page" aria-labelledby="page-title">
       <p className="eyebrow">{eyebrow}</p>
-      <h1 id="page-title" className="placeholder-page__title">{title}</h1>
+      <h1 id="page-title" className="placeholder-page__title">
+        {title}
+      </h1>
       <p className="placeholder-page__description">{description}</p>
       <div className="empty-state">
-        <span className="empty-state__symbol" aria-hidden="true">{symbol}</span>
+        <span className="empty-state__symbol" aria-hidden="true">
+          {symbol}
+        </span>
         <h2>{panelTitle}</h2>
         <p>{panelDescription}</p>
-        <Link className="button button--primary" to={actionTo}>{actionLabel}</Link>
+        <Link className="button button--primary" to={actionTo}>
+          {actionLabel}
+        </Link>
       </div>
     </section>
   );

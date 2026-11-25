@@ -90,7 +90,7 @@ class ReportPdfControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fields.year").exists());
     mvc.perform(
-            get("/api/v1/reports/sales.pdf?from=2026-11-01&to=2026-11-30&country=USA&year=2026")
+            get("/api/v1/reports/sales.pdf?from=2026-11-01&to=2026-11-30&country=FRA&year=2026")
                 .header("Authorization", bearer("ADMIN")))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));

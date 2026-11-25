@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useI18n } from '../../i18n';
 import { Button } from './Button';
 
 export interface ModalProps {
@@ -10,14 +11,9 @@ export interface ModalProps {
   footer?: ReactNode;
 }
 
-export function Modal({
-  open,
-  title,
-  children,
-  onClose,
-  closeLabel = 'Close',
-  footer,
-}: ModalProps) {
+export function Modal({ open, title, children, onClose, closeLabel, footer }: ModalProps) {
+  const { t } = useI18n();
+  const close = closeLabel ?? t('common.close');
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -47,12 +43,7 @@ export function Modal({
           <h2 className="modal__title" id={titleId}>
             {title}
           </h2>
-          <button
-            className="modal__dismiss"
-            type="button"
-            aria-label={closeLabel}
-            onClick={onClose}
-          >
+          <button className="modal__dismiss" type="button" aria-label={close} onClick={onClose}>
             ×
           </button>
         </header>
@@ -60,7 +51,7 @@ export function Modal({
         {footer === undefined ? (
           <footer className="modal__footer">
             <Button variant="secondary" onClick={onClose}>
-              {closeLabel}
+              {close}
             </Button>
           </footer>
         ) : footer ? (

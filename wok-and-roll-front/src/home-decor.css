@@ -1,0 +1,221 @@
+/* The decoration of the home hero: paper lanterns on threads. Decoration only: no clicks, hidden
+   from screen readers, still for reduced motion. */
+
+/* The lanterns hang across the whole width of the screen, also in the page margins, so the shell
+   clips the sideways overflow on the home page. clip is not a scroll container: the sticky
+   header keeps working. */
+.app-shell:has(.hero-lanterns) {
+  overflow-x: clip;
+}
+
+.home-page {
+  position: relative;
+}
+
+.home-hero {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-lanterns {
+  position: absolute;
+  top: 0;
+  left: calc(50% - 50vw);
+  z-index: 2;
+  width: 100vw;
+  height: 600px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-lanterns__defs {
+  position: absolute;
+  overflow: hidden;
+}
+
+/* --high and --low: the length of the thread when the lantern is up and when it is down. */
+.hero-lantern {
+  --x: 50%;
+  --size: 40px;
+  --high: 24px;
+  --low: 160px;
+  --time: 10s;
+  --delay: 0s;
+
+  position: absolute;
+  top: 0;
+  left: calc(var(--x) - var(--size) / 2);
+  width: var(--size);
+  animation: lantern-drop var(--time) ease-in-out var(--delay) infinite;
+  will-change: transform;
+}
+
+/* The thread runs from far above the layer (cut off at its top, under the header) down to the
+   lantern, so it always looks tied to the top. */
+.hero-lantern::before {
+  position: absolute;
+  bottom: calc(100% - 2px);
+  left: calc(50% - 0.75px);
+  width: 1.5px;
+  height: 700px;
+  background: rgb(72 71 65 / 45%);
+  content: '';
+}
+
+.hero-lantern__sway {
+  display: block;
+  transform-origin: 50% 0;
+  animation: lantern-sway calc(var(--time) / 2.5) ease-in-out var(--delay) infinite alternate;
+}
+
+.hero-lantern__body {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 48 / 80;
+  filter: drop-shadow(0 8px 12px rgb(180 59 44 / 30%));
+}
+
+/* Wide screens: two lanterns in the page margins, one above the text, one between the text and
+   the photo, one in front of the photo's corner. */
+.hero-lantern:nth-of-type(1) {
+  --x: 4%;
+  --size: 40px;
+  --high: 40px;
+  --low: 230px;
+  --time: 11s;
+  --delay: -2s;
+}
+
+.hero-lantern:nth-of-type(2) {
+  --x: 33%;
+  --size: 34px;
+  --high: 8px;
+  --low: 120px;
+  --time: 9s;
+  --delay: -6s;
+}
+
+.hero-lantern:nth-of-type(3) {
+  --x: 50%;
+  --size: 32px;
+  --high: 20px;
+  --low: 130px;
+  --time: 12s;
+  --delay: -1s;
+}
+
+.hero-lantern:nth-of-type(4) {
+  --x: 89%;
+  --size: 36px;
+  --high: 12px;
+  --low: 110px;
+  --time: 10s;
+  --delay: -4s;
+}
+
+.hero-lantern:nth-of-type(5) {
+  --x: 96.5%;
+  --size: 44px;
+  --high: 60px;
+  --low: 260px;
+  --time: 13s;
+  --delay: -8s;
+}
+
+@keyframes lantern-drop {
+  0%,
+  100% {
+    transform: translateY(var(--high));
+  }
+
+  50% {
+    transform: translateY(var(--low));
+  }
+}
+
+@keyframes lantern-sway {
+  from {
+    transform: rotate(-4deg);
+  }
+
+  to {
+    transform: rotate(4deg);
+  }
+}
+
+/* The page margins are too narrow for a lantern below 1200 px. */
+@media (max-width: 1199px) {
+  .hero-lantern:nth-of-type(1),
+  .hero-lantern:nth-of-type(5) {
+    display: none;
+  }
+}
+
+/* Tablets and phones: two small lanterns on the right, next to the title, short threads. */
+@media (max-width: 1023px) {
+  .hero-lantern:nth-of-type(2),
+  .hero-lantern:nth-of-type(3) {
+    display: none;
+  }
+
+  .hero-lantern:nth-of-type(4) {
+    --x: 80%;
+    --size: 28px;
+    --high: 6px;
+    --low: 70px;
+    --time: 9s;
+  }
+
+  .hero-lantern:nth-of-type(5) {
+    --x: 93%;
+    --size: 32px;
+    --high: 14px;
+    --low: 80px;
+    --time: 11s;
+
+    display: block;
+  }
+}
+
+/* Phones: a long title (Uzbek, Kazakh, Chinese) reaches the right edge on its second line, so the
+   lanterns move a shorter way and stay above it. */
+@media (max-width: 767px) {
+  .hero-lantern:nth-of-type(4) {
+    --x: 82%;
+    --high: 0px;
+    --low: 40px;
+  }
+
+  .hero-lantern:nth-of-type(5) {
+    --x: 94%;
+    --size: 28px;
+    --high: 8px;
+    --low: 46px;
+  }
+}
+
+/* Reduced motion: the lanterns hang still, half way down. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-lantern,
+  .hero-lantern__sway {
+    animation: none;
+  }
+
+  .hero-lantern {
+    transform: translateY(calc((var(--high) + var(--low)) / 2));
+  }
+}
+
+/* The slide buttons sit in the bottom right corner of the photo. */
+.hero-carousel__controls {
+  right: 16px;
+  left: auto;
+}
+
+@media (max-width: 767px) {
+  .hero-carousel__controls {
+    right: 12px;
+    left: auto;
+  }
+}

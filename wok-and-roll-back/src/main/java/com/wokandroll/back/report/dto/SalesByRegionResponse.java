@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * GET /api/v1/reports/sales-by-region (api-contract.md section 3.16). Always all 5 countries. There
+ * GET /api/v1/reports/sales-by-region (api-contract.md section 3.16). Always all countries. There
  * is no money sum across countries, because every country has its own currency.
  */
 public record SalesByRegionResponse(

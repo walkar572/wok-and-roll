@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react';
+import { useI18n } from '../../i18n';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
@@ -15,10 +16,11 @@ export function Toast({
   title,
   variant = 'info',
   onDismiss,
-  dismissLabel = 'Dismiss notification',
+  dismissLabel,
   className = '',
   ...props
 }: ToastProps) {
+  const { t } = useI18n();
   const classes = ['toast', `toast--${variant}`, className].filter(Boolean).join(' ');
 
   return (
@@ -36,7 +38,7 @@ export function Toast({
         <button
           className="toast__dismiss"
           type="button"
-          aria-label={dismissLabel}
+          aria-label={dismissLabel ?? t('common.dismiss')}
           onClick={onDismiss}
         >
           ×

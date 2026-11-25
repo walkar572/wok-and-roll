@@ -58,8 +58,8 @@ async function orderContext(request, { scenario = 'PICKUP', dayOffset = 1, slotS
   const [zones, items] = await Promise.all([zonesFor(request), itemsFor(request)]);
   const timeZone = await countryTimeZone(request, countryCode);
   const orderDate = localDateOffset(dayOffset, timeZone);
-  const zone = scenario === 'DELIVERY' ? zones.find(({ fee }) => fee === 20) : undefined;
-  if (scenario === 'DELIVERY') expect(zone, 'seed zone with 20.00 fee').toBeDefined();
+  const zone = scenario === 'DELIVERY' ? zones.find(({ name }) => name.endsWith(': Center')) : undefined;
+  if (scenario === 'DELIVERY') expect(zone, 'seed center zone').toBeDefined();
   const cafe = scenario === 'DELIVERY' ? { id: zone.cafeId } : seededPickupCafe();
   expect(cafe).toBeDefined();
   // Seeded cafés open at 10:00; the order API validates this slot directly.
@@ -131,14 +131,14 @@ test.describe('orders API', () => {
       } else {
         expect(created.deliveryZone).toMatchObject({ id: context.zone.id, name: context.zone.name });
         expect(created.deliveryAddress).toBe(context.order.deliveryAddress);
-        expect(created.deliveryFee).toBe(20);
+        expect(created.deliveryFee).toBe(context.zone.fee);
       }
     }
   });
 
   test('returns the expected status, code and field key for order validation failures', async ({ request }) => {
     const context = await orderContext(request);
-    await expectApiError(await postOrder(request, { ...context.order, country: 'USA' }), 400, 'UNKNOWN_COUNTRY', 'country');
+    await expectApiError(await postOrder(request, { ...context.order, country: 'FRA' }), 400, 'UNKNOWN_COUNTRY', 'country');
 
     const tooFarAhead = { ...context.order, orderDate: localDateOffset(8, await countryTimeZone(request, countryCode)) };
     await expectApiError(await postOrder(request, tooFarAhead), 400, 'VALIDATION_ERROR', 'orderDate');
