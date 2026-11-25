@@ -32,21 +32,32 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Panko has more than one model. A free key gets a small quota per model and per day (20
  * requests in November 2026), and every model has its own: a model that answers 429 with a time to
- * wait rests until then, and the next model of the list answers in the meantime.
+ * wait rests until then, and the next model of the list answers in the meantime. A model that is
+ * overloaded (500, 503, 504; such an answer can take 8 seconds to come) rests for {@link
+ * #OVERLOAD_REST}, so the next guests go straight to the next model instead of waiting for it.
  */
 final class GeminiChatModel implements ChatModel {
 
   private static final Logger log = LoggerFactory.getLogger(GeminiChatModel.class);
 
-  /** The first answers best; the others take over, in this order, while it is out of quota. */
+  /**
+   * Fast and cheap first: Panko gives short, simple answers. The others take over, in this order,
+   * while it is overloaded or out of quota.
+   */
   static final List<String> DEFAULT_MODELS =
-      List.of("gemini-3.5-flash", "gemini-3-flash-preview", "gemini-3.5-flash-lite");
+      List.of("gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3-flash-preview");
 
   static final String DEFAULT_THINKING = "minimal";
   static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
   /** Thinking (if any) and a short answer. */
-  static final int MAX_OUTPUT_TOKENS = 2048;
+  static final int MAX_OUTPUT_TOKENS = 1024;
+
+  /** How long an overloaded model is left alone. */
+  static final Duration OVERLOAD_REST = Duration.ofMinutes(2);
+
+  /** Until when a model rests, and whether for its quota (no use asking) or for an overload. */
+  private record Rest(Instant until, boolean quota) {}
 
   /**
    * The answer ended because the content was blocked: the guest gets the "only Wok & Roll" text.
@@ -70,8 +81,8 @@ final class GeminiChatModel implements ChatModel {
   private final Duration retryAfter;
   private final Clock clock;
 
-  /** The models out of their quota, and until when. */
-  private final Map<String, Instant> resting = new ConcurrentHashMap<>();
+  /** The models that rest, and until when. */
+  private final Map<String, Rest> resting = new ConcurrentHashMap<>();
 
   GeminiChatModel(
       HttpClient http,
@@ -126,6 +137,17 @@ final class GeminiChatModel implements ChatModel {
     List<String> errors = new ArrayList<>();
     boolean busy = false;
     List<String> tries = models.stream().filter(model -> !isResting(model)).toList();
+    if (tries.isEmpty()) {
+      // Every model rests: an overloaded one may be back already, one out of its quota is not.
+      tries =
+          models.stream()
+              .filter(
+                  model -> {
+                    Rest rest = resting.get(model);
+                    return rest != null && !rest.quota();
+                  })
+              .toList();
+    }
     // A model that is busy for a moment gets one more try before the guest sees anything.
     for (int round = 0; round < 2 && !tries.isEmpty(); round++) {
       if (round > 0) {
@@ -136,7 +158,15 @@ final class GeminiChatModel implements ChatModel {
         HttpResponse<Stream<String>> response = send(request(model, body));
         int status = response.statusCode();
         if (status == 200) {
-          return read(model, response, onText);
+          resting.remove(model);
+          try {
+            return read(model, response, onText);
+          } catch (SilentBreak e) {
+            // It broke off before its first word: the guest saw nothing, the next model answers.
+            errors.add(e.getMessage());
+            busy = true;
+            continue;
+          }
         }
         String error;
         try (Stream<String> lines = response.body()) {
@@ -147,10 +177,13 @@ final class GeminiChatModel implements ChatModel {
         Duration wait = status == 429 ? retryDelay(error) : null;
         if (wait != null) {
           Instant until = clock.instant().plus(wait);
-          resting.put(model, until);
+          resting.put(model, new Rest(until, true));
           log.warn("Assistant: Gemini {} is out of its quota until {}", model, until);
         } else if (isBusy(status)) {
           busyForAMoment.add(model);
+          if (status != 429) {
+            restOverloaded(model, status);
+          }
         }
       }
       tries = busyForAMoment;
@@ -162,15 +195,33 @@ final class GeminiChatModel implements ChatModel {
         busy ? Failure.BUSY : Failure.ERROR, "Gemini API: " + String.join("; ", errors), null);
   }
 
+  /** The model is overloaded: the next guests go straight to the next model for a while. */
+  private void restOverloaded(String model, int status) {
+    if (resting.put(model, new Rest(clock.instant().plus(OVERLOAD_REST), false)) == null) {
+      log.info(
+          "Assistant: Gemini {} is overloaded ({}), the next model answers for {} s",
+          model,
+          status,
+          OVERLOAD_REST.toSeconds());
+    }
+  }
+
+  /** The answer broke off before any text reached the guest, so another model can still answer. */
+  private static final class SilentBreak extends RuntimeException {
+    SilentBreak(String message) {
+      super(message, null, false, false);
+    }
+  }
+
   private boolean isResting(String model) {
-    Instant until = resting.get(model);
-    if (until == null) {
+    Rest rest = resting.get(model);
+    if (rest == null) {
       return false;
     }
-    if (clock.instant().isBefore(until)) {
+    if (clock.instant().isBefore(rest.until())) {
       return true;
     }
-    resting.remove(model, until);
+    resting.remove(model, rest);
     return false;
   }
 
@@ -188,6 +239,7 @@ final class GeminiChatModel implements ChatModel {
       String model, HttpResponse<Stream<String>> response, Consumer<String> onText) {
     String finish = null;
     boolean blocked = false;
+    boolean shown = false;
     try (Stream<String> lines = response.body()) {
       for (String line : (Iterable<String>) lines::iterator) {
         if (!line.startsWith("data:")) {
@@ -198,10 +250,14 @@ final class GeminiChatModel implements ChatModel {
         // An error in the middle of the answer (the model got overloaded while it wrote).
         if (chunk.has("error")) {
           int code = chunk.path("error").path("code").asInt(0);
-          throw new Failure(
-              isBusy(code) ? Failure.BUSY : Failure.ERROR,
-              "Gemini " + model + " broke off with " + code + " " + errorOf(data),
-              null);
+          String message = model + " broke off with " + code + " " + errorOf(data);
+          if (isBusy(code) && code != 429) {
+            restOverloaded(model, code);
+          }
+          if (isBusy(code) && !shown) {
+            throw new SilentBreak(message);
+          }
+          throw new Failure(isBusy(code) ? Failure.BUSY : Failure.ERROR, "Gemini " + message, null);
         }
         if (chunk.path("promptFeedback").hasNonNull("blockReason")) {
           blocked = true;
@@ -209,7 +265,9 @@ final class GeminiChatModel implements ChatModel {
         JsonNode candidate = chunk.path("candidates").path(0);
         for (JsonNode part : candidate.path("content").path("parts")) {
           if (part.hasNonNull("text") && !part.path("thought").asBoolean(false)) {
-            onText.accept(part.get("text").asText());
+            String text = part.get("text").asText();
+            shown |= !text.isEmpty();
+            onText.accept(text);
           }
         }
         if (candidate.hasNonNull("finishReason")) {
@@ -217,6 +275,9 @@ final class GeminiChatModel implements ChatModel {
         }
       }
     } catch (IOException | UncheckedIOException e) {
+      if (!shown) {
+        throw new SilentBreak(model + " stream broke: " + e.getMessage());
+      }
       throw new Failure(Failure.BUSY, "Gemini " + model + " stream broke", e);
     }
     if (blocked) {
@@ -224,6 +285,9 @@ final class GeminiChatModel implements ChatModel {
     }
     // Every complete answer ends with a reason: without one the answer was cut off.
     if (finish == null) {
+      if (!shown) {
+        throw new SilentBreak(model + " stopped before its first word");
+      }
       throw new Failure(Failure.BUSY, "Gemini " + model + " stopped before the end", null);
     }
     return new Outcome(BLOCKED.contains(finish), finish);

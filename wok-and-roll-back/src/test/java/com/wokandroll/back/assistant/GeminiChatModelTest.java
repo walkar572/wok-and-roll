@@ -286,6 +286,70 @@ class GeminiChatModelTest {
   }
 
   @Test
+  void anOverloadedModelIsLeftAloneForAMomentAndTheNextGuestsGoStraightToTheNext() {
+    model = model("main", "spare");
+    String overloaded =
+        "{\"error\":{\"code\":503,\"status\":\"UNAVAILABLE\",\"message\":\"demand\"}}";
+    replies.add(new Reply(503, overloaded));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Spare\"}"))));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Spare again\"}"))));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Main\"}"))));
+
+    StringBuilder first = new StringBuilder();
+    ask(first);
+    StringBuilder second = new StringBuilder();
+    ask(second);
+    clock.advance(GeminiChatModel.OVERLOAD_REST.plusSeconds(1));
+    StringBuilder third = new StringBuilder();
+    ask(third);
+
+    assertThat(first + " | " + second + " | " + third).isEqualTo("Spare | Spare again | Main");
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
+        .containsExactly("main", "spare", "spare", "main");
+  }
+
+  @Test
+  void aModelThatBreaksOffBeforeItsFirstWordHandsOverToTheNext() {
+    model = model("main", "spare");
+    replies.add(
+        new Reply(
+            200,
+            sse("{\"error\":{\"code\":503,\"status\":\"UNAVAILABLE\",\"message\":\"demand\"}}")));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"From the spare\"}"))));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Spare again\"}"))));
+
+    StringBuilder first = new StringBuilder();
+    ask(first);
+    StringBuilder second = new StringBuilder();
+    ask(second);
+
+    assertThat(first.toString()).isEqualTo("From the spare");
+    assertThat(second.toString()).isEqualTo("Spare again");
+    // The main model broke off overloaded, so it rests: the second guest goes straight to the
+    // spare.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
+        .containsExactly("main", "spare", "spare");
+  }
+
+  @Test
+  void whenEveryModelRestsAnOverloadedOneIsStillTriedButOneOutOfQuotaIsNot() {
+    model = model("main", "spare");
+    replies.add(new Reply(429, quotaExhausted("57748s")));
+    replies.add(new Reply(503, "{\"error\":{\"code\":503,\"status\":\"UNAVAILABLE\"}}"));
+    replies.add(new Reply(503, "{\"error\":{\"code\":503,\"status\":\"UNAVAILABLE\"}}"));
+    assertThatThrownBy(() -> ask(new StringBuilder())).isInstanceOf(Failure.class);
+
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Back\"}"))));
+    StringBuilder shown = new StringBuilder();
+    ask(shown);
+
+    assertThat(shown.toString()).isEqualTo("Back");
+    // main (quota), spare (503), spare once more after the pause; then only spare.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
+        .containsExactly("main", "spare", "spare", "spare");
+  }
+
+  @Test
   void anErrorOfOneModelGoesToTheNextAndIsNotTriedAgain() {
     model = model("main", "spare");
     replies.add(new Reply(404, "{\"error\":{\"status\":\"NOT_FOUND\",\"message\":\"no model\"}}"));
@@ -344,7 +408,7 @@ class GeminiChatModelTest {
         .containsExactly("gemini-3.8-flash");
     assertThat(AssistantConfig.models(" ", defaults)).isEqualTo(defaults);
     assertThat(AssistantConfig.models(null, defaults)).isEqualTo(defaults);
-    assertThat(defaults.get(0)).isEqualTo("gemini-3.5-flash");
+    assertThat(defaults.get(0)).isEqualTo("gemini-3.1-flash-lite");
   }
 
   @Test

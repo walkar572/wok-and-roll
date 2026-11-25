@@ -6,8 +6,8 @@
 # Panko's AI chat is on only with an API key of Anthropic or Google; add it to the same .env (never
 # commit it). ASSISTANT_MODEL and ASSISTANT_EFFORT are optional (defaults in AssistantConfig):
 #   ANTHROPIC_API_KEY=sk-ant-...    (Claude, default claude-opus-5-5)
-#   GEMINI_API_KEY=...              (Gemini, default gemini-3.5-flash, then gemini-3-flash-preview
-#                                    and gemini-3.5-flash-lite while it is out of its quota)
+#   GEMINI_API_KEY=...              (Gemini, default gemini-3.1-flash-lite, then gemini-3.5-flash-lite
+#                                    and gemini-3-flash-preview while it is overloaded or out of quota)
 services:
   db:
     image: postgres:16

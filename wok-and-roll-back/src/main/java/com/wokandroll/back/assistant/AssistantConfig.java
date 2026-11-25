@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Configuration;
  *   <li>{@code ASSISTANT_PROVIDER}: {@code anthropic} or {@code gemini} (optional).
  *   <li>{@code ASSISTANT_MODEL}: default {@code claude-opus-5-5}. For Gemini a list separated by
  *       commas, the first answers while it has quota left; default {@code
- *       gemini-3.5-flash,gemini-3-flash-preview,gemini-3.5-flash-lite}.
+ *       gemini-3.1-flash-lite,gemini-3.5-flash-lite,gemini-3-flash-preview}.
  *   <li>{@code ASSISTANT_EFFORT}: how much the model thinks before it answers. Claude: effort,
  *       default {@code low}; Gemini: thinking level, default {@code minimal}. Short answers, fast
  *       and cheap.
