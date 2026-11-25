@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useI18n } from '../../i18n';
 import { Icon } from '../common/Icon';
 import { PankoArt } from './PankoArt';
+import { PankoChat } from './PankoChat';
 
 const HIDDEN_KEY = 'wr.mascot.hidden';
 const GREETED_KEY = 'wr.mascot.greeted';
@@ -37,14 +38,17 @@ function prefersReducedMotion(): boolean {
  * Panko in the bottom right corner of the shop (not in the admin panel), next to a round arrow
  * button that tucks him away into the corner and brings him back; the choice is remembered. He
  * breathes, wags his tail, blinks and tosses his wok; once a visit he says hello. A click on him
- * makes him wave, toss the wok and say what he will do: the chat with him comes later, here.
+ * makes him wave and toss the wok, and opens the chat with him beside him (api-contract.md 3.21).
  */
 export function Mascot() {
   const { t } = useI18n();
   const id = useId();
+  const chatId = useId();
   const [visible, setVisible] = useState(() => readStore('local', HIDDEN_KEY) !== '1');
   const [leaving, setLeaving] = useState(false);
-  const [bubble, setBubble] = useState<'hello' | 'intro' | null>(null);
+  const [bubble, setBubble] = useState<'hello' | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [greeting, setGreeting] = useState(false);
   const greetTimer = useRef<number>();
   const leaveTimer = useRef<number>();
@@ -78,11 +82,21 @@ export function Mascot() {
     [],
   );
 
-  function greet() {
-    setBubble((current) => (current === 'intro' ? null : 'intro'));
-    setGreeting(true);
-    window.clearTimeout(greetTimer.current);
-    greetTimer.current = window.setTimeout(() => setGreeting(false), 1400);
+  function toggleChat() {
+    // he waves when the chat opens; the hello is not needed any more
+    writeStore('session', GREETED_KEY, '1');
+    setBubble(null);
+    if (!chatOpen) {
+      setGreeting(true);
+      window.clearTimeout(greetTimer.current);
+      greetTimer.current = window.setTimeout(() => setGreeting(false), 1400);
+    }
+    setChatOpen(!chatOpen);
+  }
+
+  function closeChat() {
+    setChatOpen(false);
+    buttonRef.current?.focus();
   }
 
   function toggle() {
@@ -91,6 +105,7 @@ export function Mascot() {
       // into the corner: the leave animation first, then he is gone
       writeStore('local', HIDDEN_KEY, '1');
       setBubble(null);
+      setChatOpen(false);
       if (prefersReducedMotion()) {
         setVisible(false);
         return;
@@ -117,28 +132,31 @@ export function Mascot() {
   const shown = visible && !leaving;
 
   return (
-    <div className="mascot-dock">
+    <div className={`mascot-dock${chatOpen && shown ? ' is-chatting' : ''}`}>
+      {chatOpen && shown && <PankoChat id={chatId} onClose={closeChat} />}
       {visible && (
         <div
           id={id}
           className={`mascot${greeting ? ' is-greeting' : ''}${leaving ? ' is-leaving' : ''}`}
         >
-          {bubble && (
-            // The same words are read once from the status line below.
+          {bubble && !chatOpen && (
+            // Decoration: the button says the same (its name), so it is not read twice.
             <div className="mascot__bubble" aria-hidden="true">
               <strong>{t('mascot.hello')}</strong>
-              {bubble === 'intro' && <p>{t('mascot.intro')}</p>}
+              <p>{t('mascot.intro')}</p>
             </div>
           )}
-          <p className="sr-only" role="status">
-            {bubble === 'intro' ? `${t('mascot.hello')}. ${t('mascot.intro')}` : ''}
-          </p>
           <button
+            ref={buttonRef}
             type="button"
             className="mascot__button"
             aria-label={t('mascot.label')}
-            aria-expanded={bubble === 'intro'}
-            onClick={greet}
+            aria-expanded={chatOpen}
+            aria-controls={chatOpen ? chatId : undefined}
+            onClick={toggleChat}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && chatOpen) closeChat();
+            }}
           >
             <PankoArt />
           </button>

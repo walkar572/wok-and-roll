@@ -592,7 +592,7 @@ function isAmount(value: unknown): value is number | null | undefined {
   );
 }
 
-function parseProduct(item: unknown): Product {
+export function parseProduct(item: unknown): Product {
   if (
     !isRecord(item) ||
     typeof item.id !== 'number' ||

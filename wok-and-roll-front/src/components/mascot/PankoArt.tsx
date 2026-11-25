@@ -2,11 +2,17 @@
  * Panko, the Wok & Roll chef: a red panda in a chef's jacket and toque with a wok over the fire.
  * Drawn in SVG in the brand colours (rust fur, rice white, brand red, saffron). The moving parts
  * are groups with their own class: the CSS animates them (breathing, tail, blink, the wok toss,
- * the flame, the steam, the waving paw). Decoration: the button around it has the name.
+ * the flame, the steam, the waving paw). Decoration: the button around it has the name. `face`
+ * shows only his head, for the avatar of the chat.
  */
-export function PankoArt() {
+export function PankoArt({ face = false }: { face?: boolean }) {
   return (
-    <svg className="panko" viewBox="0 0 170 170" focusable="false" aria-hidden="true">
+    <svg
+      className={face ? 'panko panko--face' : 'panko'}
+      viewBox={face ? '28 0 100 100' : '0 0 170 170'}
+      focusable="false"
+      aria-hidden="true"
+    >
       {/* the shadow on the floor breathes with him */}
       <ellipse className="panko__shadow" cx="84" cy="163" rx="56" ry="5" />
 
