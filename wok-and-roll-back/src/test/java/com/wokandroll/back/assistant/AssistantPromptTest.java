@@ -95,11 +95,11 @@ class AssistantPromptTest {
         .contains("# Menu of Uzbekistan, prices in UZS before VAT")
         .contains("## Rolls")
         .contains(
-            "- [id 1] Philadelphia: 65000.00 UZS; 8 pcs, 250 g; Salmon, cream cheese.; options:"
-                + " Large (+15000.00, size)")
+            "- [id 1] Philadelphia: 65000 UZS; 8 pcs, 250 g; Salmon, cream cheese.; options:"
+                + " Large (+15000, size)")
         .contains("- [id 2] Dragon roll: 72000.50 UZS; 8 pcs, 250 g; Eel, avocado.; OUT OF STOCK")
         .contains(
-            "- [id 3] Big set: 180000.00 UZS (209000.00 for its dishes one by one, saves 13%); 24"
+            "- [id 3] Big set: 180000 UZS (209000 for its dishes one by one, saves 13%); 24"
                 + " pcs, 250 g; contains 2 x Philadelphia, Dragon roll")
         .doesNotContain("Ignored for a set")
         .doesNotContain("## Empty");
@@ -113,9 +113,9 @@ class AssistantPromptTest {
         .contains(
             "- Wok & Roll Chilanzar, Tashkent: 12 Bunyodkor Ave; open every day 10:00-22:00 local"
                 + " time; phone +998712000001")
-        .contains("- Tashkent: Center: fee 15000.00 UZS, about 45 min")
+        .contains("- Tashkent: Center: fee 15000 UZS, about 45 min")
         .contains("- VAT 12% is added at checkout.")
-        .contains("from 300000.00 UZS 5%");
+        .contains("from 300000 UZS 5%");
   }
 
   @Test

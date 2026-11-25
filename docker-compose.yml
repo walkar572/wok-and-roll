@@ -3,9 +3,10 @@
 # Stop:  docker compose down         (add -v to also delete the database volume)
 # First time only, create .env with a JWT secret (the file is in .gitignore):
 #   echo "JWT_SECRET=$(openssl rand -base64 48)" > .env
-# Panko's AI chat is on only with an Anthropic API key; add it to the same .env (never commit it):
-#   ANTHROPIC_API_KEY=sk-ant-...
-#   ASSISTANT_MODEL=claude-opus-5-5   (optional; claude-haiku-5-5 is cheaper)
+# Panko's AI chat is on only with an API key of Anthropic or Google; add it to the same .env (never
+# commit it). ASSISTANT_MODEL and ASSISTANT_EFFORT are optional (defaults in AssistantConfig):
+#   ANTHROPIC_API_KEY=sk-ant-...    (Claude, default claude-opus-5-5)
+#   GEMINI_API_KEY=...              (Gemini, default gemini-3.5-flash)
 services:
   db:
     image: postgres:16
@@ -32,8 +33,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-wokroll}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env, see the comment at the top of this file}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-opus-5-5}
-      ASSISTANT_EFFORT: ${ASSISTANT_EFFORT:-low}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ASSISTANT_PROVIDER: ${ASSISTANT_PROVIDER:-}
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-}
+      ASSISTANT_EFFORT: ${ASSISTANT_EFFORT:-}
     ports:
       - "8080:8080"
     depends_on:
