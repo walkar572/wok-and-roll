@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, ErrorMessage, Loader } from '../../components/common';
 import { DishImage } from '../../components/common/DishImage';
+import { DishMarks } from '../../components/common/DishMarks';
 import { Icon } from '../../components/common/Icon';
 import { useCountry } from '../../context/CountryContext';
 import { countryName, productDescription, productName, useI18n, portionText } from '../../i18n';
@@ -134,10 +135,11 @@ export function HomePage() {
                   />
                   <div>
                     <h3>{productName(item.name)}</h3>
-                    {(description || portion) && (
+                    {(description || portion || item.spicy || item.vegetarian) && (
                       <div className="favorite-card__text">
                         {description && <p>{description}</p>}
                         {portion && <p className="dish-portion">{portion}</p>}
+                        <DishMarks product={item} />
                       </div>
                     )}
                     {!allCities && <span>{formatPrice(item.price, item.currency)}</span>}

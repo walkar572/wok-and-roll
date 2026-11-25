@@ -49,7 +49,9 @@ class ProductDetailControllerTest {
                 true,
                 List.of(new ModifierResponse(2, "SIZE", "Large", new BigDecimal("12.00"))),
                 null,
-                List.of()));
+                List.of(),
+                false,
+                true));
 
     mvc.perform(get("/api/v1/products/5").param("country", "UZB"))
         .andExpect(status().isOk())
@@ -60,6 +62,8 @@ class ProductDetailControllerTest {
         .andExpect(jsonPath("$.price").value(48.00))
         .andExpect(jsonPath("$.currency").value("UZS"))
         .andExpect(jsonPath("$.hasModifiers").value(true))
+        .andExpect(jsonPath("$.vegetarian").value(false))
+        .andExpect(jsonPath("$.spicy").value(true))
         .andExpect(jsonPath("$.modifiers[0].type").value("SIZE"))
         .andExpect(jsonPath("$.modifiers[0].priceDelta").value(12.00));
   }

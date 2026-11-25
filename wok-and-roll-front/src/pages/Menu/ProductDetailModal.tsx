@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader, Modal } from '../../components/common';
+import { DishMarks } from '../../components/common/DishMarks';
 import {
   ApiRequestError,
   formatPrice,
@@ -189,6 +190,7 @@ export function ProductDetailModal({
           {portionText(product) && (
             <p className="dish-portion product-modal__portion">{portionText(product)}</p>
           )}
+          <DishMarks product={product} className="product-modal__marks" />
           <p className="product-modal__price">
             <DishPrice product={product} />
             {saving !== null && <SavingBadge percent={saving} />}

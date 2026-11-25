@@ -5,6 +5,7 @@ import com.wokandroll.back.catalog.detail.dto.ModifierResponse;
 import com.wokandroll.back.catalog.dto.CategoryResponse;
 import com.wokandroll.back.catalog.dto.ProductResponse;
 import com.wokandroll.back.catalog.dto.SetItemResponse;
+import com.wokandroll.back.catalog.service.DishFacts;
 import com.wokandroll.back.country.dto.CountryResponse;
 import com.wokandroll.back.delivery.dto.DeliveryZoneResponse;
 import com.wokandroll.back.pricing.dto.DiscountTier;
@@ -15,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -291,59 +292,38 @@ final class AssistantPrompt {
     return line.append('\n').toString();
   }
 
-  private static final Pattern MEAT =
-      Pattern.compile(
-          "\\b(chicken|beef|pork|duck|lamb|veal|turkey|bacon|ham|sausages?|meat|meatballs?)\\b",
-          Pattern.CASE_INSENSITIVE);
-
-  private static final Pattern FISH =
-      Pattern.compile(
-          "\\b(fish|seafood|salmon|tuna|eel|crabs?|shrimps?|prawns?|squid|octopus|scallops?|"
-              + "mussels?|oysters?|lobsters?|caviar|roe|cod|mackerel|yellowtail|hamachi|"
-              + "anchov(y|ies)|bonito|dashi)\\b",
-          Pattern.CASE_INSENSITIVE);
-
-  private static final Pattern SPICY =
-      Pattern.compile(
-          "\\b(chili|chilli|chilies|chillies|spicy|kimchi|firecracker|sriracha|jalape(n|ñ)os?)\\b",
-          Pattern.CASE_INSENSITIVE);
-
   /**
-   * What a dish has, read from its name and ingredients (the menu data is in English): vegetarian,
-   * has meat, has fish or seafood, and spicy. A set has what its dishes have. A small fast model
-   * judging the ingredients itself called salmon and crab rolls vegetarian; a word in the menu it
-   * follows. Empty when there is nothing to read, as a dish without ingredients is not vegetarian
-   * for sure.
+   * What a dish has, in words for the model: vegetarian, has meat, has fish or seafood, and spicy
+   * (DishFacts, the same reading as the marks of the menu cards). A small fast model judging the
+   * ingredients itself called salmon and crab rolls vegetarian; a word in the menu it follows.
+   * Empty when nothing is known, as a dish without ingredients is not vegetarian for sure.
    */
   static String tags(ProductResponse product, Map<Long, ProductResponse> byId) {
-    StringBuilder text = new StringBuilder(product.name());
-    if (product.setItems().isEmpty()) {
-      if (product.description() == null || product.description().isBlank()) {
-        return "";
-      }
-      text.append(' ').append(product.description());
-    } else {
-      for (SetItemResponse item : product.setItems()) {
-        ProductResponse dish = byId.get(item.productId());
-        if (dish == null || dish.description() == null || dish.description().isBlank()) {
-          return "";
-        }
-        text.append(' ').append(dish.name()).append(' ').append(dish.description());
-      }
+    Optional<DishFacts.Facts> known =
+        product.setItems().isEmpty()
+            ? DishFacts.ofDish(product.name(), product.description())
+            : DishFacts.ofSet(
+                product.setItems().stream()
+                    .map(
+                        item ->
+                            Optional.ofNullable(byId.get(item.productId()))
+                                .flatMap(dish -> DishFacts.ofDish(dish.name(), dish.description())))
+                    .toList());
+    if (known.isEmpty()) {
+      return "";
     }
-    boolean meat = MEAT.matcher(text).find();
-    boolean fish = FISH.matcher(text).find();
+    DishFacts.Facts facts = known.get();
     String diet;
-    if (meat && fish) {
+    if (facts.meat() && facts.fish()) {
       diet = "has meat and fish";
-    } else if (meat) {
+    } else if (facts.meat()) {
       diet = "has meat";
-    } else if (fish) {
+    } else if (facts.fish()) {
       diet = "has fish or seafood";
     } else {
       diet = "vegetarian";
     }
-    return SPICY.matcher(text).find() ? diet + ", spicy" : diet;
+    return facts.spicy() ? diet + ", spicy" : diet;
   }
 
   private static String setItem(SetItemResponse item) {

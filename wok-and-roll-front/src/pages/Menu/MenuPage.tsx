@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, ErrorMessage, Loader } from '../../components/common';
 import { DishImage } from '../../components/common/DishImage';
+import { DishMarks } from '../../components/common/DishMarks';
 import { Icon } from '../../components/common/Icon';
 import { ChooseCity } from '../../components/layout/ChooseCity';
 import { useCart } from '../../context/CartContext';
@@ -158,10 +159,11 @@ export function MenuPage() {
                       <span className="menu-card__stock">{t('menu.outOfStock')}</span>
                     )}
                   </div>
-                  {(description || portion) && (
+                  {(description || portion || product.spicy || product.vegetarian) && (
                     <div className="menu-card__text">
                       {description && <p>{description}</p>}
                       {portion && <p className="dish-portion">{portion}</p>}
+                      <DishMarks product={product} />
                     </div>
                   )}
                   <div className="menu-card__footer">

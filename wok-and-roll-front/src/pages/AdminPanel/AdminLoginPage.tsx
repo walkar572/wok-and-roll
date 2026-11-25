@@ -38,7 +38,7 @@ export function AdminLoginPage() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    document.title = `${t('login.titleLogin')} — ${t('panel.title')} — Wok & Roll`;
+    document.title = `${t('login.titleLogin')} - ${t('panel.title')} - Wok & Roll`;
   }, [t, locale]);
 
   if (auth && isPanelRole(auth.role)) {

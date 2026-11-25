@@ -45,7 +45,9 @@ class CatalogControllerTest {
         true,
         false,
         null,
-        List.of());
+        List.of(),
+        false,
+        false);
   }
 
   @Test
@@ -71,6 +73,8 @@ class CatalogControllerTest {
         .andExpect(jsonPath("$[0].currency").value("UZS"))
         .andExpect(jsonPath("$[0].inStock").value(true))
         .andExpect(jsonPath("$[0].hasModifiers").value(false))
+        .andExpect(jsonPath("$[0].vegetarian").value(false))
+        .andExpect(jsonPath("$[0].spicy").value(false))
         .andExpect(content().string(containsString("\"imageUrl\":null")))
         .andExpect(content().string(containsString("\"price\":52.00")));
   }

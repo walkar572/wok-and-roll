@@ -31,12 +31,15 @@ public class CatalogService {
   public List<ProductResponse> getProducts(String countryCode, Long categoryId) {
     List<ProductRow> rows = repository.findProducts(countryCode, categoryId);
     Map<Long, List<SetItemResponse>> setItems = repository.findSetItems();
+    Map<Long, DishFacts.Facts> facts = DishFacts.of(repository.findDishTexts(), setItems);
     return rows.stream()
-        .map(row -> toResponse(row, setItems.getOrDefault(row.id(), List.of())))
+        .map(
+            row -> toResponse(row, setItems.getOrDefault(row.id(), List.of()), facts.get(row.id())))
         .toList();
   }
 
-  private static ProductResponse toResponse(ProductRow row, List<SetItemResponse> setItems) {
+  private static ProductResponse toResponse(
+      ProductRow row, List<SetItemResponse> setItems, DishFacts.Facts facts) {
     return new ProductResponse(
         row.id(),
         row.categoryId(),
@@ -51,7 +54,9 @@ public class CatalogService {
         row.inStock(),
         row.hasModifiers(),
         row.regularPrice() == null ? null : money(row.regularPrice()),
-        List.copyOf(setItems));
+        List.copyOf(setItems),
+        facts != null && facts.vegetarian(),
+        facts != null && facts.spicy());
   }
 
   /** Money always has exactly 2 decimals in the JSON (api-contract.md section 1). */

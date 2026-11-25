@@ -88,9 +88,17 @@ test.describe('menu API', () => {
         expect(hasAtMostTwoDecimalPlaces(product.price), country.code + ' ' + product.name + ' price').toBe(true);
         expect(product.inStock).toEqual(expect.any(Boolean));
         expect(product.hasModifiers).toEqual(expect.any(Boolean));
+        // v1.16: the marks under a dish
+        expect(product.vegetarian).toEqual(expect.any(Boolean));
+        expect(product.spicy).toEqual(expect.any(Boolean));
       }
       const udon = products.find(({ name }) => name === 'Firecracker udon');
       expect(udon).toBeDefined();
+      expect(udon).toMatchObject({ vegetarian: false, spicy: true });
+      expect(products.find(({ name }) => name === 'Miso mushroom rice')).toMatchObject({
+        vegetarian: true,
+        spicy: false,
+      });
       expect(udon).toMatchObject(seededUdonPrices[country.code]);
       expect(udon).toMatchObject({ pieces: null, weightGrams: 350, volumeMl: null });
       const salmon = products.find(({ name }) => name === 'Salmon avocado roll');

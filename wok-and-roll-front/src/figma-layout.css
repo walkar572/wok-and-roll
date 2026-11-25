@@ -2866,3 +2866,46 @@ a.cafe-card__book {
     max-width: 96px;
   }
 }
+
+/* The marks under a dish (contract v1.16): spicy in red with a chili, vegetarian in green with a
+   leaf, read from the ingredients on the server. */
+.dish-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dish-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-size-meta-small);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.dish-mark svg {
+  flex: none;
+}
+
+.dish-mark--spicy {
+  color: var(--color-text-brand);
+}
+
+.dish-mark--vegetarian {
+  color: var(--color-feedback-success);
+}
+
+.product-modal__marks {
+  margin-top: 6px;
+}
+
+/* Inside the text of a card the grid gap already sets the marks apart. */
+.menu-card__text .dish-marks,
+.favorite-card__text .dish-marks {
+  margin-top: 2px;
+}

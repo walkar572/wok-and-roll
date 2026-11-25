@@ -25,8 +25,8 @@ export function AdminLayout() {
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
   useEffect(() => {
-    const page = section ? `${t(section.label)} — ` : '';
-    document.title = `${page}${t('panel.title')} — Wok & Roll`;
+    const page = section ? `${t(section.label)} - ` : '';
+    document.title = `${page}${t('panel.title')} - Wok & Roll`;
   }, [section, t, locale]);
 
   // On a narrow screen the menu is a drawer: Escape closes it and gives focus back to its button.

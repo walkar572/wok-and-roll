@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,46 @@ class CatalogApiIntegrationTest {
         .andExpect(jsonPath("$[3].name").value("Sides"))
         .andExpect(jsonPath("$[4].name").value("Desserts"))
         .andExpect(jsonPath("$[5].name").value("Drinks"));
+  }
+
+  @Test
+  void everyDishSaysWhetherItIsVegetarianAndSpicy() throws Exception {
+    String body =
+        mvc.perform(get("/api/v1/products").param("country", "UZB"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    List<Map<String, Object>> products = JsonPath.read(body, "$[*]");
+    Map<String, String> marks = new HashMap<>();
+    for (Map<String, Object> product : products) {
+      marks.put(
+          (String) product.get("name"),
+          (Boolean.TRUE.equals(product.get("vegetarian")) ? "vegetarian" : "-")
+              + (Boolean.TRUE.equals(product.get("spicy")) ? " spicy" : ""));
+    }
+
+    assertThat(marks)
+        .containsEntry("Miso mushroom rice", "vegetarian")
+        .containsEntry("Vegetable spring rolls", "vegetarian spicy")
+        .containsEntry("Mochi ice cream", "vegetarian")
+        .containsEntry("Salmon avocado roll", "-")
+        .containsEntry("California roll", "-")
+        .containsEntry("Firecracker udon", "- spicy")
+        .containsEntry("Crunchy shrimp roll", "- spicy")
+        // a set from its dishes: the Dragon set has the crunchy shrimp roll
+        .containsEntry("Dragon set", "- spicy")
+        .containsEntry("Philadelphia set", "-");
+
+    // the product modal says the same
+    long udon =
+        jdbc.sql("SELECT id FROM product WHERE name = 'Firecracker udon'")
+            .query(Long.class)
+            .single();
+    mvc.perform(get("/api/v1/products/" + udon).param("country", "UZB"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.vegetarian").value(false))
+        .andExpect(jsonPath("$.spicy").value(true));
   }
 
   @Test

@@ -41,7 +41,9 @@ class AssistantPromptTest {
         inStock,
         id == 1,
         regularPrice == null ? null : new BigDecimal(regularPrice),
-        setItems);
+        setItems,
+        false,
+        false);
   }
 
   private static final AssistantPrompt.MenuData DATA =

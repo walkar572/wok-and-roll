@@ -24,7 +24,7 @@ export function MainLayout() {
     const key =
       pageTitles[pathname] ??
       (pathname.startsWith('/account/orders/') ? 'titles.orderDetails' : 'titles.notFound');
-    document.title = `${t(key)} — Wok & Roll`;
+    document.title = `${t(key)} - Wok & Roll`;
   }, [pathname, t, locale]);
 
   return (

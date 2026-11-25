@@ -35,4 +35,7 @@ public record ProductDetailResponse(
             nullable = true)
         BigDecimal regularPrice,
     @Schema(description = "The dishes of a set in their order; empty for a dish")
-        List<SetItemResponse> setItems) {}
+        List<SetItemResponse> setItems,
+    @Schema(description = "No meat, fish or seafood (same as 3.3, v1.16)", example = "false")
+        boolean vegetarian,
+    @Schema(description = "Spicy (same as 3.3, v1.16)", example = "true") boolean spicy) {}

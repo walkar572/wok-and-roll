@@ -34,6 +34,9 @@ public class CatalogRepository {
       boolean hasModifiers,
       BigDecimal regularPrice) {}
 
+  /** The name and the ingredients of a dish, in English, for what it has (DishFacts). */
+  public record DishText(String name, String description) {}
+
   /**
    * The regular price of the set {@code p} in the country {@code c}: quantity x regional price of
    * each of its dishes. NULL for a dish (no set items) and when a dish of the set has no price in
@@ -132,6 +135,25 @@ public class CatalogRepository {
                 Map.Entry::getKey,
                 LinkedHashMap::new,
                 Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+  }
+
+  /** The name and ingredients of every dish (a small table), so a set is read from its dishes. */
+  public Map<Long, DishText> findDishTexts() {
+    return findDishTexts(jdbc);
+  }
+
+  /** Shared with the product modal. */
+  public static Map<Long, DishText> findDishTexts(JdbcClient jdbc) {
+    return jdbc
+        .sql("SELECT id, name, description FROM product")
+        .query(
+            (rs, i) ->
+                Map.entry(
+                    rs.getLong("id"),
+                    new DishText(rs.getString("name"), rs.getString("description"))))
+        .list()
+        .stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /** One dish of a set from a row of {@link #SET_ITEMS_SQL}. */

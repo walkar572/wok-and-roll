@@ -32,6 +32,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.12 | 24 Nov | Web only, no API change: the city switcher offers "All cities" first. The home page then shows the cafés of every country (§3.6, one call per country) on one map, city by city; the menu, the cart, checkout and booking ask for a city before any price, so an order always has one country. |
 | 1.11 | 24 Nov | Admin panel (additive): §3.20, six read-only `GET /api/v1/admin/…` endpoints for ADMIN (overview of a period, every order with one order in full, every booking, every account, every café with its day), and a booking history seed for the demo. The web app has an admin panel at `/admin` with its own login (`/admin/login`); café orders and reports moved into it. |
 | 1.13 | 24 Nov | Web only, no API change: Panko, the mascot, in the corner of every page of the shop, with a button that tucks him away. |
+| 1.16 | 26 Nov | Dish marks (additive): `vegetarian` and `spicy` in §3.3 and §3.4, read on the server from the name and the ingredients (a set from its dishes); the web shows them under the dish in red (spicy) and green (vegetarian), and Panko's menu uses the same reading. Web only: the tab titles use a hyphen, "Menu - Wok & Roll". |
 | 1.15 | 25 Nov | No API change: prices on the web with the sign of the currency (`₴259.00`, not `UAH 259.00`; sum, which has no sign, as a word), and Panko writes them the same way. Gemini has spare models for a model out of its daily quota or overloaded (§3.21), the first is `gemini-3.1-flash-lite`, and Panko's answers are shorter and simpler. Only fast Flash-Lite models by default: when a model has no first word after 1.5 s the next is asked too and the first that speaks answers, and the guest waits 6 s at most. The menu in the prompt marks every dish vegetarian, with meat or with fish, and spicy, and has the dish marker after each name, so no id reaches the guest. |
 | 1.14 | 25 Nov | Panko, the AI chat (additive): §3.21, `GET /api/v1/assistant` and `POST /api/v1/assistant/chat` (public, server-sent events), codes `TOO_MANY_MESSAGES` and `ASSISTANT_UNAVAILABLE`. A click on Panko opens the chat. |
 | 1.10 | 24 Nov | Roll sets (additive): category `Sets` with 7 sets, each 15–19 % under its dishes bought one by one. `regularPrice` and `setItems` in §3.3 and §3.4; a set is ordered and priced like any dish (§5 does not change). |
@@ -203,6 +204,8 @@ Returns visible dishes that **have a price in this country**; a dish with no `re
 | `hasModifiers` | boolean | `true` if the dish has at least one modifier priced in this country. The card opens the modal for these dishes. |
 | `regularPrice` | number or `null` | v1.10, sets only: what the dishes of the set cost one by one in this country (sum of quantity × price, before VAT). `null` for a dish, and for a set when one of its dishes has no price here (no saving is shown from a part of the set). |
 | `setItems` | array | v1.10: the dishes of a set in their order, `{ "productId": 11, "name": "Philadelphia roll", "quantity": 2 }`; empty for a dish. A dish of a set may be hidden or out of stock on its own; the set has its own price and stock. |
+| `vegetarian` | boolean | v1.16: no meat, fish or seafood, read from the English name and ingredients (`description`); a set is vegetarian when all its dishes are. `false` when the ingredients are not known (no `description`). |
+| `spicy` | boolean | v1.16: has chili, a spicy sauce or kimchi, read the same way; a set is spicy when one of its dishes is. |
 
 Responses: `200` · `400` (missing or unknown `country`, `categoryId` not a number).
 
@@ -210,7 +213,7 @@ Responses: `200` · `400` (missing or unknown `country`, `categoryId` not a numb
 
 ### 3.4 `GET /api/v1/products/{id}?country=UZB`
 
-The product modal (#52, #114). All fields of §3.3 (also `regularPrice` and `setItems`, v1.10), plus `modifiers`.
+The product modal (#52, #114). All fields of §3.3 (also `regularPrice` and `setItems`, v1.10, `vegetarian` and `spicy`, v1.16), plus `modifiers`.
 
 ```json
 {
@@ -956,6 +959,7 @@ export interface Product {
   imageUrl: string | null; pieces: number | null; weightGrams: number | null; volumeMl: number | null;
   price: number; currency: string; inStock: boolean; hasModifiers: boolean;
   regularPrice: number | null; setItems: SetItem[]; // v1.10
+  vegetarian: boolean; spicy: boolean; // v1.16
 }
 export interface SetItem { productId: number; name: string; quantity: number }
 

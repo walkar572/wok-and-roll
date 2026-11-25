@@ -40,6 +40,10 @@ export interface Product {
   regularPrice: number | null;
   /** The dishes of a set in their order; empty for a dish. */
   setItems: SetItem[];
+  /** Contract v1.16: no meat, fish or seafood (read from the ingredients on the server). */
+  vegetarian: boolean;
+  /** Contract v1.16: spicy (chili, spicy sauce, kimchi). */
+  spicy: boolean;
 }
 
 /** One dish of a set and how many of it the set has. */
@@ -639,6 +643,9 @@ export function parseProduct(item: unknown): Product {
     hasModifiers: item.hasModifiers,
     regularPrice: typeof item.regularPrice === 'number' ? item.regularPrice : null,
     setItems: Array.isArray(item.setItems) ? item.setItems.map(parseSetItem) : [],
+    // v1.16; an older server has no marks, so the dish just shows none
+    vegetarian: item.vegetarian === true,
+    spicy: item.spicy === true,
   };
 }
 

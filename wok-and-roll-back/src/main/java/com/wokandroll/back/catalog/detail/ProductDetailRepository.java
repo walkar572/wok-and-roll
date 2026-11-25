@@ -5,6 +5,7 @@ import com.wokandroll.back.catalog.dto.SetItemResponse;
 import com.wokandroll.back.catalog.repository.CatalogRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -83,6 +84,11 @@ public class ProductDetailRepository {
         .param("setId", setId)
         .query((rs, i) -> CatalogRepository.setItem(rs))
         .list();
+  }
+
+  /** The name and ingredients of every dish, for what the dish (or the set) has. */
+  public Map<Long, CatalogRepository.DishText> findDishTexts() {
+    return CatalogRepository.findDishTexts(jdbc);
   }
 
   /** Visible modifiers with a price in this country. Order: SIZE, then EXTRA, then id. */
