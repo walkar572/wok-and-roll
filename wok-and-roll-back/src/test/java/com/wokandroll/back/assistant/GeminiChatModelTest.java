@@ -50,9 +50,6 @@ class GeminiChatModelTest {
   private final List<String> keys = new CopyOnWriteArrayList<>();
   private final List<JsonNode> bodies = new CopyOnWriteArrayList<>();
 
-  /** How far the clock moves while the fake API answers a request. */
-  private volatile Duration requestTakes = Duration.ZERO;
-
   private ExecutorService threads;
   private HttpServer server;
   private GeminiChatModel model;
@@ -67,7 +64,6 @@ class GeminiChatModelTest {
           keys.add(exchange.getRequestHeaders().getFirst("x-goog-api-key"));
           bodies.add(json.readTree(exchange.getRequestBody()));
           Reply reply = replies.isEmpty() ? new Reply(500, "{}") : replies.removeFirst();
-          clock.advance(requestTakes);
           try {
             Thread.sleep(reply.delay());
           } catch (InterruptedException e) {
@@ -104,7 +100,7 @@ class GeminiChatModelTest {
         clock);
   }
 
-  /** A clock the test moves by hand (and the fake API, while it answers). */
+  /** A clock the test moves by hand. */
   private static final class TestClock extends Clock {
     private volatile Instant now = Instant.parse("2026-11-25T16:00:00Z");
 
@@ -382,13 +378,8 @@ class GeminiChatModelTest {
   }
 
   @Test
-  void aModelWithoutAFirstWordInTimeIsLeftBehindAndTheNextAnswers() {
-    model =
-        model(
-            new GeminiChatModel.Timing(
-                Duration.ZERO, Duration.ofMillis(300), Duration.ofSeconds(30)),
-            "main",
-            "spare");
+  void aQuietModelGetsAHelperAndTheFirstThatSpeaksAnswers() {
+    model = model(hedgeAfter(300, 30_000), "main", "spare");
     replies.add(
         new Reply(200, sse(parts("STOP", "{\"text\":\"Too late\"}")), Duration.ofSeconds(4)));
     replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"From the spare\"}"))));
@@ -404,46 +395,75 @@ class GeminiChatModelTest {
     assertThat(first + " | " + second).isEqualTo("From the spare | Spare again");
     // The guest did not wait the 4 seconds of the main model.
     assertThat(took).isLessThan(Duration.ofSeconds(3));
-    // The slow model rests: the second guest goes straight to the spare.
+    // The quiet model rests: the second guest goes straight to the spare.
     assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
         .containsExactly("main", "spare", "spare");
   }
 
   @Test
+  void aModelThatSpeaksAfterItsHelperWasAskedStillAnswersFirst() {
+    model = model(hedgeAfter(300, 30_000), "main", "spare");
+    replies.add(
+        new Reply(200, sse(parts("STOP", "{\"text\":\"From main\"}")), Duration.ofMillis(700)));
+    replies.add(
+        new Reply(200, sse(parts("STOP", "{\"text\":\"Too late\"}")), Duration.ofSeconds(3)));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Main again\"}"))));
+
+    long started = System.nanoTime();
+    StringBuilder first = new StringBuilder();
+    ask(first);
+    Duration took = Duration.ofNanos(System.nanoTime() - started);
+    StringBuilder second = new StringBuilder();
+    ask(second);
+
+    // Main was not dropped when the spare was asked: its answer at 0.7 s won.
+    assertThat(first + " | " + second).isEqualTo("From main | Main again");
+    assertThat(took).isLessThan(Duration.ofMillis(2500));
+    // The spare was asked after main, so it does not rest: main stays first.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
+        .containsExactly("main", "spare", "main");
+  }
+
+  @Test
   void theLastModelGetsAllTheTimeThatIsLeft() {
-    model =
-        model(
-            new GeminiChatModel.Timing(
-                Duration.ZERO, Duration.ofMillis(300), Duration.ofSeconds(30)),
-            "main");
+    model = model(hedgeAfter(300, 30_000), "main");
     replies.add(
         new Reply(200, sse(parts("STOP", "{\"text\":\"Slow but here\"}")), Duration.ofMillis(800)));
     StringBuilder shown = new StringBuilder();
 
     ask(shown);
 
-    // No other model could answer, so it was not left behind after 300 ms.
+    // No other model could answer, so it had all the time it needed.
     assertThat(shown.toString()).isEqualTo("Slow but here");
   }
 
   @Test
-  void afterTheLimitNoModelIsTriedAndTheGuestHearsBusyAtOnce() {
-    model =
-        model(
-            new GeminiChatModel.Timing(Duration.ZERO, Duration.ofSeconds(1), Duration.ofSeconds(6)),
-            "a",
-            "b",
-            "c");
-    requestTakes = Duration.ofSeconds(3);
-    String overloaded = "{\"error\":{\"code\":503,\"status\":\"UNAVAILABLE\"}}";
-    replies.add(new Reply(503, overloaded));
-    replies.add(new Reply(503, overloaded));
-    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Too late\"}"))));
+  void afterTheLimitTheGuestHearsBusyAtOnce() {
+    model = model(hedgeAfter(200, 700), "a", "b", "c");
+    for (String name : List.of("a", "b", "c")) {
+      replies.add(
+          new Reply(200, sse(parts("STOP", "{\"text\":\"" + name + "\"}")), Duration.ofSeconds(3)));
+    }
 
+    long started = System.nanoTime();
     assertThatThrownBy(() -> ask(new StringBuilder()))
-        .isInstanceOfSatisfying(Failure.class, e -> assertThat(e.code()).isEqualTo(Failure.BUSY));
-    // a at 0 s, b at 3 s; at 6 s no time is left for c, nor for one more try of a and b.
-    assertThat(paths.stream().map(GeminiChatModelTest::modelOf)).containsExactly("a", "b");
+        .isInstanceOfSatisfying(
+            Failure.class,
+            e -> {
+              assertThat(e.code()).isEqualTo(Failure.BUSY);
+              assertThat(e.getMessage()).contains("no first word in time");
+            });
+    Duration took = Duration.ofNanos(System.nanoTime() - started);
+
+    // a at 0 s, b at 0.2 s, c at 0.4 s, all quiet; the guest hears it at 0.7 s, not after 3 s.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf)).containsExactly("a", "b", "c");
+    assertThat(took).isLessThan(Duration.ofSeconds(2));
+  }
+
+  /** Short times for the tests of speed: the next model after {@code firstWord} ms. */
+  private static GeminiChatModel.Timing hedgeAfter(long firstWord, long limit) {
+    return new GeminiChatModel.Timing(
+        Duration.ZERO, Duration.ofMillis(firstWord), Duration.ofMillis(limit));
   }
 
   @Test

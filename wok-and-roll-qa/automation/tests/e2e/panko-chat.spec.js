@@ -127,6 +127,25 @@ test('a question the AI declines without a word gets the own answer of Panko', a
   ).toBeVisible();
 });
 
+test('Panko comes back without a reload when the server answers again', async ({ page }) => {
+  // After a restart the site is up before the server: the first status request fails.
+  let calls = 0;
+  await page.route('**/api/v1/assistant', (route) => {
+    calls += 1;
+    return calls === 1
+      ? route.abort('connectionrefused')
+      : route.fulfill({ json: { enabled: true, model: 'gemini-3.1-flash-lite' } });
+  });
+
+  const chat = await openChat(page);
+  await expect(chat.getByText('AI qismim hozir dam olmoqda')).toBeVisible();
+  // the chat asks again by itself, and the field to ask comes back
+  await expect(chat.getByRole('textbox', { name: 'Pankodan soʻrang…' })).toBeVisible({
+    timeout: 10000,
+  });
+  expect(calls).toBeGreaterThanOrEqual(2);
+});
+
 test('without the AI Panko shows the way to the menu and the booking', async ({ page }) => {
   await aiIs(page, false);
 

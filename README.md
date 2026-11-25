@@ -39,8 +39,8 @@ answering. With both keys Claude is used, unless `ASSISTANT_PROVIDER=gemini`. `A
 (default `claude-opus-5-5`; for Gemini a list separated by commas, default
 `gemini-3.1-flash-lite,gemini-3.5-flash-lite,gemini-flash-lite-latest`: a free key gets about 20
 requests a day per model, so the next model answers while one is overloaded, slow or out of
-its quota; a model with no first word after 2 seconds is left behind, and the guest waits 6
-seconds at most) and `ASSISTANT_EFFORT` (Claude effort, default
+its quota; when a model has no first word after 1.5 seconds the next is asked too and the first
+that speaks answers, and the guest waits 6 seconds at most) and `ASSISTANT_EFFORT` (Claude effort, default
 `low`; Gemini thinking level, default `minimal`) can be set in `.env` too.
 The database starts with the menu (real prices at the level of Tashkent, converted to every
 currency), cafés, delivery zones and about 3,400 orders from June to November 2026, so the

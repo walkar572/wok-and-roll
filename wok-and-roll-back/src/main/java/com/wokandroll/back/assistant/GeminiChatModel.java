@@ -15,10 +15,17 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,10 +44,11 @@ import org.slf4j.LoggerFactory;
  * overloaded (500, 503, 504; such an answer can take 13 seconds to come) rests for {@link
  * #OVERLOAD_REST}, so the next guests go straight to the next model instead of waiting for it.
  *
- * <p>Speed comes before everything: a model that has no first word after {@link Timing#firstWord}
- * while another model could still answer is left behind (the API sends the headers of its answer
- * with the first word, so this is the timeout of the request), and the guest waits for a first word
- * at most {@link Timing#limit}, then hears that Panko is busy.
+ * <p>Speed comes before everything. The API sends the headers of an answer with its first word.
+ * When a model has no first word after {@link Timing#firstWord}, the next model is asked too, and
+ * the first that speaks answers the guest; the others are cancelled, and a model that was asked
+ * earlier and is still quiet rests like an overloaded one. The guest waits for a first word at most
+ * {@link Timing#limit}, then hears that Panko is busy.
  */
 final class GeminiChatModel implements ChatModel {
 
@@ -66,15 +74,17 @@ final class GeminiChatModel implements ChatModel {
    * How long Panko waits.
    *
    * @param retryAfter the pause before one more try of the models that were busy for a moment
-   * @param firstWord how long a model gets for its first word while another model could still
-   *     answer
+   * @param firstWord how long a model has for its first word before the next model is asked too
    * @param limit how long the guest waits for a first word at most, whatever happens
    */
   record Timing(Duration retryAfter, Duration firstWord, Duration limit) {}
 
-  /** A healthy model says its first word in about a second, an overloaded one 503 after 13 s. */
+  /**
+   * A healthy model says its first word in 0.8 to 1.4 s (sometimes 2.3 s), an overloaded one 503
+   * after up to 13 s.
+   */
   static final Timing TIMING =
-      new Timing(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(6));
+      new Timing(Duration.ofSeconds(1), Duration.ofMillis(1500), Duration.ofSeconds(6));
 
   /** Until when a model rests, and whether for its quota (no use asking) or for an overload. */
   private record Rest(Instant until, boolean quota) {}
@@ -153,10 +163,9 @@ final class GeminiChatModel implements ChatModel {
   @Override
   public Outcome stream(
       String instructions, String context, List<Turn> turns, Consumer<String> onText) {
-    String body = body(instructions, context, turns);
-    Instant deadline = clock.instant().plus(timing.limit());
-    List<String> errors = new ArrayList<>();
-    boolean busy = false;
+    Attempt attempt =
+        new Attempt(
+            body(instructions, context, turns), System.nanoTime() + timing.limit().toNanos());
     List<String> tries = models.stream().filter(model -> !isResting(model)).toList();
     if (tries.isEmpty()) {
       // Every model rests: an overloaded one may be back already, one out of its quota is not.
@@ -171,61 +180,138 @@ final class GeminiChatModel implements ChatModel {
     }
     // A model that is busy for a moment gets one more try before the guest sees anything, while
     // there is time for it.
-    rounds:
     for (int round = 0; round < 2 && !tries.isEmpty(); round++) {
       if (round > 0) {
-        if (left(deadline).compareTo(timing.retryAfter().plus(timing.firstWord())) < 0) {
+        if (attempt.left() < timing.retryAfter().plus(timing.firstWord()).toNanos()) {
           break;
         }
         pause();
       }
       List<String> busyForAMoment = new ArrayList<>();
-      for (int i = 0; i < tries.size(); i++) {
-        String model = tries.get(i);
-        Duration left = left(deadline);
-        if (left.compareTo(timing.firstWord()) < 0) {
-          break rounds;
+      Outcome outcome = race(attempt, tries, busyForAMoment, onText);
+      if (outcome != null) {
+        return outcome;
+      }
+      tries = busyForAMoment;
+    }
+    if (attempt.errors.isEmpty()) {
+      throw new Failure(Failure.BUSY, "Every Gemini model is out of its quota", null);
+    }
+    throw new Failure(
+        attempt.busy ? Failure.BUSY : Failure.ERROR,
+        "Gemini API: " + String.join("; ", attempt.errors),
+        null);
+  }
+
+  /** One question of a guest: the request, until when a first word may come, what went wrong. */
+  private static final class Attempt {
+    final String body;
+    final long deadline;
+    final List<String> errors = new ArrayList<>();
+    boolean busy;
+
+    Attempt(String body, long deadline) {
+      this.body = body;
+      this.deadline = deadline;
+    }
+
+    /** The time left for a first word, in nanoseconds of {@link System#nanoTime}. */
+    long left() {
+      return deadline - System.nanoTime();
+    }
+  }
+
+  /** What came back for the request to one model: its answer, or why there is none. */
+  private record Reply(String model, HttpResponse<Stream<String>> response, Throwable error) {}
+
+  /**
+   * Asks the models in turn, the next one as soon as the one before fails or has been quiet for
+   * {@link Timing#firstWord}; the first that speaks answers the guest. Null when none did.
+   */
+  private Outcome race(
+      Attempt attempt, List<String> tries, List<String> busyForAMoment, Consumer<String> onText) {
+    BlockingQueue<Reply> replies = new LinkedBlockingQueue<>();
+    AtomicBoolean over = new AtomicBoolean();
+    Map<String, CompletableFuture<HttpResponse<Stream<String>>>> running = new LinkedHashMap<>();
+    long firstWord = timing.firstWord().toNanos();
+    int next = 0;
+    long nextStart = System.nanoTime();
+    try {
+      while (true) {
+        long now = System.nanoTime();
+        if (next < tries.size() && (running.isEmpty() || now - nextStart >= 0)) {
+          long left = attempt.deadline - now;
+          if (left >= firstWord) {
+            String model = tries.get(next++);
+            running.put(model, start(model, attempt.body, Duration.ofNanos(left), replies, over));
+            nextStart = now + firstWord;
+          } else {
+            next = tries.size(); // too late to ask one more model
+          }
         }
-        // The last model gets all the time that is left; the others hand over sooner.
-        Duration timeout = i < tries.size() - 1 ? timing.firstWord() : left;
-        HttpResponse<Stream<String>> response;
-        try {
-          response = send(request(model, body, timeout));
-        } catch (HttpTimeoutException e) {
-          // No first word in time: the guest does not wait for it, the next model answers.
-          String slow = "no first word after " + timeout.toMillis() + " ms";
-          errors.add(model + " had " + slow);
-          busy = true;
-          restOverloaded(model, slow);
-          continue;
-        } catch (IOException e) {
-          errors.add(model + " not reachable: " + e);
-          busy = true;
+        if (running.isEmpty()) {
+          if (next >= tries.size()) {
+            return null;
+          }
           continue;
         }
+        long until = next < tries.size() ? Math.min(nextStart, attempt.deadline) : attempt.deadline;
+        Reply reply = replies.poll(Math.max(0, until - now), TimeUnit.NANOSECONDS);
+        if (reply == null) {
+          if (attempt.left() <= 0) {
+            // Time is up: the models still quiet were too slow, the guest hears that Panko is busy.
+            running.keySet().forEach(model -> slow(attempt, model));
+            return null;
+          }
+          continue;
+        }
+        String model = reply.model();
+        running.remove(model);
+        nextStart = System.nanoTime(); // one model less: the next may start at once
+        if (reply.error() != null) {
+          Throwable error =
+              reply.error() instanceof CompletionException && reply.error().getCause() != null
+                  ? reply.error().getCause()
+                  : reply.error();
+          if (error instanceof HttpTimeoutException) {
+            slow(attempt, model);
+          } else {
+            attempt.errors.add(model + " not reachable: " + error);
+            attempt.busy = true;
+          }
+          continue;
+        }
+        HttpResponse<Stream<String>> response = reply.response();
         int status = response.statusCode();
         if (status == 200) {
           resting.remove(model);
+          // The models asked before it are still quiet: they were slower, the next guests skip
+          // them.
+          for (String quiet : running.keySet()) {
+            if (tries.indexOf(quiet) < tries.indexOf(model)) {
+              restOverloaded(quiet, "slower than " + model);
+            }
+          }
           try {
             return read(model, response, onText);
           } catch (SilentBreak e) {
-            // It broke off before its first word: the guest saw nothing, the next model answers.
-            errors.add(e.getMessage());
-            busy = true;
+            // It broke off before its first word: the guest saw nothing, another model answers.
+            attempt.errors.add(e.getMessage());
+            attempt.busy = true;
             continue;
           }
         }
-        String error;
+        String body;
         try (Stream<String> lines = response.body()) {
-          error = lines.collect(Collectors.joining("\n"));
+          body = lines.collect(Collectors.joining("\n"));
         }
-        errors.add(model + " answered " + status + " " + errorOf(error));
-        busy |= isBusy(status);
-        Duration wait = status == 429 ? retryDelay(error) : null;
+        attempt.errors.add(model + " answered " + status + " " + errorOf(body));
+        attempt.busy |= isBusy(status);
+        Duration wait = status == 429 ? retryDelay(body) : null;
         if (wait != null) {
-          Instant until = clock.instant().plus(wait);
-          resting.put(model, new Rest(until, true));
-          log.warn("Assistant: Gemini {} is out of its quota until {}", model, until);
+          Instant back = clock.instant().plus(wait);
+          resting.put(model, new Rest(back, true));
+          log.warn("Assistant: Gemini {} is out of its quota until {}", model, back);
         } else if (isBusy(status)) {
           busyForAMoment.add(model);
           if (status != 429) {
@@ -233,13 +319,49 @@ final class GeminiChatModel implements ChatModel {
           }
         }
       }
-      tries = busyForAMoment;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new Failure(Failure.ERROR, "Interrupted", e);
+    } finally {
+      // The requests still running lost: cancel them, and close the answers that came anyway.
+      over.set(true);
+      running.values().forEach(future -> future.cancel(true));
+      closeAll(replies);
     }
-    if (errors.isEmpty()) {
-      throw new Failure(Failure.BUSY, "Every Gemini model is out of its quota", null);
+  }
+
+  /** Sends the request; its reply goes to the queue, or is closed when the race is over. */
+  private CompletableFuture<HttpResponse<Stream<String>>> start(
+      String model,
+      String body,
+      Duration timeout,
+      BlockingQueue<Reply> replies,
+      AtomicBoolean over) {
+    CompletableFuture<HttpResponse<Stream<String>>> sent =
+        http.sendAsync(request(model, body, timeout), HttpResponse.BodyHandlers.ofLines());
+    sent.whenComplete(
+        (response, error) -> {
+          replies.add(new Reply(model, response, error));
+          if (over.get()) {
+            closeAll(replies);
+          }
+        });
+    return sent;
+  }
+
+  private static void closeAll(BlockingQueue<Reply> replies) {
+    for (Reply reply = replies.poll(); reply != null; reply = replies.poll()) {
+      if (reply.response() != null) {
+        reply.response().body().close();
+      }
     }
-    throw new Failure(
-        busy ? Failure.BUSY : Failure.ERROR, "Gemini API: " + String.join("; ", errors), null);
+  }
+
+  /** No first word in time: the guest does not wait for it, and the next guests skip it. */
+  private void slow(Attempt attempt, String model) {
+    attempt.errors.add(model + " had no first word in time");
+    attempt.busy = true;
+    restOverloaded(model, "no first word in time");
   }
 
   /** The model is overloaded or slow: the next guests go straight to the next model for a while. */
@@ -251,10 +373,6 @@ final class GeminiChatModel implements ChatModel {
           why,
           OVERLOAD_REST.toSeconds());
     }
-  }
-
-  private Duration left(Instant deadline) {
-    return Duration.between(clock.instant(), deadline);
   }
 
   /** The answer broke off before any text reached the guest, so another model can still answer. */
@@ -278,7 +396,7 @@ final class GeminiChatModel implements ChatModel {
 
   /**
    * The timeout is the time to the headers of the answer, and the API sends them with the first
-   * word: the time the model gets for its first word.
+   * word: the time that is left for a first word.
    */
   private HttpRequest request(String model, String body, Duration timeout) {
     return HttpRequest.newBuilder(
@@ -369,15 +487,6 @@ final class GeminiChatModel implements ChatModel {
       return json.writeValueAsString(root);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
-    }
-  }
-
-  private HttpResponse<Stream<String>> send(HttpRequest request) throws IOException {
-    try {
-      return http.send(request, HttpResponse.BodyHandlers.ofLines());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new Failure(Failure.ERROR, "Interrupted", e);
     }
   }
 

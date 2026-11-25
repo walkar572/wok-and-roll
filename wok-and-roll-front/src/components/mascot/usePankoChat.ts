@@ -35,17 +35,21 @@ interface Saved {
 }
 
 // One status request per page load, shared by every chat that opens.
-let statusRequest: Promise<boolean> | undefined;
+let statusRequest: Promise<boolean | null> | undefined;
 
-function aiEnabled(): Promise<boolean> {
+/** Whether the AI is on; null when the server did not answer (it may still be starting). */
+function aiEnabled(): Promise<boolean | null> {
   statusRequest ??= loadAssistantStatus()
     .then((status) => status.enabled)
     .catch(() => {
       statusRequest = undefined;
-      return false;
+      return null;
     });
   return statusRequest;
 }
+
+/** How often the open chat asks again while the server does not answer. */
+const RECHECK_MS = 5000;
 
 function readSaved(country: string): PankoMessage[] {
   try {
@@ -84,22 +88,38 @@ export function usePankoChat(active: boolean) {
   const { country, city, allCities } = useCountry();
   const { locale, t } = useI18n();
   const [mode, setMode] = useState<PankoMode>('loading');
+  // The server did not answer the status: Panko is off for now, but asks again.
+  const [unreachable, setUnreachable] = useState(false);
+  const [checks, setChecks] = useState(0);
+  const lastCheck = useRef(0);
   const [messages, setMessages] = useState<PankoMessage[]>(() => readSaved(country));
   const [chatCountry, setChatCountry] = useState(country);
   const abort = useRef<AbortController>();
   const streaming = messages.some((message) => message.state === 'streaming');
 
-  // The status is asked only when the chat opens for the first time.
+  // The status is asked when the chat opens for the first time. While the server does not answer
+  // (after a restart the site is up before the server), the open chat asks again every few
+  // seconds, so Panko comes back without a reload of the page.
   useEffect(() => {
-    if (!active || mode !== 'loading') return undefined;
+    if (!active || (mode !== 'loading' && !unreachable)) return undefined;
     let current = true;
-    void aiEnabled().then((enabled) => {
-      if (current) setMode(enabled ? 'on' : 'off');
-    });
+    const timer = window.setTimeout(
+      () => {
+        lastCheck.current = Date.now();
+        void aiEnabled().then((enabled) => {
+          if (!current) return;
+          setUnreachable(enabled === null);
+          setMode(enabled ? 'on' : 'off');
+          setChecks((count) => count + 1);
+        });
+      },
+      Math.max(0, lastCheck.current + RECHECK_MS - Date.now()),
+    );
     return () => {
       current = false;
+      window.clearTimeout(timer);
     };
-  }, [active, mode]);
+  }, [active, mode, unreachable, checks]);
 
   useEffect(() => {
     if (chatCountry === country) return;
@@ -170,6 +190,7 @@ export function usePankoChat(active: boolean) {
           }
           if (error instanceof ApiRequestError && error.code === 'ASSISTANT_UNAVAILABLE') {
             // switched off since the status was asked: no AI, and the question stays
+            setUnreachable(false);
             setMode('off');
             setMessages((list) => list.filter((message) => message.id !== answerId));
             return;
