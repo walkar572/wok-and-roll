@@ -96,12 +96,17 @@ class AssistantPromptTest {
         .contains("with the word for sum in the guest's language")
         .contains("## Rolls")
         .contains(
-            "- [id 1] Philadelphia: 65000 UZS; 8 pcs, 250 g; Salmon, cream cheese.; options:"
-                + " Large (+15000, size)")
-        .contains("- [id 2] Dragon roll: 72000.50 UZS; 8 pcs, 250 g; Eel, avocado.; OUT OF STOCK")
+            "- Philadelphia [[dish:1]]: 65000 UZS; 8 pcs, 250 g; Salmon, cream cheese.; has fish"
+                + " or seafood; options: Large (+15000, size)")
         .contains(
-            "- [id 3] Big set: 180000 UZS (209000 for its dishes one by one, saves 13%); 24"
-                + " pcs, 250 g; contains 2 x Philadelphia, Dragon roll")
+            "- Dragon roll [[dish:2]]: 72000.50 UZS; 8 pcs, 250 g; Eel, avocado.; has fish or"
+                + " seafood; OUT OF STOCK")
+        .contains(
+            "- Big set [[dish:3]]: 180000 UZS (209000 for its dishes one by one, saves 13%); 24"
+                + " pcs, 250 g; contains 2 x Philadelphia, Dragon roll; has fish or seafood")
+        .contains("follow these words for any wish about meat, fish, a vegetarian meal or spice")
+        .contains("recommend only dishes whose price is at most that amount")
+        .doesNotContain("[id ")
         .doesNotContain("Ignored for a set")
         .doesNotContain("## Empty");
   }
@@ -148,5 +153,75 @@ class AssistantPromptTest {
   @Test
   void theCachedPartIsTheSameForTheSameData() {
     assertThat(AssistantPrompt.instructions(DATA)).isEqualTo(AssistantPrompt.instructions(DATA));
+  }
+
+  @Test
+  void everyDishSaysWhetherItIsVegetarianHasMeatOrFishAndIsSpicy() {
+    ProductResponse miso =
+        product(
+            6,
+            1,
+            "Miso mushroom rice",
+            "Shiitake, seasonal greens, miso.",
+            "1",
+            true,
+            null,
+            List.of());
+    ProductResponse gyoza =
+        product(8, 1, "Gyoza", "Pan-fried chicken dumplings.", "1", true, null, List.of());
+    ProductResponse california =
+        product(
+            3,
+            1,
+            "California roll",
+            "Crab, avocado, cucumber, sesame.",
+            "1",
+            true,
+            null,
+            List.of());
+    ProductResponse udon =
+        product(
+            5,
+            1,
+            "Firecracker udon",
+            "Udon noodles, chicken, chili, sesame.",
+            "1",
+            true,
+            null,
+            List.of());
+    ProductResponse rice =
+        product(
+            16,
+            1,
+            "Spicy egg fried rice",
+            "Wok-fried rice, chili, kimchi, fried egg.",
+            "1",
+            true,
+            null,
+            List.of());
+    ProductResponse combo =
+        product(
+            31,
+            2,
+            "Lunch combo",
+            "California roll and gyoza.",
+            "1",
+            true,
+            null,
+            List.of(
+                new SetItemResponse(3, "California roll", 1), new SetItemResponse(8, "Gyoza", 1)));
+    ProductResponse mystery = product(40, 1, "Chef's special", null, "1", true, null, List.of());
+    Map<Long, ProductResponse> byId =
+        Map.of(6L, miso, 8L, gyoza, 3L, california, 5L, udon, 16L, rice, 31L, combo);
+
+    assertThat(AssistantPrompt.tags(miso, byId)).isEqualTo("vegetarian");
+    assertThat(AssistantPrompt.tags(gyoza, byId)).isEqualTo("has meat");
+    assertThat(AssistantPrompt.tags(california, byId)).isEqualTo("has fish or seafood");
+    assertThat(AssistantPrompt.tags(udon, byId)).isEqualTo("has meat, spicy");
+    assertThat(AssistantPrompt.tags(rice, byId)).isEqualTo("vegetarian, spicy");
+    // a set has what its dishes have
+    assertThat(AssistantPrompt.tags(combo, byId)).isEqualTo("has meat and fish");
+    // without ingredients nothing is said: it is not vegetarian for sure
+    assertThat(AssistantPrompt.tags(mystery, byId)).isEmpty();
   }
 }

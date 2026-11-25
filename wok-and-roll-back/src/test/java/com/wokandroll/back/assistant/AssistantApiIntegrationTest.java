@@ -223,7 +223,7 @@ class AssistantApiIntegrationTest {
     verify(model).stream(instructions.capture(), context.capture(), turns.capture(), any());
     assertThat(instructions.getValue())
         .contains("You are Panko")
-        .contains("[id " + roll.id() + "] " + roll.name() + ": ")
+        .contains("- " + roll.name() + " [[dish:" + roll.id() + "]]: ")
         .contains("# Cafés")
         .contains("# Delivery zones");
     assertThat(context.getValue()).contains("Ukrainian").contains(city + ", Uzbekistan");
@@ -267,7 +267,7 @@ class AssistantApiIntegrationTest {
     ArgumentCaptor<String> instructions = ArgumentCaptor.forClass(String.class);
     verify(model).stream(instructions.capture(), anyString(), anyList(), any());
     assertThat(instructions.getValue())
-        .contains("[id " + gone.id() + "] ")
+        .contains(" [[dish:" + gone.id() + "]]: ")
         .contains("OUT OF STOCK");
   }
 

@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -69,12 +70,14 @@ final class AssistantPrompt {
       - Keep answers very short and simple: one to three short sentences, at most about 50 \
       words, in plain everyday words, warm and friendly like a chef. \
       Plain text: no headings, no tables, no bold; a short list with "- " is fine.
-      - Recommend only dishes whose listed ingredients and price fit the guest's wish (for a \
-      vegetarian guest: no fish, seafood, crab, eel or meat), from any part of the menu. If \
+      - Recommend only dishes that fit the guest's wish, from any part of the menu. Every dish \
+      says whether it is vegetarian, has meat or has fish or seafood, and whether it is spicy: \
+      follow these words for any wish about meat, fish, a vegetarian meal or spice. When the \
+      guest names a budget, recommend only dishes whose price is at most that amount. If \
       nothing fits exactly, say it in a few words and offer the closest dish that does fit. \
       Do not explain these checks to the guest.
       - Recommend at most 3 dishes. Right after the name of each dish you recommend, write its \
-      marker once, exactly like [[dish:12]] with the id from the menu. The website turns the \
+      marker from the menu once, exactly as it is there, like [[dish:12]]. The website turns the \
       markers into dish cards and removes them from the text. Never show ids in any other way.
       - Stay on topic: for anything not about Wok & Roll, its food, cafés or ordering, say \
       kindly that you can only help with Wok & Roll.
@@ -132,6 +135,9 @@ final class AssistantPrompt {
         .append('\n');
     Map<Long, List<ProductResponse>> byCategory =
         data.products().stream().collect(Collectors.groupingBy(ProductResponse::categoryId));
+    Map<Long, ProductResponse> byId =
+        data.products().stream()
+            .collect(Collectors.toMap(ProductResponse::id, product -> product, (a, b) -> a));
     for (CategoryResponse category : data.categories()) {
       List<ProductResponse> products = byCategory.getOrDefault(category.id(), List.of());
       if (products.isEmpty()) {
@@ -139,7 +145,7 @@ final class AssistantPrompt {
       }
       text.append("\n## ").append(category.name()).append('\n');
       for (ProductResponse product : products) {
-        text.append(productLine(product, data.modifiers().get(product.id()), currency));
+        text.append(productLine(product, data.modifiers().get(product.id()), currency, byId));
       }
     }
 
@@ -222,10 +228,16 @@ final class AssistantPrompt {
   }
 
   private static String productLine(
-      ProductResponse product, List<ModifierResponse> modifiers, String currency) {
-    StringBuilder line = new StringBuilder("- [id ").append(product.id()).append("] ");
-    line.append(product.name())
-        .append(": ")
+      ProductResponse product,
+      List<ModifierResponse> modifiers,
+      String currency,
+      Map<Long, ProductResponse> byId) {
+    // The marker stands after the name, as the answer should have it: a small model copies what it
+    // sees, and an id in another form ("[id 6]") came back as "[[id 6]]".
+    StringBuilder line = new StringBuilder("- ").append(product.name());
+    line.append(" [[dish:")
+        .append(product.id())
+        .append("]]: ")
         .append(money(product.price()))
         .append(' ')
         .append(currency);
@@ -256,6 +268,10 @@ final class AssistantPrompt {
     } else if (product.description() != null && !product.description().isBlank()) {
       line.append("; ").append(product.description().trim());
     }
+    String tags = tags(product, byId);
+    if (!tags.isEmpty()) {
+      line.append("; ").append(tags);
+    }
     if (modifiers != null && !modifiers.isEmpty()) {
       line.append("; options: ")
           .append(
@@ -273,6 +289,61 @@ final class AssistantPrompt {
       line.append("; OUT OF STOCK");
     }
     return line.append('\n').toString();
+  }
+
+  private static final Pattern MEAT =
+      Pattern.compile(
+          "\\b(chicken|beef|pork|duck|lamb|veal|turkey|bacon|ham|sausages?|meat|meatballs?)\\b",
+          Pattern.CASE_INSENSITIVE);
+
+  private static final Pattern FISH =
+      Pattern.compile(
+          "\\b(fish|seafood|salmon|tuna|eel|crabs?|shrimps?|prawns?|squid|octopus|scallops?|"
+              + "mussels?|oysters?|lobsters?|caviar|roe|cod|mackerel|yellowtail|hamachi|"
+              + "anchov(y|ies)|bonito|dashi)\\b",
+          Pattern.CASE_INSENSITIVE);
+
+  private static final Pattern SPICY =
+      Pattern.compile(
+          "\\b(chili|chilli|chilies|chillies|spicy|kimchi|firecracker|sriracha|jalape(n|ñ)os?)\\b",
+          Pattern.CASE_INSENSITIVE);
+
+  /**
+   * What a dish has, read from its name and ingredients (the menu data is in English): vegetarian,
+   * has meat, has fish or seafood, and spicy. A set has what its dishes have. A small fast model
+   * judging the ingredients itself called salmon and crab rolls vegetarian; a word in the menu it
+   * follows. Empty when there is nothing to read, as a dish without ingredients is not vegetarian
+   * for sure.
+   */
+  static String tags(ProductResponse product, Map<Long, ProductResponse> byId) {
+    StringBuilder text = new StringBuilder(product.name());
+    if (product.setItems().isEmpty()) {
+      if (product.description() == null || product.description().isBlank()) {
+        return "";
+      }
+      text.append(' ').append(product.description());
+    } else {
+      for (SetItemResponse item : product.setItems()) {
+        ProductResponse dish = byId.get(item.productId());
+        if (dish == null || dish.description() == null || dish.description().isBlank()) {
+          return "";
+        }
+        text.append(' ').append(dish.name()).append(' ').append(dish.description());
+      }
+    }
+    boolean meat = MEAT.matcher(text).find();
+    boolean fish = FISH.matcher(text).find();
+    String diet;
+    if (meat && fish) {
+      diet = "has meat and fish";
+    } else if (meat) {
+      diet = "has meat";
+    } else if (fish) {
+      diet = "has fish or seafood";
+    } else {
+      diet = "vegetarian";
+    }
+    return SPICY.matcher(text).find() ? diet + ", spicy" : diet;
   }
 
   private static String setItem(SetItemResponse item) {

@@ -9,14 +9,19 @@ import java.util.Set;
  * dish it recommends; the guest sees the text without the marker and a card of dish 26 under it. A
  * marker can arrive split over several pieces, so text that may still become a marker is held back
  * until it is clear; anything that is not a marker is passed on unchanged. The spaces just before a
- * marker go with it, so "Dragon roll [[dish:3]], a classic" reads "Dragon roll, a classic". A
- * weaker spare model sometimes writes {@code [[id:3]]} (the menu says {@code [id 3]}): that is a
- * marker too.
+ * marker go with it, so "Dragon roll [[dish:3]], a classic" reads "Dragon roll, a classic".
+ *
+ * <p>Small fast models do not always copy the marker exactly: {@code [[id 6]]}, {@code [[dish 6]]},
+ * {@code [[dish: 6]]} and {@code [[Dish:6]]} are markers too (the word dish or id in any case, a
+ * colon and/or spaces, the id), so the guest never sees one.
  */
 final class MarkerFilter {
 
-  private static final List<String> OPENS = List.of("[[dish:", "[[id:");
+  private static final List<String> WORDS = List.of("dish", "id");
   private static final int MAX_DIGITS = 6;
+
+  /** At most this many spaces between the word and the id. */
+  private static final int MAX_SPACES = 2;
 
   /** Spaces that are shown only if no marker follows them. */
   private final StringBuilder spaces = new StringBuilder();
@@ -63,8 +68,8 @@ final class MarkerFilter {
     pending.append(c);
     State state = state(pending);
     if (state == State.COMPLETE) {
-      String digits = pending.substring(pending.indexOf(":") + 1, pending.length() - 2);
-      ids.add(Long.parseLong(digits));
+      // The word has no digits: the digits of the marker are its id.
+      ids.add(Long.parseLong(pending.toString().replaceAll("[^0-9]", "")));
       pending.setLength(0);
       spaces.setLength(0);
     } else if (state == State.NOT_A_MARKER) {
@@ -85,29 +90,62 @@ final class MarkerFilter {
     NOT_A_MARKER
   }
 
+  /**
+   * Whether the text (it starts with "[") is a whole marker, may still become one, or is not one:
+   * "[[", "dish" or "id", ":" and/or spaces, the id, "]]".
+   */
   private static State state(CharSequence text) {
-    for (String open : OPENS) {
-      State state = state(text, open);
-      if (state != State.NOT_A_MARKER) {
-        return state;
-      }
-    }
-    return State.NOT_A_MARKER;
-  }
-
-  private static State state(CharSequence text, String open) {
     int n = text.length();
-    for (int i = 0; i < Math.min(n, open.length()); i++) {
-      if (text.charAt(i) != open.charAt(i)) {
-        return State.NOT_A_MARKER;
-      }
-    }
-    if (n <= open.length()) {
+    if (n == 1) {
       return State.PREFIX;
     }
-    int i = open.length();
+    if (text.charAt(1) != '[') {
+      return State.NOT_A_MARKER;
+    }
+    int i = 2;
+    if (i == n) {
+      return State.PREFIX;
+    }
+    int word = -1;
+    for (String candidate : WORDS) {
+      int k = 0;
+      while (k < candidate.length()
+          && i + k < n
+          && Character.toLowerCase(text.charAt(i + k)) == candidate.charAt(k)) {
+        k++;
+      }
+      if (k == candidate.length()) {
+        word = i + k;
+        break;
+      }
+      if (i + k == n && k > 0) {
+        return State.PREFIX; // the text ends inside the word
+      }
+    }
+    if (word < 0) {
+      return State.NOT_A_MARKER;
+    }
+    i = word;
+    if (i == n) {
+      return State.PREFIX;
+    }
+    int separator = i;
+    if (text.charAt(i) == ':') {
+      i++;
+    }
+    int spaces = 0;
+    while (i < n && text.charAt(i) == ' ' && spaces < MAX_SPACES) {
+      spaces++;
+      i++;
+    }
+    if (i == separator) {
+      return State.NOT_A_MARKER; // "[[idea]]"
+    }
+    if (i == n) {
+      return State.PREFIX;
+    }
     int digits = 0;
-    while (i < n && Character.isDigit(text.charAt(i))) {
+    while (i < n && text.charAt(i) >= '0' && text.charAt(i) <= '9') {
       digits++;
       i++;
     }
@@ -117,15 +155,17 @@ final class MarkerFilter {
     if (i == n) {
       return State.PREFIX;
     }
-    if (digits == 0 || text.charAt(i) != ']') {
+    if (digits == 0) {
       return State.NOT_A_MARKER;
     }
-    if (i + 1 == n) {
-      return State.PREFIX;
+    int closed = 0;
+    while (i < n && closed < 2 && text.charAt(i) == ']') {
+      closed++;
+      i++;
     }
-    if (text.charAt(i + 1) != ']' || i + 2 != n) {
+    if (closed == 0 || i < n) {
       return State.NOT_A_MARKER;
     }
-    return State.COMPLETE;
+    return closed == 2 ? State.COMPLETE : State.PREFIX;
   }
 }
