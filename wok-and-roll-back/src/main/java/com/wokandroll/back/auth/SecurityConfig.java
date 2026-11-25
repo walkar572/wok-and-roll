@@ -43,7 +43,8 @@ public class SecurityConfig {
     "/api/v1/products/*",
     "/api/v1/cafes",
     "/api/v1/delivery-zones",
-    "/api/v1/time-slots"
+    "/api/v1/time-slots",
+    "/api/v1/assistant"
   };
 
   static final String[] PUBLIC_POST = {
@@ -51,7 +52,8 @@ public class SecurityConfig {
     "/api/v1/auth/login",
     "/api/v1/cart/quote",
     "/api/v1/orders",
-    "/api/v1/bookings"
+    "/api/v1/bookings",
+    "/api/v1/assistant/chat"
   };
 
   static final String[] DOCS = {"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"};
