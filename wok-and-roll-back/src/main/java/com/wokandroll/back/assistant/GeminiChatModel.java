@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,19 +34,24 @@ import org.slf4j.LoggerFactory;
  * <p>Panko has more than one model. A free key gets a small quota per model and per day (20
  * requests in November 2026), and every model has its own: a model that answers 429 with a time to
  * wait rests until then, and the next model of the list answers in the meantime. A model that is
- * overloaded (500, 503, 504; such an answer can take 8 seconds to come) rests for {@link
+ * overloaded (500, 503, 504; such an answer can take 13 seconds to come) rests for {@link
  * #OVERLOAD_REST}, so the next guests go straight to the next model instead of waiting for it.
+ *
+ * <p>Speed comes before everything: a model that has no first word after {@link Timing#firstWord}
+ * while another model could still answer is left behind (the API sends the headers of its answer
+ * with the first word, so this is the timeout of the request), and the guest waits for a first word
+ * at most {@link Timing#limit}, then hears that Panko is busy.
  */
 final class GeminiChatModel implements ChatModel {
 
   private static final Logger log = LoggerFactory.getLogger(GeminiChatModel.class);
 
   /**
-   * Fast and cheap first: Panko gives short, simple answers. The others take over, in this order,
-   * while it is overloaded or out of quota.
+   * Only fast models, first words in about a second: Panko gives short, simple answers. The others
+   * take over, in this order, while the first is overloaded, slow or out of quota.
    */
   static final List<String> DEFAULT_MODELS =
-      List.of("gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3-flash-preview");
+      List.of("gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-lite-latest");
 
   static final String DEFAULT_THINKING = "minimal";
   static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
@@ -53,8 +59,22 @@ final class GeminiChatModel implements ChatModel {
   /** Thinking (if any) and a short answer. */
   static final int MAX_OUTPUT_TOKENS = 1024;
 
-  /** How long an overloaded model is left alone. */
+  /** How long an overloaded or slow model is left alone. */
   static final Duration OVERLOAD_REST = Duration.ofMinutes(2);
+
+  /**
+   * How long Panko waits.
+   *
+   * @param retryAfter the pause before one more try of the models that were busy for a moment
+   * @param firstWord how long a model gets for its first word while another model could still
+   *     answer
+   * @param limit how long the guest waits for a first word at most, whatever happens
+   */
+  record Timing(Duration retryAfter, Duration firstWord, Duration limit) {}
+
+  /** A healthy model says its first word in about a second, an overloaded one 503 after 13 s. */
+  static final Timing TIMING =
+      new Timing(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(6));
 
   /** Until when a model rests, and whether for its quota (no use asking) or for an overload. */
   private record Rest(Instant until, boolean quota) {}
@@ -78,7 +98,7 @@ final class GeminiChatModel implements ChatModel {
   private final String apiKey;
   private final List<String> models;
   private final String thinkingLevel;
-  private final Duration retryAfter;
+  private final Timing timing;
   private final Clock clock;
 
   /** The models that rest, and until when. */
@@ -91,7 +111,7 @@ final class GeminiChatModel implements ChatModel {
       String apiKey,
       List<String> models,
       String thinkingLevel,
-      Duration retryAfter,
+      Timing timing,
       Clock clock) {
     if (models.isEmpty()) {
       throw new IllegalArgumentException("No Gemini model");
@@ -102,20 +122,20 @@ final class GeminiChatModel implements ChatModel {
     this.apiKey = apiKey;
     this.models = List.copyOf(models);
     this.thinkingLevel = thinkingLevel;
-    this.retryAfter = retryAfter;
+    this.timing = timing;
     this.clock = clock;
   }
 
   static GeminiChatModel create(
       ObjectMapper json, String apiKey, List<String> models, String thinking) {
     return new GeminiChatModel(
-        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build(),
+        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
         json,
         BASE_URL,
         apiKey,
         models,
         thinking,
-        Duration.ofSeconds(1),
+        TIMING,
         Clock.systemUTC());
   }
 
@@ -134,6 +154,7 @@ final class GeminiChatModel implements ChatModel {
   public Outcome stream(
       String instructions, String context, List<Turn> turns, Consumer<String> onText) {
     String body = body(instructions, context, turns);
+    Instant deadline = clock.instant().plus(timing.limit());
     List<String> errors = new ArrayList<>();
     boolean busy = false;
     List<String> tries = models.stream().filter(model -> !isResting(model)).toList();
@@ -148,14 +169,40 @@ final class GeminiChatModel implements ChatModel {
                   })
               .toList();
     }
-    // A model that is busy for a moment gets one more try before the guest sees anything.
+    // A model that is busy for a moment gets one more try before the guest sees anything, while
+    // there is time for it.
+    rounds:
     for (int round = 0; round < 2 && !tries.isEmpty(); round++) {
       if (round > 0) {
+        if (left(deadline).compareTo(timing.retryAfter().plus(timing.firstWord())) < 0) {
+          break;
+        }
         pause();
       }
       List<String> busyForAMoment = new ArrayList<>();
-      for (String model : tries) {
-        HttpResponse<Stream<String>> response = send(request(model, body));
+      for (int i = 0; i < tries.size(); i++) {
+        String model = tries.get(i);
+        Duration left = left(deadline);
+        if (left.compareTo(timing.firstWord()) < 0) {
+          break rounds;
+        }
+        // The last model gets all the time that is left; the others hand over sooner.
+        Duration timeout = i < tries.size() - 1 ? timing.firstWord() : left;
+        HttpResponse<Stream<String>> response;
+        try {
+          response = send(request(model, body, timeout));
+        } catch (HttpTimeoutException e) {
+          // No first word in time: the guest does not wait for it, the next model answers.
+          String slow = "no first word after " + timeout.toMillis() + " ms";
+          errors.add(model + " had " + slow);
+          busy = true;
+          restOverloaded(model, slow);
+          continue;
+        } catch (IOException e) {
+          errors.add(model + " not reachable: " + e);
+          busy = true;
+          continue;
+        }
         int status = response.statusCode();
         if (status == 200) {
           resting.remove(model);
@@ -182,7 +229,7 @@ final class GeminiChatModel implements ChatModel {
         } else if (isBusy(status)) {
           busyForAMoment.add(model);
           if (status != 429) {
-            restOverloaded(model, status);
+            restOverloaded(model, String.valueOf(status));
           }
         }
       }
@@ -195,15 +242,19 @@ final class GeminiChatModel implements ChatModel {
         busy ? Failure.BUSY : Failure.ERROR, "Gemini API: " + String.join("; ", errors), null);
   }
 
-  /** The model is overloaded: the next guests go straight to the next model for a while. */
-  private void restOverloaded(String model, int status) {
+  /** The model is overloaded or slow: the next guests go straight to the next model for a while. */
+  private void restOverloaded(String model, String why) {
     if (resting.put(model, new Rest(clock.instant().plus(OVERLOAD_REST), false)) == null) {
       log.info(
           "Assistant: Gemini {} is overloaded ({}), the next model answers for {} s",
           model,
-          status,
+          why,
           OVERLOAD_REST.toSeconds());
     }
+  }
+
+  private Duration left(Instant deadline) {
+    return Duration.between(clock.instant(), deadline);
   }
 
   /** The answer broke off before any text reached the guest, so another model can still answer. */
@@ -225,10 +276,14 @@ final class GeminiChatModel implements ChatModel {
     return false;
   }
 
-  private HttpRequest request(String model, String body) {
+  /**
+   * The timeout is the time to the headers of the answer, and the API sends them with the first
+   * word: the time the model gets for its first word.
+   */
+  private HttpRequest request(String model, String body, Duration timeout) {
     return HttpRequest.newBuilder(
             URI.create(baseUrl + "/models/" + model + ":streamGenerateContent?alt=sse"))
-        .timeout(Duration.ofSeconds(60))
+        .timeout(timeout)
         .header("Content-Type", "application/json")
         .header("x-goog-api-key", apiKey)
         .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -252,7 +307,7 @@ final class GeminiChatModel implements ChatModel {
           int code = chunk.path("error").path("code").asInt(0);
           String message = model + " broke off with " + code + " " + errorOf(data);
           if (isBusy(code) && code != 429) {
-            restOverloaded(model, code);
+            restOverloaded(model, String.valueOf(code));
           }
           if (isBusy(code) && !shown) {
             throw new SilentBreak(message);
@@ -317,11 +372,9 @@ final class GeminiChatModel implements ChatModel {
     }
   }
 
-  private HttpResponse<Stream<String>> send(HttpRequest request) {
+  private HttpResponse<Stream<String>> send(HttpRequest request) throws IOException {
     try {
       return http.send(request, HttpResponse.BodyHandlers.ofLines());
-    } catch (IOException e) {
-      throw new Failure(Failure.BUSY, "Gemini API not reachable", e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new Failure(Failure.ERROR, "Interrupted", e);
@@ -330,7 +383,7 @@ final class GeminiChatModel implements ChatModel {
 
   private void pause() {
     try {
-      Thread.sleep(retryAfter);
+      Thread.sleep(timing.retryAfter());
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new Failure(Failure.ERROR, "Interrupted", e);

@@ -19,10 +19,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,13 +33,27 @@ import org.junit.jupiter.api.Test;
 /** Gemini on a local fake of its REST API: no key and no network. */
 class GeminiChatModelTest {
 
-  private record Reply(int status, String body) {}
+  /** An answer of the fake API, sent after {@code delay} (headers and all, like the real one). */
+  private record Reply(int status, String body, Duration delay) {
+    Reply(int status, String body) {
+      this(status, body, Duration.ZERO);
+    }
+  }
+
+  /** Time is short in the tests too, but a slow test machine is not a slow model. */
+  private static final GeminiChatModel.Timing TIMING =
+      new GeminiChatModel.Timing(Duration.ZERO, Duration.ofSeconds(5), Duration.ofSeconds(30));
 
   private final ObjectMapper json = new ObjectMapper();
-  private final Deque<Reply> replies = new ArrayDeque<>();
-  private final List<String> paths = new ArrayList<>();
-  private final List<String> keys = new ArrayList<>();
-  private final List<JsonNode> bodies = new ArrayList<>();
+  private final Deque<Reply> replies = new ConcurrentLinkedDeque<>();
+  private final List<String> paths = new CopyOnWriteArrayList<>();
+  private final List<String> keys = new CopyOnWriteArrayList<>();
+  private final List<JsonNode> bodies = new CopyOnWriteArrayList<>();
+
+  /** How far the clock moves while the fake API answers a request. */
+  private volatile Duration requestTakes = Duration.ZERO;
+
+  private ExecutorService threads;
   private HttpServer server;
   private GeminiChatModel model;
 
@@ -50,6 +67,13 @@ class GeminiChatModelTest {
           keys.add(exchange.getRequestHeaders().getFirst("x-goog-api-key"));
           bodies.add(json.readTree(exchange.getRequestBody()));
           Reply reply = replies.isEmpty() ? new Reply(500, "{}") : replies.removeFirst();
+          clock.advance(requestTakes);
+          try {
+            Thread.sleep(reply.delay());
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+          }
           byte[] bytes = reply.body().getBytes(StandardCharsets.UTF_8);
           exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
           exchange.sendResponseHeaders(reply.status(), bytes.length);
@@ -57,11 +81,18 @@ class GeminiChatModelTest {
             out.write(bytes);
           }
         });
+    // A model slow to answer does not hold up the next one.
+    threads = Executors.newCachedThreadPool();
+    server.setExecutor(threads);
     server.start();
     model = model("gemini-3.5-flash");
   }
 
   private GeminiChatModel model(String... names) {
+    return model(TIMING, names);
+  }
+
+  private GeminiChatModel model(GeminiChatModel.Timing timing, String... names) {
     return new GeminiChatModel(
         HttpClient.newHttpClient(),
         json,
@@ -69,13 +100,13 @@ class GeminiChatModelTest {
         "test-key",
         List.of(names),
         "minimal",
-        Duration.ZERO,
+        timing,
         clock);
   }
 
-  /** A clock the test moves by hand. */
+  /** A clock the test moves by hand (and the fake API, while it answers). */
   private static final class TestClock extends Clock {
-    private Instant now = Instant.parse("2026-11-25T16:00:00Z");
+    private volatile Instant now = Instant.parse("2026-11-25T16:00:00Z");
 
     void advance(Duration duration) {
       now = now.plus(duration);
@@ -115,6 +146,7 @@ class GeminiChatModelTest {
   @AfterEach
   void stop() {
     server.stop(0);
+    threads.shutdownNow();
   }
 
   private static String sse(String... chunks) {
@@ -350,6 +382,71 @@ class GeminiChatModelTest {
   }
 
   @Test
+  void aModelWithoutAFirstWordInTimeIsLeftBehindAndTheNextAnswers() {
+    model =
+        model(
+            new GeminiChatModel.Timing(
+                Duration.ZERO, Duration.ofMillis(300), Duration.ofSeconds(30)),
+            "main",
+            "spare");
+    replies.add(
+        new Reply(200, sse(parts("STOP", "{\"text\":\"Too late\"}")), Duration.ofSeconds(4)));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"From the spare\"}"))));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Spare again\"}"))));
+
+    long started = System.nanoTime();
+    StringBuilder first = new StringBuilder();
+    ask(first);
+    Duration took = Duration.ofNanos(System.nanoTime() - started);
+    StringBuilder second = new StringBuilder();
+    ask(second);
+
+    assertThat(first + " | " + second).isEqualTo("From the spare | Spare again");
+    // The guest did not wait the 4 seconds of the main model.
+    assertThat(took).isLessThan(Duration.ofSeconds(3));
+    // The slow model rests: the second guest goes straight to the spare.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf))
+        .containsExactly("main", "spare", "spare");
+  }
+
+  @Test
+  void theLastModelGetsAllTheTimeThatIsLeft() {
+    model =
+        model(
+            new GeminiChatModel.Timing(
+                Duration.ZERO, Duration.ofMillis(300), Duration.ofSeconds(30)),
+            "main");
+    replies.add(
+        new Reply(200, sse(parts("STOP", "{\"text\":\"Slow but here\"}")), Duration.ofMillis(800)));
+    StringBuilder shown = new StringBuilder();
+
+    ask(shown);
+
+    // No other model could answer, so it was not left behind after 300 ms.
+    assertThat(shown.toString()).isEqualTo("Slow but here");
+  }
+
+  @Test
+  void afterTheLimitNoModelIsTriedAndTheGuestHearsBusyAtOnce() {
+    model =
+        model(
+            new GeminiChatModel.Timing(Duration.ZERO, Duration.ofSeconds(1), Duration.ofSeconds(6)),
+            "a",
+            "b",
+            "c");
+    requestTakes = Duration.ofSeconds(3);
+    String overloaded = "{\"error\":{\"code\":503,\"status\":\"UNAVAILABLE\"}}";
+    replies.add(new Reply(503, overloaded));
+    replies.add(new Reply(503, overloaded));
+    replies.add(new Reply(200, sse(parts("STOP", "{\"text\":\"Too late\"}"))));
+
+    assertThatThrownBy(() -> ask(new StringBuilder()))
+        .isInstanceOfSatisfying(Failure.class, e -> assertThat(e.code()).isEqualTo(Failure.BUSY));
+    // a at 0 s, b at 3 s; at 6 s no time is left for c, nor for one more try of a and b.
+    assertThat(paths.stream().map(GeminiChatModelTest::modelOf)).containsExactly("a", "b");
+  }
+
+  @Test
   void anErrorOfOneModelGoesToTheNextAndIsNotTriedAgain() {
     model = model("main", "spare");
     replies.add(new Reply(404, "{\"error\":{\"status\":\"NOT_FOUND\",\"message\":\"no model\"}}"));
@@ -409,6 +506,8 @@ class GeminiChatModelTest {
     assertThat(AssistantConfig.models(" ", defaults)).isEqualTo(defaults);
     assertThat(AssistantConfig.models(null, defaults)).isEqualTo(defaults);
     assertThat(defaults.get(0)).isEqualTo("gemini-3.1-flash-lite");
+    // Speed first: only the fast Flash-Lite models, none that thinks for seconds.
+    assertThat(defaults).allMatch(name -> name.contains("flash-lite"));
   }
 
   @Test
