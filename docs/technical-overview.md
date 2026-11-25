@@ -128,6 +128,14 @@ for `position()`, so `%` is not a wildcard). The overview money is the sales-by-
 the panel and the reports always agree. The panel has its own login; each role sees its sections
 (ADMIN all, STAFF café orders, VIEWER reports), a customer gets "no access".
 
+Panko's AI chat (`/assistant`, v1.14) is public and calls Claude through the official Anthropic
+Java SDK; the key is only in the server environment. The prompt holds the rules and the data of
+the country (menu with ids, prices, stock, cafés, zones, VAT, discounts) as one cached system
+block, then the language, city and local time; the guest's text is only the conversation. The
+answer streams to the browser as server-sent events on a virtual thread; dish markers are taken
+out of the text and checked against the menu. Limits: 20 questions per IP in 10 minutes, 500
+characters a question, 20 messages. Nothing is stored and no message text is logged.
+
 Deny by default, one test per cell. Passwords: BCrypt. Tokens: HS256 with `exp`, `iss`, `aud`;
 5 failed logins in 15 minutes → `429`. Admin changes use optimistic locking (`version`) and get
 `409 VERSION_CONFLICT` instead of overwriting each other. The frontend mirrors the rules in its

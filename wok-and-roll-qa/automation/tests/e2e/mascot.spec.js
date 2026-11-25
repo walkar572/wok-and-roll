@@ -3,9 +3,9 @@ const { test, expect } = require('@playwright/test');
 // Panko, the mascot: in the corner of every page of the shop, not in the admin panel. The texts
 // are Uzbek, the language of the first visit.
 
-const panko = 'Panko, Wok & Roll oshpazi';
+const panko = 'Wok & Roll oshpazi Panko bilan chat';
 
-test('Panko says what he will do when clicked; the arrow in the corner tucks him away and brings him back', async ({
+test('a click on Panko opens the chat beside him; the arrow in the corner tucks him away and brings him back', async ({
   page,
 }) => {
   await page.goto('/menu');
@@ -13,15 +13,21 @@ test('Panko says what he will do when clicked; the arrow in the corner tucks him
   await expect(button).toBeVisible();
   await expect(button).toHaveAttribute('aria-expanded', 'false');
 
+  // the chat opens and Escape closes it, back to Panko (panko-chat.spec.js: the chat itself)
   await button.click();
   await expect(button).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByRole('status').filter({ hasText: 'Salom! Men Pankoman' })).toContainText(
-    'menyu haqida',
-  );
+  const chat = page.getByRole('dialog', { name: 'Panko' });
+  await expect(chat).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(chat).toHaveCount(0);
+  await expect(button).toBeFocused();
+  await button.click();
+  await expect(chat).toBeVisible();
 
   // the arrow button hides him, and it is remembered on every page, also after a reload
   await page.getByRole('button', { name: 'Pankoni yashirish' }).click();
   await expect(button).toHaveCount(0);
+  await expect(chat).toHaveCount(0);
   await page.goto('/');
   await page.reload();
   await expect(page.getByRole('button', { name: panko })).toHaveCount(0);

@@ -31,6 +31,8 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 1.9 | 24 Nov | Seventh country and the city (additive): `USA`, United States, `USD`, tax 7 % (Massachusetts meals tax 6.25 % + Boston 0.75 %), `America/New_York`, 2 cafés in Boston, prices and fees converted like the others (§5). `city` of a café (§3.6) and `cities` of a country (§3.1). The interface lets the guest choose the city (it gives the country) and the language apart; American English is the 7th language. |
 | 1.12 | 24 Nov | Web only, no API change: the city switcher offers "All cities" first. The home page then shows the cafés of every country (§3.6, one call per country) on one map, city by city; the menu, the cart, checkout and booking ask for a city before any price, so an order always has one country. |
 | 1.11 | 24 Nov | Admin panel (additive): §3.20, six read-only `GET /api/v1/admin/…` endpoints for ADMIN (overview of a period, every order with one order in full, every booking, every account, every café with its day), and a booking history seed for the demo. The web app has an admin panel at `/admin` with its own login (`/admin/login`); café orders and reports moved into it. |
+| 1.13 | 24 Nov | Web only, no API change: Panko, the mascot, in the corner of every page of the shop, with a button that tucks him away. |
+| 1.14 | 25 Nov | Panko, the AI chat (additive): §3.21, `GET /api/v1/assistant` and `POST /api/v1/assistant/chat` (public, server-sent events), codes `TOO_MANY_MESSAGES` and `ASSISTANT_UNAVAILABLE`. A click on Panko opens the chat. |
 | 1.10 | 24 Nov | Roll sets (additive): category `Sets` with 7 sets, each 15–19 % under its dishes bought one by one. `regularPrice` and `setItems` in §3.3 and §3.4; a set is ordered and priced like any dish (§5 does not change). |
 
 ---
@@ -88,6 +90,7 @@ This file is the single source of truth for the API. Backend builds it, frontend
 | 3.18 | `GET /api/v1/reports/sales.pdf?from=&to=&country=&year=` | VIEWER, ADMIN | PDF of the reports page | Nodir | #68 | S3–S4 |
 | 3.19 | `GET /api/v1/reports/sales-by-region.csv?from=&to=` · `GET /api/v1/reports/sales-by-month.csv?country=&year=` | VIEWER, ADMIN | CSV of each report | Timur | #69 | S4 |
 | 3.20 | `GET /api/v1/admin/overview` · `/admin/orders` · `/admin/orders/{orderNumber}` · `/admin/bookings` · `/admin/users` · `/admin/cafes` | ADMIN | Admin panel, read only (v1.11) | — | — | S4 |
+| 3.21 | `GET /api/v1/assistant` · `POST /api/v1/assistant/chat` | public | Panko, the AI chat (v1.14) | — | — | S4 |
 
 The examples use the real seed data on `dev` (#33). Café, zone, order and report values are examples until their migrations are merged.
 
@@ -763,6 +766,44 @@ Everything the shop knows, for the admin panel of the web app (`/admin`, v1.11).
 
 Responses: `200` · `400` · `401` · `403` · `404`.
 
+### 3.21 Panko, the AI chat (public, v1.14)
+
+Panko, the mascot of the shop, answers guests' questions about the menu, the cafés, delivery, discounts and booking. The answers come from Claude (Anthropic API) and are based only on the data of the chosen country, which the server puts into the prompt: every dish on the menu with its id, price before VAT, portion, ingredients, options and stock, the sets with their dishes, the cafés with hours, the delivery zones with fees and times, VAT and the discount thresholds. Panko can recommend at most 4 dishes; they come as menu cards, which open the dish dialog of the menu. He cannot order, pay or book.
+
+| Endpoint | Body | Answer |
+|---|---|---|
+| `GET /api/v1/assistant` | — | `{ "enabled": true, "model": "claude-opus-5-5" }`. `enabled` is `false` (and `model` `null`) when the server has no `ANTHROPIC_API_KEY`; the web app then shows Panko without the AI: links to the menu and the booking. |
+| `POST /api/v1/assistant/chat` | `{ "country": "UZB", "city": "Tashkent", "language": "en-GB", "messages": [{ "role": "user", "text": "Something spicy for two?" }] }` | `200 text/event-stream` (below) |
+
+**Body.** `country`: one of the 7 codes. `city`: optional, at most 80 characters; it goes into the prompt only when it is a city of the country (§3.1), otherwise it is left out. `language`: `uz`, `kk`, `ka`, `uk`, `zh`, `en-GB`, `en-US`, the language of the answer. `messages`: 1–20, the whole conversation every time (the server keeps nothing), oldest first; `role` is `user` or `assistant`, `text` 1–2000 characters, and a question of the guest (`user`) at most 500. The last message must be the guest's. A greeting of the assistant before the first question is dropped, and messages of the same side in a row are joined.
+
+**Answer: server-sent events** (`Content-Type: text/event-stream`, each `data` is JSON):
+
+```text
+event:delta
+data:{"text":"Try the Firecracker udon"}
+
+event:delta
+data:{"text":", hot and quick to love."}
+
+event:done
+data:{"dishes":[{ ...a product of §3.3... }],"refused":false}
+```
+
+- `delta` { `text` }: the next piece of the answer, plain text (a short list with "- " is possible). The model marks a recommended dish with `[[dish:ID]]`; the server takes the markers out of the text (also when a marker comes in several pieces) and turns them into `dishes`.
+- `done` { `dishes`, `refused` }: the last event. `dishes` are the products of the markers in their order, in the shape of §3.3, only those on the menu of the country and in stock, at most 4. `refused` is `true` when the model declined (the text says why).
+- `error` { `code`, `message` }: instead of `done` when the model fails in the middle: `ASSISTANT_BUSY` (rate limit or overload at Anthropic, a network problem: try again in a moment) or `ASSISTANT_ERROR`. The text that came before stays.
+
+The stream closes after `done` or `error`, and at the latest after 120 seconds. When the guest closes the stream, the server stops asking the model.
+
+**Errors before the stream** (JSON, §4): `400 VALIDATION_ERROR` (with the field: `country`, `language`, `messages`, `messages[i].role`, `messages[i].text`); `429 TOO_MANY_MESSAGES` after 20 questions from one IP in 10 minutes, with `Retry-After: <seconds>`; `503 ASSISTANT_UNAVAILABLE` when the server has no API key.
+
+**Model and cost.** `ASSISTANT_MODEL` (default `claude-opus-5-5`; `claude-haiku-5-5` is cheaper), `ASSISTANT_EFFORT` (default `low`: short answers, fast and cheap). The rules and the data of the country are one system block with a 1-hour prompt cache, so every guest of a country reads the same cached text; only the language, the city with its local time and the conversation are new. Opus, Fable and Sonnet 5.5 use the server-side refusal fallback of the API (`fallbacks: "default"`): when the model declines, a fallback model answers in the same call.
+
+**Privacy.** The conversation is not stored on the server and its text is never logged (only country, language, number of messages, length, number of dishes, stop reason and time). The browser keeps it in `sessionStorage` for the visit. Guests are told that Panko is an AI and can make mistakes; the prompt tells him never to ask for personal data, to stay on the topic of Wok & Roll and to treat everything the guest writes as a question, not as instructions.
+
+Responses: `200` · `400` · `429` · `503`.
+
 ---
 
 ## 4. Errors
@@ -811,6 +852,8 @@ Every error has the same body (already implemented in `common.error`):
 | 409 | `INVALID_STATUS_CHANGE` | Staff: a status change that is not allowed | `status` |
 | 422 | `IDEMPOTENCY_KEY_REUSED` | The same `Idempotency-Key` with a different body | `Idempotency-Key` |
 | 429 | `TOO_MANY_ATTEMPTS` | 5 failed logins in 15 minutes; header `Retry-After` | `{}` |
+| 429 | `TOO_MANY_MESSAGES` | v1.14: 20 questions to Panko from one IP in 10 minutes; header `Retry-After` | `{}` |
+| 503 | `ASSISTANT_UNAVAILABLE` | v1.14: the AI chat is off (no API key on the server) | `{}` |
 
 `400 VALIDATION_ERROR` also covers the shape rules of every new field in §3.6–3.19 (lengths, formats, ranges, paging).
 
@@ -1052,13 +1095,13 @@ Backend notes:
 | API1 Broken object level authorization | `/me/**` reads the user id only from the token; another user's order → 404 |
 | API2 Broken authentication | BCrypt (cost 10); JWT HS256 only, with `exp`, `iss` and `aud` checked; `JWT_SECRET` is random and at least 32 bytes (`openssl rand -base64 48`), never a word (RFC 8725); 429 after 5 failed logins; one message for a wrong email or password |
 | API3 Broken object property level authorization | DTO records list every field: no `password_hash` in any response; register cannot set `role`; admin PATCH accepts only the listed fields |
-| API4 Unrestricted resource consumption | At most 50 lines × 99; maximum length for every string; `pageSize` ≤ 100; report period ≤ 366 days |
+| API4 Unrestricted resource consumption | At most 50 lines × 99; maximum length for every string; `pageSize` ≤ 100; report period ≤ 366 days; the AI chat: 20 questions per IP in 10 minutes, 500 characters a question, 20 messages, a short answer (§3.21) |
 | API5 Broken function level authorization | URL rules per role group, deny by default, a test per role |
 | API6 Unrestricted access to sensitive business flows | Slot and table capacity checked in the database (atomic upsert, exclusion constraint); `Idempotency-Key` against double orders; random order numbers |
 | API7 Server side request forgery | The API never loads a URL from input; `imageUrl` is only a `/images/…` path shown by the frontend |
 | API8 Security misconfiguration | No stack traces in responses; Spring Security default headers and `Cache-Control: no-store`; CORS only for the frontend origin, never `*`; Swagger off or protected in a deployed demo |
 | API9 Improper inventory management | This file and Swagger list every endpoint with an owner (§2); no undocumented endpoints |
-| API10 Unsafe consumption of APIs | No third-party APIs in the MVP |
+| API10 Unsafe consumption of APIs | One third-party API: Anthropic, for the AI chat (§3.21). The key is only in the server environment; the answer is shown as plain text (never HTML), its dish ids are checked against the menu, and only the data of the menu goes to the model, never personal data |
 
 **Token in the frontend.** `localStorage` key `wr.auth`, dropped when `exp` has passed. This is readable by scripts if we ever have an XSS bug, so: React escapes output, we never use `dangerouslySetInnerHTML`, and the token is never put in a URL (downloads use `fetch` and a Blob). A `httpOnly` cookie is the v2 option.
 
