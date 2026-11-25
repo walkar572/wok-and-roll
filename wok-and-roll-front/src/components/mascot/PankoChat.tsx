@@ -97,6 +97,14 @@ export function PankoChat({ id, onClose }: PankoChatProps) {
     (coarse ? titleRef.current : inputRef.current)?.focus();
   }, []);
 
+  // Without the AI the field goes away, and the focus with it: it comes back to the title, so the
+  // keyboard stays in the chat (Escape closes it, Tab reaches the links).
+  useEffect(() => {
+    if (mode !== 'off') return;
+    const active = document.activeElement;
+    if (!active || active === document.body) titleRef.current?.focus();
+  }, [mode]);
+
   // Follow the answer as it grows, unless the guest scrolled up to read.
   useEffect(() => {
     const log = logRef.current;

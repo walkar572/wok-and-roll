@@ -146,6 +146,18 @@ test('Panko comes back without a reload when the server answers again', async ({
   expect(calls).toBeGreaterThanOrEqual(2);
 });
 
+test('without the AI the keyboard stays in the chat, and Escape closes it', async ({ page }) => {
+  await aiIs(page, false);
+
+  const chat = await openChat(page);
+  await expect(chat.getByText('AI qismim hozir dam olmoqda')).toBeVisible();
+  // the field went away with the AI, the focus did not leave the chat
+  await expect(chat.getByRole('heading', { name: 'Panko' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(chat).toHaveCount(0);
+  await expect(page.getByRole('button', { name: panko })).toBeFocused();
+});
+
 test('without the AI Panko shows the way to the menu and the booking', async ({ page }) => {
   await aiIs(page, false);
 
