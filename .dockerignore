@@ -1,0 +1,11 @@
+# Build context of the site (wok-and-roll-front/Dockerfile, built from the repo root).
+# Never send secrets, dependencies or build output to Docker.
+.git
+.env
+.env.*
+**/node_modules
+**/dist
+**/target
+**/*.log
+wok-and-roll-qa/automation/test-results
+wok-and-roll-qa/automation/playwright-report

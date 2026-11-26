@@ -1,0 +1,65 @@
+# The whole project on one server (for example AWS EC2): PostgreSQL, the Spring Boot API and the
+# site behind Caddy. Only ports 80 and 443 are open; the database and the API stay inside.
+# Start (from the repo root):  docker compose -f docker-compose.prod.yml up -d --build
+# Update after git pull:       the same command
+# Logs:                        docker compose -f docker-compose.prod.yml logs -f back
+# .env next to this file (never commit it):
+#   JWT_SECRET=...        openssl rand -base64 48
+#   DB_PASSWORD=...       openssl rand -hex 16
+#   GEMINI_API_KEY=...    or ANTHROPIC_API_KEY=..., for Panko's AI chat (optional)
+#   SITE_ADDRESS=...      optional: a host name for HTTPS, see the Caddyfile
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-wokroll}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: wokroll
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-wokroll} -d wokroll"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  back:
+    build: ./wok-and-roll-back
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/wokroll
+      DB_USERNAME: ${DB_USERNAME:-wokroll}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ASSISTANT_PROVIDER: ${ASSISTANT_PROVIDER:-}
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-}
+      ASSISTANT_EFFORT: ${ASSISTANT_EFFORT:-}
+      # A small server: the heap stays well under the memory of a 2 GB machine.
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=40
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: wok-and-roll-front/Dockerfile
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - back
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

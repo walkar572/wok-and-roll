@@ -1,0 +1,20 @@
+# The site and the API on one address (docker-compose.prod.yml).
+# SITE_ADDRESS ":80" serves plain HTTP on the server's IP. A host name instead, for example
+# "3-120-45-67.sslip.io" (the IP with dashes), makes Caddy get an HTTPS certificate by itself.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# The API, Panko's answers (server-sent events) included: Caddy streams them as they come.
+	handle /api/* {
+		reverse_proxy back:8080
+	}
+
+	# The site: files of the build, every other path is the single-page app.
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+}

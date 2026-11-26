@@ -96,6 +96,27 @@ Only for local runs and the demo (they are created by a migration).
 Staff accounts log in to the admin panel at `/admin/login` (the account menu of the site links to it too).
 Guests can order and book a table without an account.
 
+## Run it on a server
+
+One machine with Docker (for example AWS EC2, 2 GB of memory) runs everything with
+[`docker-compose.prod.yml`](docker-compose.prod.yml): PostgreSQL, the API and the site behind Caddy
+([`Caddyfile`](Caddyfile)), which serves the build and passes `/api` to the backend. Only ports 80 and
+443 are open.
+
+```bash
+git clone https://github.com/walkar572/wok-and-roll.git && cd wok-and-roll
+cat > .env <<EOF
+JWT_SECRET=$(openssl rand -base64 48)
+DB_PASSWORD=$(openssl rand -hex 16)
+EOF
+# optional: GEMINI_API_KEY=... (Panko's AI chat), SITE_ADDRESS=<host name> (HTTPS by Caddy)
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+The demo accounts are public (they are on the log in page of the admin panel): on a server that
+others can reach, give them new passwords, for example
+`docker compose -f docker-compose.prod.yml exec db psql -U wokroll -d wokroll -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; UPDATE app_user SET password_hash = crypt('<new password>', gen_salt('bf', 10)) WHERE email = 'admin@wokandroll.test';"`.
+
 ## Features
 
 | Area | What works |
