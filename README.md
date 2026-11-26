@@ -113,6 +113,13 @@ EOF
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
+On AWS the database can live on RDS and the secrets in Secrets Manager:
+[`docker-compose.aws.yml`](docker-compose.aws.yml) runs only the API and the site, and
+[`deploy/aws.sh`](deploy/aws.sh) reads the secret `wok-and-roll/prod` with the IAM role of the EC2
+server ([`deploy/aws-iam-policy.json`](deploy/aws-iam-policy.json): read that one secret only), so no
+password is written to a file. On the server: `./deploy/aws.sh setup` once, log in again, then
+`./deploy/aws.sh start`; later `update`, `status`, `logs`, `passwords`, `stop`.
+
 The demo accounts are public (they are on the log in page of the admin panel): on a server that
 others can reach, give them new passwords, for example
 `docker compose -f docker-compose.prod.yml exec db psql -U wokroll -d wokroll -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; UPDATE app_user SET password_hash = crypt('<new password>', gen_salt('bf', 10)) WHERE email = 'admin@wokandroll.test';"`.

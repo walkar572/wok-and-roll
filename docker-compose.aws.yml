@@ -1,0 +1,41 @@
+# AWS: the API and the site on EC2 (Docker), the database on RDS (PostgreSQL), the secrets in
+# Secrets Manager, read with the IAM role of the server. Start it with deploy/aws.sh, which reads the
+# secret and passes it as environment variables (nothing is written to a file):
+#   ./deploy/aws.sh start
+services:
+  back:
+    build: ./wok-and-roll-back
+    restart: unless-stopped
+    environment:
+      # RDS for PostgreSQL 16 accepts only encrypted connections by default.
+      DB_URL: jdbc:postgresql://${DB_HOST:-}:${DB_PORT:-5432}/${DB_NAME:-wokroll}?sslmode=${DB_SSLMODE:-require}
+      DB_USERNAME: ${DB_USERNAME:-wokroll}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ASSISTANT_PROVIDER: ${ASSISTANT_PROVIDER:-}
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-}
+      ASSISTANT_EFFORT: ${ASSISTANT_EFFORT:-}
+      # A small server: the heap stays well under the memory of a 2 GB machine.
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=50
+
+  web:
+    build:
+      context: .
+      dockerfile: wok-and-roll-front/Dockerfile
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - back
+
+volumes:
+  caddy-data:
+  caddy-config:
